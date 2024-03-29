@@ -70,7 +70,7 @@ export default function Homepage() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={()=>navigation.openDrawer()}
+          onPress={() => navigation.openDrawer()}
           style={styles.leftIcon}>
           <AntDesign name="left" size={24} color="black" />
         </TouchableOpacity>
@@ -87,7 +87,7 @@ export default function Homepage() {
       </View>
       <Text style={styles.heading}>iTax</Text>
       <TouchableOpacity style={styles.closeButton} onPress={openScanner}>
-      <Text style={styles.closeButtonText}>Open Scanner</Text>
+        <Text style={styles.closeButtonText}>Open Scanner</Text>
       </TouchableOpacity>
       {/* <Button title="Open Scanner" onPress={openScanner} style={styles.buttonBehind} /> */}
       {scannerVisible && (
@@ -101,14 +101,14 @@ export default function Homepage() {
         )} */}
         {scannerVisible && (
           <>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setScanned(false)}>
-          <Text style={styles.closeButtonText}>Scan Again</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setScanned(false)}>
+              <Text style={styles.closeButtonText}>Scan Again</Text>
+            </TouchableOpacity>
 
-        {/* <Button title="Open Scanner" onPress={openScanner} style={styles.button} /> */}
-          <TouchableOpacity style={styles.closeButton} onPress={closeScanner}>
-            <Text style={styles.closeButtonText}>Close Scanner</Text>
-          </TouchableOpacity>
+            {/* <Button title="Open Scanner" onPress={openScanner} style={styles.button} /> */}
+            <TouchableOpacity style={styles.closeButton} onPress={closeScanner}>
+              <Text style={styles.closeButtonText}>Close Scanner</Text>
+            </TouchableOpacity>
           </>
         )}
       </View>
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   buttonBehind: {
     flex: 1,
     marginHorizontal: 5,
-    zIndex:1
+    zIndex: 1
   },
   heading: {
     fontWeight: 'bold',

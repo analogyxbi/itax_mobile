@@ -1,38 +1,34 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import setupClient from '../../setup/setupClient';
+// import { createAsyncThunk } from '@reduxjs/toolkit';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import setupClient from '../../setup/setupClient';
+// import { login, logout } from '../reducers/reducers'; // Assuming the path to your authSlice is correct
 
-//To Persist Logged in state. This function is dispatched from the App.js with a useEffect.
-export const Init = () => {
-  return async (dispatch) => {
-    let csrf = await AsyncStorage.getItem('csrf');
-    if (csrf !== null) {
-      setupClient(csrf);
-      dispatch({
-        type: 'LOGIN',
-        csrf,
-      });
-    }
-  };
-};
+// // Thunk for initializing the authentication state
+// export const initAuth = createAsyncThunk(
+//   'auth/init',
+//   async (_, { dispatch }) => {
+//     const csrf = await AsyncStorage.getItem('csrf');
+//     if (csrf !== null) {
+//       setupClient(csrf);
+//       dispatch(login({ csrf }));
+//     }
+//   }
+// );
 
-export const Login = (csrf, url) => {
-  return async (dispatch) => {
-    dispatch({
-      type: 'LOGIN',
-      csrf,
-      url,
-    });
-  };
-};
+// // Thunk for logging in
+// export const loginUser = createAsyncThunk(
+//   'auth/login',
+//   async ({ csrf, url }, { dispatch }) => {
+//     setupClient(csrf);
+//     dispatch(login({ csrf, url }));
+//   }
+// );
 
-export const Logout = (value) => {
-  return async (dispatch) => {
-    await AsyncStorage.getAllKeys().then((keys) =>
-      AsyncStorage.multiRemove(keys)
-    );
-    dispatch({
-      type: 'LOGOUT',
-      payoad: value,
-    });
-  };
-};
+// // Thunk for logging out
+// export const logoutUser = createAsyncThunk(
+//   'auth/logout',
+//   async (_, { dispatch }) => {
+//     await AsyncStorage.clear();
+//     dispatch(logout());
+//   }
+// );

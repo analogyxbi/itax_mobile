@@ -13,8 +13,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// import { useDispatch } from 'react-redux';
-// import { Logout } from '../loginscreen/actions/actions';
+import { useDispatch } from 'react-redux';
+import { logout } from '../loginscreen/reducers/reducers';
+// import { logoutUser } from '../loginscreen/actions/actions';
 // import { clearAllTabs } from '../welcome/actions/actions';
 
 const windowHeight = Dimensions.get('window').height;
@@ -22,7 +23,7 @@ const windowWidth = Dimensions.get('window').width;
 
 const ProfileSettings = ({isAuthenticated, setIsAuthenticated}) => {
   const navigation = useNavigation();
-  // const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
   const [indicator, setIndicator] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,7 +50,7 @@ const ProfileSettings = ({isAuthenticated, setIsAuthenticated}) => {
     })
       .then((res) => {
       //  dispatch(clearAllTabs());
-      //   dispatch(Logout(null)); 
+        dispatch(logout(null)); 
         setIsAuthenticated(false)
         setLoading(false);
       })

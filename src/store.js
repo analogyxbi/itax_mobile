@@ -1,9 +1,9 @@
-import { applyMiddleware, combineReducers, createStore } from 'redux';
+import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
+import authReducer from './loginscreen/reducers/reducers';
 import thunk from 'redux-thunk';
-import AuthReducers from './loginscreen/reducers/reducers';
 
-const RootReducers = combineReducers({
-  AuthReducers,
+export default configureStore({
+  reducer: {
+    auth: authReducer,
+  },
 });
-
-export const store = createStore(RootReducers, applyMiddleware(thunk));

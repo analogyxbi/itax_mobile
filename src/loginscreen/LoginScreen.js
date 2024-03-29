@@ -14,20 +14,22 @@ import { BlurView } from 'expo-blur';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 // import { useNavigation } from '@react-navigation/native';
 // import { useDispatch } from 'react-redux';
-import { Login } from './actions/actions';
+import { loginUser } from './actions/actions';
 import axios from 'axios';
 import JSSoup from 'jssoup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import setupClient from '../setup/setupClient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useDispatch } from 'react-redux';
+import { login } from './reducers/reducers';
 
 const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
   const [passwordHidden, setPasswordHidden] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [url, setUrl] = useState('app.analogyx.com'); //gets overwritten when value is edited
-
+  const dispatch = useDispatch();
   const [csrf, setCsrf] = useState('');
   const [loading, setLoading] = useState(false);
   // const dispatch = useDispatch();
@@ -91,7 +93,7 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
           setLoading(false);
         } else {
           setupClient(csrf_token, url);
-          // dispatch(Login(csrf_token, url));
+          dispatch(login(csrf_token, url));
           AsyncStorage.multiSet([
             ['csrf', csrf],
             ['url', url],

@@ -7,11 +7,11 @@ import { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/loginscreen/LoginScreen';
-// import { Provider, useDispatch, useSelector } from 'react-redux';
-// import { store } from './src/store';
-// import { Init } from './src/loginscreen/actions/actions';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { store } from './src/store';
 import Homepage from './src/homepage/Homepage';
 import ProfileSettings from './src/profile/ProfileSettings';
+import { initAuth } from './src/loginscreen/actions/actions';
 
 
 // import { enableFreeze } from 'react-native-screens';
@@ -43,27 +43,19 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
 
 const RootNavigation = () => {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false); // Define isAuthenticated state
-  const [csrf, setCsrf] = React.useState(null)
   //Since this is inside the provider we have access to store.
   //Getting values from redux store to switch the between Auth & Main stacks based on csrf
-  // const csrf = useSelector((state) => state.AuthReducers.csrf);
-
-  // const dispatch = useDispatch();
+  const csrf = useSelector((state) => state.auth.csrf); // Access csrf from the auth slice
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    
-    // dispatch(Init());
-
-      // Simulate authentication check
-      const checkAuthentication = () => {
-        // Your authentication logic here
-        const userIsAuthenticated = csrf != null; // Replace with actual authentication check
-        setIsAuthenticated(userIsAuthenticated);
-      };
-  
-      checkAuthentication();
-
+      dispatch(initAuth());
   }, []);
+
+  useEffect(() => {
+    // Update isAuthenticated state based on csrf value
+    setIsAuthenticated(csrf !== null);
+  }, [csrf]); 
   
 
   return (
@@ -79,9 +71,9 @@ const RootNavigation = () => {
 
 const App = () => {
   return (
-    // <Provider store={store}>
+    <Provider store={store}>
       <RootNavigation />
-    // </Provider>
+     </Provider>
   );
 };
 

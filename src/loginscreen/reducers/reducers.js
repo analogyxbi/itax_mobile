@@ -1,26 +1,30 @@
+import { createSlice } from '@reduxjs/toolkit';
+
+// Define initial state
 const initialState = {
   csrf: null,
   url: null,
 };
 
-//This is the AuthReducers
+// Create auth slice
+const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    login(state, action) {
+      const { csrf, url } = action.payload;
+      state.csrf = csrf;
+      state.url = url;
+    },
+    logout(state) {
+      state.csrf = null;
+      state.url = null;
+    },
+  },
+});
 
-export default (state = initialState, action) => {
-  switch (action.type) {
-    case 'LOGIN':
-      return {
-        ...state,
-        csrf: action.csrf,
-        url: action.url,
-      };
-    case 'LOGOUT':
-      return {
-        // or ...initialState,
-        csrf: null,
-        url: null,
-      };
+// Export actions
+export const { login, logout } = authSlice.actions;
 
-    default:
-      return state;
-  }
-};
+// Export reducer
+export default authSlice.reducer;

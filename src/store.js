@@ -1,9 +1,10 @@
 import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
-import authReducer from './loginscreen/reducers/reducers';
+import authReducer from './loginscreen/authSlice';
 import thunk from 'redux-thunk';
 
-export default configureStore({
+const store = configureStore({
   reducer: {
     auth: authReducer,
   },
 });
+export default store;

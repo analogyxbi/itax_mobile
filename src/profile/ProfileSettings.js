@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
-import { logout } from '../loginscreen/reducers/reducers';
+import { logout } from '../loginscreen/authSlice';
 // import { logoutUser } from '../loginscreen/actions/actions';
 // import { clearAllTabs } from '../welcome/actions/actions';
 

@@ -8,16 +8,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/loginscreen/LoginScreen';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { store } from './src/store';
+import  store  from './src/store';
 import Homepage from './src/homepage/Homepage';
 import ProfileSettings from './src/profile/ProfileSettings';
-import { initAuth } from './src/loginscreen/actions/actions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { initAuth } from './src/loginscreen/actions/actions';
 
 
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
-
 const AuthStack = ({ isAuthenticated, setIsAuthenticated }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -48,14 +48,24 @@ const RootNavigation = () => {
   const csrf = useSelector((state) => state.auth.csrf); // Access csrf from the auth slice
   const dispatch = useDispatch();
 
-  useEffect(() => {
-      dispatch(initAuth());
-  }, []);
+const Init = async() => {
+    let csrf = await AsyncStorage.getItem('csrf');
+    console.log("csrf", csrf)
+    if (csrf !== null) {
+      setupClient(csrf);
+      dispatch({
+        type: 'LOGIN',
+        csrf,
+      });
+      setIsAuthenticated(true)
+    }
+};
 
   useEffect(() => {
-    // Update isAuthenticated state based on csrf value
-    setIsAuthenticated(csrf !== null);
-  }, [csrf]); 
+    Init();
+  }, []);
+
+ console.log({csrf})
   
 
   return (

@@ -14,7 +14,7 @@ import { BlurView } from 'expo-blur';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 // import { useNavigation } from '@react-navigation/native';
 // import { useDispatch } from 'react-redux';
-import { loginUser } from './actions/actions';
+// import { loginUser } from './actions/actions';
 import axios from 'axios';
 import JSSoup from 'jssoup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,7 +22,7 @@ import setupClient from '../setup/setupClient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { useDispatch } from 'react-redux';
-import { login } from './reducers/reducers';
+import { login } from './authSlice';
 
 const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
   const [passwordHidden, setPasswordHidden] = useState(true);

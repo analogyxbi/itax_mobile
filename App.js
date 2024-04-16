@@ -6,23 +6,54 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createDrawerNavigator } from '@react-navigation/drawer'
 import LoginScreen from './src/loginscreen/LoginScreen';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import  store  from './src/store';
+import { Provider as PaperProvider } from 'react-native-paper';
+import store from './src/store';
 import Homepage from './src/homepage/Homepage';
 import ProfileSettings from './src/profile/ProfileSettings';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Users from './src/users/Users';
+import { login } from './src/loginscreen/authSlice';
+import setupClient from './src/setup/setupClient';
 // import { initAuth } from './src/loginscreen/actions/actions';
 
 
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator()
+
+const DrawerRoutes = ({ isAuthenticated, setIsAuthenticated }) => {
+  // enableFreeze(true);
+  return (
+    <Drawer.Navigator screenOptions={{ headerShown: false }}>
+      <Drawer.Screen
+        name="Homepage"
+        component={Homepage}
+        options={{
+          drawerLabel: 'Home',
+          title: 'overview',
+        }}
+      />
+      <Drawer.Screen
+        name="Users"
+        component={Users}
+        options={{
+          drawerLabel: 'User',
+          title: 'overview',
+        }}
+      />
+      {/* <Drawer.Screen name="ProfileSettings" component={ProfileSettings} /> */}
+    </Drawer.Navigator>
+  );
+};
 const AuthStack = ({ isAuthenticated, setIsAuthenticated }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home">
-      {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+        {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
       </Stack.Screen>
     </Stack.Navigator>
   );
@@ -32,9 +63,9 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
   // enableFreeze(true);
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Homepage" component={Homepage} />
+      <Stack.Screen name="Homepage" component={DrawerRoutes} />
       <Stack.Screen name="ProfileSettings">
-      {props => <ProfileSettings {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+        {props => <ProfileSettings {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
       </Stack.Screen>
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
@@ -48,32 +79,30 @@ const RootNavigation = () => {
   const csrf = useSelector((state) => state.auth.csrf); // Access csrf from the auth slice
   const dispatch = useDispatch();
 
-const Init = async() => {
+  const Init = async () => {
     let csrf = await AsyncStorage.getItem('csrf');
-    console.log("csrf", csrf)
     if (csrf !== null) {
-      setupClient(csrf);
-      dispatch({
-        type: 'LOGIN',
-        csrf,
-      });
+      const url = 'app.analogyx.com';
+      setupClient(csrf, url);
+      dispatch(login({ csrf, url }));
+      AsyncStorage.multiSet([
+        ['csrf', csrf],
+        ['url', url],
+      ]);
       setIsAuthenticated(true)
     }
-};
+  };
 
   useEffect(() => {
     Init();
   }, []);
 
- console.log({csrf})
-  
-
   return (
     <NavigationContainer>
-       {isAuthenticated === false ? (
+      {isAuthenticated === false ? (
         <AuthStack isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
       ) : (
-        <MainStack  isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated}/>
+        <MainStack isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
       )}
     </NavigationContainer>
   );
@@ -82,8 +111,10 @@ const Init = async() => {
 const App = () => {
   return (
     <Provider store={store}>
-      <RootNavigation />
-     </Provider>
+      <PaperProvider>
+        <RootNavigation />
+      </PaperProvider>
+    </Provider>
   );
 };
 

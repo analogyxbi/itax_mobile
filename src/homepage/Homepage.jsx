@@ -4,6 +4,11 @@ import { BarCodeScanner } from 'expo-barcode-scanner';
 import { AntDesign } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { Entypo } from '@expo/vector-icons';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
+import getClientErrorObject from '../utils/getClientErrorObject';
+import { useDispatch } from 'react-redux';
+import { setUserData } from '../loginscreen/authSlice';
 
 const screenWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -14,7 +19,16 @@ export default function Homepage() {
   const [scanned, setScanned] = useState(false);
   const [scannerVisible, setScannerVisible] = useState(false);
   const navigation = useNavigation();
+  const dispatch = useDispatch()
 
+  useEffect(() => {
+    const endpoint = `/user_management/users?json=true`;
+    AnalogyxBIClient.get({ endpoint }).then(({ json }) => {
+      dispatch(setUserData(json));
+    }).catch((err) => {
+      console.log("error", getClientErrorObject(err))
+    })
+  }, [])
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -72,7 +86,7 @@ export default function Homepage() {
         <TouchableOpacity
           onPress={() => navigation.openDrawer()}
           style={styles.leftIcon}>
-          <AntDesign name="left" size={24} color="black" />
+          <Entypo name="menu" size={28} color="black" />
         </TouchableOpacity>
         <Image
           source={require('../../images/analogyxbi-logo-horiz.png')}

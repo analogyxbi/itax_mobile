@@ -40,7 +40,6 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
       return;
     }
     setLoading(true);
-    console.log('unpw check ran');
     var myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
 
@@ -93,14 +92,13 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
           setLoading(false);
         } else {
           setupClient(csrf_token, url);
-          dispatch(login(csrf_token, url));
+          dispatch(login({csrf: csrf_token, url}));
           AsyncStorage.multiSet([
             ['csrf', csrf],
             ['url', url],
           ]);
           setLoading(false);
           setIsAuthenticated(true)
-          console.log("User logged innnnnnnnnnnnnnnnnnnnnnnnnnnn")
         }
       })
       .catch((err) => {
@@ -118,7 +116,6 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
         let soup = new JSSoup(res.data);
         let csrf = soup.find('input', { id: 'csrf_token' }).attrs.value;
         setCsrf(csrf);
-        console.log('csrfLOG', csrf);
       })
       .catch((err) => console.log('csrf set err', err));
   }, [url]);

@@ -22,99 +22,76 @@ const roleOptions = [
         "value": "Viewer"
     }
 ];
-const timeZones = [
-    {
-        "name": "Africa/Accra",
-        "id": 1,
-        "label": "Africa/Accra",
-        "value": 1
-    },
-    {
-        "name": "America/Detroit",
-        "id": 2,
-        "label": "America/Detroit",
-        "value": 2
-    },
-    {
-        "name": "Asia/Kabul",
-        "id": 3,
-        "label": "Asia/Kabul",
-        "value": 3
-    }
-]
 const windowHeight = Dimensions.get('window').height;
-// const container = document.getElementById('app');
-// const bootstrapData = JSON.parse(container.getAttribute('data-bootstrap'));
-// console.log({bootstrapData})
 
-const UsersForm = ({ initialFormData, formData, setFormData, userGroups, timeZone, usersData }) => {
+const UsersForm = ({ initialFormData, formData, setFormData, userGroups, timeZone, usersData, roleData }) => {
     const [error, setError] = useState({});
     const validatePassword = (value, name) => {
         setError((prev) => {
-          const stateObj = { ...prev, [name]: '' };
-    
-          switch (name) {
-            case 'username':
-              if (!value) {
-                stateObj[name] = 'Please enter Username.';
-              } else if (
-                usersData.find((data) => data.username === value) != undefined
-              ) {
-                stateObj[name] = 'Username Already Taken......';
-              }
-              break;
-    
-            case 'password':
-              if (!value) {
-                stateObj[name] = 'Please enter Password.';
-              } else if (
-                formData.confirm_password &&
-                value !== formData.confirmPassword
-              ) {
-                stateObj['confirm_password'] =
-                  'Password and Confirm Password does not match.';
-              } else {
-                stateObj['confirm_password'] = formData.confirm_password
-                  ? ''
-                  : error.confirm_password;
-              }
-              break;
-    
-            case 'confirm_password':
-              if (!value) {
-                stateObj[name] = 'Please enter Confirm Password.';
-              } else if (formData.password && value !== formData.password) {
-                stateObj[name] = 'Password and Confirm Password does not match.';
-              }
-              break;
-    
-            case 'email':
-              if (!value) {
-                stateObj[name] = 'Please enter Email.';
-              } else if (
-                usersData.find(
-                  (data) => data.email === value && data.id != selectedFormData?.id
-                ) != undefined
-              ) {
-                stateObj[name] = 'Email Already exist......';
-              }
-              break;
-    
-            default:
-              break;
-          }
-    
-          return stateObj;
+            const stateObj = { ...prev, [name]: '' };
+
+            switch (name) {
+                case 'username':
+                    if (!value) {
+                        stateObj[name] = 'Please enter Username.';
+                    } else if (
+                        usersData.find((data) => data.username === value) != undefined
+                    ) {
+                        stateObj[name] = 'Username Already Taken......';
+                    }
+                    break;
+
+                case 'password':
+                    if (!value) {
+                        stateObj[name] = 'Please enter Password.';
+                    } else if (
+                        formData.confirm_password &&
+                        value !== formData.confirmPassword
+                    ) {
+                        stateObj['confirm_password'] =
+                            'Password and Confirm Password does not match.';
+                    } else {
+                        stateObj['confirm_password'] = formData.confirm_password
+                            ? ''
+                            : error.confirm_password;
+                    }
+                    break;
+
+                case 'confirm_password':
+                    if (!value) {
+                        stateObj[name] = 'Please enter Confirm Password.';
+                    } else if (formData.password && value !== formData.password) {
+                        stateObj[name] = 'Password and Confirm Password does not match.';
+                    }
+                    break;
+
+                case 'email':
+                    if (!value) {
+                        stateObj[name] = 'Please enter Email.';
+                    } else if (
+                        usersData.find(
+                            (data) => data.email === value && data.id != selectedFormData?.id
+                        ) != undefined
+                    ) {
+                        stateObj[name] = 'Email Already exist......';
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+
+            return stateObj;
         });
-      };
+    };
     const onChangeText = (e, name) => {
         setFormData(prev => ({
             ...prev, [name]: e
         }))
         validatePassword(e, name);
     }
-    const renderLabelsValues =(values)=>{
-        const result = values.map(val => ({...val, label: val.name, value: val.id}));
+    const renderLabelsValues = (values) => {
+        const result = values.map(val => ({ ...val, label: val.name, value: val.id }));
         return result;
     }
     return (
@@ -141,10 +118,10 @@ const UsersForm = ({ initialFormData, formData, setFormData, userGroups, timeZon
                     placeholder="Username"
                 />
                 {error.username && (
-                    <span style={{ color: 'red' }} className="err">
-                      {error.username}
-                    </span>
-                  )}
+                    <Text style={{ color: 'red' }} className="err">
+                        {error.username}
+                    </Text>
+                )}
                 <View style={[globalStyles.dFlexR, { paddingLeft: 13 }]}>
                     <Text>Active: </Text>
                     <Switch value={formData?.active} onValueChange={(text) => setFormData({ active: text })} />
@@ -165,14 +142,14 @@ const UsersForm = ({ initialFormData, formData, setFormData, userGroups, timeZon
                     placeholder="Email"
                 />
                 {error.email && (
-                    <span style={{ color: 'red' }} className="err">
-                      {error.email}
-                    </span>
-                  )}
+                    <Text style={{ color: 'red' }} className="err">
+                        {error.email}
+                    </Text>
+                )}
                 <View style={[styles.input, styles.select]}>
                     <RNPickerSelect
                         onValueChange={(text) => onChangeText(text, 'roles')}
-                        items={roleOptions}
+                        items={renderLabelsValues(roleData)}
                         placeholder={{
                             label: 'Role',
                             value: null,
@@ -209,12 +186,11 @@ const UsersForm = ({ initialFormData, formData, setFormData, userGroups, timeZon
                     secureTextEntry={true}
                     placeholder="Password"
                 />
-                {error.password &&
-                        (message === 'Edit' || message === 'New') && (
-                          <span style={{ color: 'red' }} className="err">
-                            {error.password}
-                          </span>
-                        )}
+                {error.password && (
+                    <Text style={{ color: 'red' }} className="err">
+                        {error.password}
+                    </Text>
+                )}
                 <TextInput
                     style={styles.input}
                     onChangeText={(text) => onChangeText(text, 'confirm_password')}
@@ -222,11 +198,11 @@ const UsersForm = ({ initialFormData, formData, setFormData, userGroups, timeZon
                     secureTextEntry={true}
                     placeholder="Confirm Password"
                 />
-                {error.confirm_password && message === 'New' && (
-                        <span style={{ color: 'red' }} className="err">
-                          {error.confirm_password}
-                        </span>
-                      )}
+                {error.confirm_password && (
+                    <Text style={{ color: 'red' }} className="err">
+                        {error.confirm_password}
+                    </Text>
+                )}
             </ScrollView>
             <TouchableOpacity style={styles.resetButton} onPress={() => setFormData(initialFormData)}>
                 <Text style={styles.resetButtonText} >Reset</Text>
@@ -249,12 +225,12 @@ const styles = StyleSheet.create({
         padding: 0,
     },
     resetButton: {
-        alignItems:"center",
-        display:"flex"
+        alignItems: "center",
+        display: "flex"
     },
-    resetButtonText:{
-        fontSize:23,
-        color:globalStyles.colors.primary
+    resetButtonText: {
+        fontSize: 23,
+        color: globalStyles.colors.primary
     }
 });
 

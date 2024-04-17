@@ -17,32 +17,74 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Users from './src/users/Users';
 import { login } from './src/loginscreen/authSlice';
 import setupClient from './src/setup/setupClient';
+import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 // import { initAuth } from './src/loginscreen/actions/actions';
 
 
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
-const Drawer = createDrawerNavigator()
+const Drawer = createDrawerNavigator();
+
+const ReceivingNavigator = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Receiving" component={Users} />
+    <Stack.Screen name="POReceipt" component={Users} />
+    <Stack.Screen name="Orders" component={Users} />
+  </Stack.Navigator>
+);
 
 const DrawerRoutes = ({ isAuthenticated, setIsAuthenticated }) => {
   // enableFreeze(true);
   return (
     <Drawer.Navigator screenOptions={{ headerShown: false }}>
       <Drawer.Screen
-        name="Homepage"
+        name="Home"
         component={Homepage}
         options={{
-          drawerLabel: 'Home',
-          title: 'overview',
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
         }}
       />
       <Drawer.Screen
         name="Users"
         component={Users}
         options={{
-          drawerLabel: 'User',
-          title: 'overview',
+          drawerLabel: 'Users',
+          drawerIcon: ({ color, size }) => (
+            <FontAwesome name="user" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Shipping"
+        component={Homepage}
+        options={{
+          drawerLabel: 'Shipping',
+          drawerIcon: ({ color, size }) => (
+            <FontAwesome5 name="shipping-fast" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Receiving"
+        component={ReceivingNavigator}
+        options={{
+          drawerLabel: 'Receiving',
+          drawerIcon: ({ color, size }) => (
+            <FontAwesome name="inbox" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Trackers"
+        component={Users}
+        options={{
+          drawerLabel: 'Trackers',
+          drawerIcon: ({ color, size }) => (
+            <FontAwesome name="map-marker" size={size} color={color} />
+          ),
         }}
       />
       {/* <Drawer.Screen name="ProfileSettings" component={ProfileSettings} /> */}

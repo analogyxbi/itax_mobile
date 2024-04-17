@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Modal, Alert, Pressable } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Modal, Alert, Pressable, ToastAndroid } from 'react-native';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { globalStyles } from '../style/globalStyles';
@@ -8,23 +8,7 @@ import UsersTable from './components/UsersTable';
 import { useNavigation } from '@react-navigation/native';
 import _ from 'lodash';
 import { useSelector } from 'react-redux';
-
-// Define user data
-const users = [
-  { id: 1, name: 'John Doe', email: 'john@example.com', role: "Admin" },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: "User" },
-  { id: 3, name: 'Alice Johnson', email: 'alice@example.com', role: "Admin" },
-  { id: 4, name: 'John Doe', email: 'john@example.com', role: "Admin" },
-  { id: 5, name: 'Jane Smith', email: 'jane@example.com', role: "User" },
-  { id: 6, name: 'Alice Johnson', email: 'alice@example.com', role: "Admin" },
-  { id: 7, name: 'John Doe', email: 'john@example.com', role: "Admin" },
-  { id: 8, name: 'Jane Smith', email: 'jane@example.com', role: "User" },
-  { id: 9, name: 'Alice Johnson', email: 'alice@example.com', role: "Admin" },
-  { id: 10, name: 'John Doe', email: 'john@example.com', role: "Admin" },
-  { id: 12, name: 'Jane Smith', email: 'jane@example.com', role: "User" },
-  { id: 13, name: 'Alice Johnson', email: 'alice@example.com', role: "Admin" },
-  // Add more user objects as needed
-];
+import getClientErrorObject from '../utils/getClientErrorObject';
 
 const initialFormData = {
   first_name: "",
@@ -40,21 +24,11 @@ const initialFormData = {
   confirm_password: "",
 }
 
-// Component to render each user item
-const UserItem = ({ user }) => (
-  <View style={styles.userItem}>
-    <Text style={styles.userName}>{user.name}</Text>
-    <Entypo name="edit" size={24} color="black" />
-  </View>
-);
-
 const Users = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
   const [formData, setFormData] = React.useState(initialFormData);
   const userData = useSelector((state) => state.auth.user_data);
-
-  console.log({ userData })
 
   const handleValidate = () => {
     if (_.isEmpty(formData)) {
@@ -85,9 +59,52 @@ const Users = () => {
   };
 
   const saveUser = () => {
-    console.log(formData)
-    handleValidate()
-    setModalVisible(!modalVisible)
+    console.log({formData})
+    // const data = { ...formData };
+
+    const data = {
+      active: true,
+      confirm_password: "12345",
+      email: "raj@analogyx.com",
+      first_name: "Raj",
+      last_name: "Raj",
+      password: "12345",
+      phone: "",
+      roles: "[9]",
+      timezone_id: 7,
+      user_group: "[19]",
+      username: "raj"
+    }
+    if (handleValidate) {
+      // const roles = _.isArray(data.roles)
+      //   ? [data.roles[0].value]
+      //   : [data.roles.value];
+      let payload = {
+        ...data,
+        timezone_id: data?.time_zone,
+        roles: JSON.stringify([data.roles]),
+        user_group: '[]',
+      };
+      console.log(data)
+
+      AnalogyxBIClient.post({
+        endpoint: `/user_management/create`,
+        postPayload:data,
+        stringify: false,
+      })
+        .then(({ json }) => {
+          // onSaveData({ ...data, id: json.id }, type);
+          console.log("Successsss")
+          ToastAndroid.show(t(json.message), ToastAndroid.SHORT);
+        })
+        .catch((err) =>
+          getClientErrorObject(err).then((res) => {
+            console.log({ err })
+            ToastAndroid.show(t(res), ToastAndroid.SHORT);
+          })
+        );
+      // setModalVisible(!modalVisible)
+    }
   }
 
 
@@ -101,7 +118,9 @@ const Users = () => {
         <Text style={styles.heading}>Users</Text>
         <Pressable
           // style={[styles.button, styles.buttonClose]}
-          onPress={saveUser}>
+          onPress={() => {
+            setModalVisible(!modalVisible);
+          }}>
           <AntDesign name="pluscircleo" size={24} color={globalStyles.colors.darkGrey} />
         </Pressable>
       </View>
@@ -127,7 +146,7 @@ const Users = () => {
             </Pressable>
             <Text style={styles.heading}>Create User</Text>
             <Pressable
-              onPress={() => setModalVisible(!modalVisible)}>
+              onPress={saveUser}>
               <FontAwesome name="save" size={24} color={globalStyles.colors.primary} />
             </Pressable>
           </View>
@@ -136,6 +155,7 @@ const Users = () => {
               formData={formData}
               usersData={userData?.users_data || []}
               setFormData={setFormData}
+              roleData={userData?.role_data}
               userGroups={userData?.user_group_data || []}
               timeZone={userData?.timezone} />
           </View>

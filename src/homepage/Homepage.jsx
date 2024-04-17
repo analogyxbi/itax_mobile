@@ -19,14 +19,14 @@ export default function Homepage() {
   const [scanned, setScanned] = useState(false);
   const [scannerVisible, setScannerVisible] = useState(false);
   const navigation = useNavigation();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const endpoint = `/user_management/users?json=true`;
     AnalogyxBIClient.get({ endpoint }).then(({ json }) => {
       dispatch(setUserData(json));
     }).catch((err) => {
-      console.log("error", getClientErrorObject(err))
+      getClientErrorObject(err).then(res => ToastAndroid.show(t(res), ToastAndroid.SHORT))
     })
   }, [])
   useEffect(() => {

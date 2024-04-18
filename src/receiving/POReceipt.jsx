@@ -27,7 +27,7 @@ const POReceipt = () => {
                     value={tabValue}
                     onValueChange={handleTabs}
                     buttons={[
-                        { value: '1', label: 'Entry', icon: () => <FontAwesome name="search" size={24} color={globalStyles.colors.darkGrey} /> },
+                        { value: '1', label: 'Entry', icon: () => <Ionicons name="search" size={24} color={globalStyles.colors.darkGrey} /> },
                         { value: '2', label: 'Receipt', icon: () => <FontAwesome5 name="receipt" size={24} color={globalStyles.colors.darkGrey} /> },
                         { value: '3', label: 'Line', icon: () => <Feather name="list" size={24} color={globalStyles.colors.darkGrey} /> },
                     ]}
@@ -70,14 +70,24 @@ const POReceipt = () => {
                 {
                     tabValue == "2" && (
                         <View style={styles.tabView}>
-                            <Text style={styles.inputLabel}>Filter</Text>
-                            <TextInput
-                                style={styles.input}
-                                // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-                                // value={formData?.confirm_password}
-                                // secureTextEntry={true}
-                                placeholder="Filter"
-                            />
+                            <View>
+                                <Text style={styles.inputLabel}>Filter</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    // onChangeText={(text) => onChangeText(text, 'confirm_password')}
+                                    // value={formData?.confirm_password}
+                                    // secureTextEntry={true}
+                                    placeholder="Filter"
+                                />
+                            </View>
+                            <View>
+                                <Text style={[styles.inputLabel, { color: "black" }]}>ACD-PUR01</Text>
+                                <Text style={{ paddingLeft: 10 }}>Purchased 01</Text>
+                                <View style={[globalStyles.dFlexR, globalStyles.justifySB, {fontSize:13}]}>
+                                    <Text style={{ paddingLeft: 10, fontSize:13 }}>4252/1/1</Text>
+                                    <Text style={{ paddingHorizontal: 10, fontSize:13,  }}>10/EA</Text>
+                                </View>
+                            </View>
                         </View>
                     )
                 }

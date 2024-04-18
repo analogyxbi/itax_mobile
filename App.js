@@ -1,24 +1,32 @@
-import 'react-native-gesture-handler';
 import { LogBox } from 'react-native';
+import 'react-native-gesture-handler';
 LogBox.ignoreAllLogs(true);
 
-import * as React from 'react';
-import { useEffect } from 'react';
+import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createDrawerNavigator } from '@react-navigation/drawer'
-import LoginScreen from './src/loginscreen/LoginScreen';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import * as React from 'react';
+import { useEffect } from 'react';
 import { Provider as PaperProvider } from 'react-native-paper';
-import store from './src/store';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import Homepage from './src/homepage/Homepage';
-import ProfileSettings from './src/profile/ProfileSettings';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Users from './src/users/Users';
+import LoginScreen from './src/loginscreen/LoginScreen';
 import { login } from './src/loginscreen/authSlice';
+import ProfileSettings from './src/profile/ProfileSettings';
 import setupClient from './src/setup/setupClient';
-import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import store from './src/store';
+import Users from './src/users/Users';
 // import { initAuth } from './src/loginscreen/actions/actions';
+import { DrawerContentScrollView, DrawerItemList,createStackNavigator } from '@react-navigation/drawer';
+import { Image, Text, View } from 'react-native';
+import Colors from './utils/Colors';
+import { StyleSheet } from 'react-native';
+import { AppRegistry } from 'react-native';
+import CustomDrawer from './utils/CustomDrawer';
+import { ScreensArray } from './src/constants/constants';
+import Icon from './src/components/Icons';
 
 
 // import { enableFreeze } from 'react-native-screens';
@@ -26,68 +34,62 @@ import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-const ReceivingNavigator = () => (
+function ReceivingNavigator() {
+  return <>
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Receiving" component={Users} />
     <Stack.Screen name="POReceipt" component={Users} />
     <Stack.Screen name="Orders" component={Users} />
   </Stack.Navigator>
-);
+  </>
+}
 
-const DrawerRoutes = ({ isAuthenticated, setIsAuthenticated }) => {
+
+function CustomDrawerContent(props) {
+  return (
+    <DrawerContentScrollView {...props}>
+      <View style={{ backgroundColor: '#f4f4f4', padding: 20 }}>
+        <Image
+          source={require('./assets/icon.png')} // Add your profile picture source here
+          style={{ width: 80, height: 80, borderRadius: 40 }}
+        />
+        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>Satendra Kumar R</Text>
+      </View>
+
+     <CustomDrawer {...props} />
+    </DrawerContentScrollView>
+  );
+}
+
+const DrawerRoutes = (props) => {
   // enableFreeze(true);
   return (
-    <Drawer.Navigator screenOptions={{ headerShown: false }}>
-      <Drawer.Screen
-        name="Home"
-        component={Homepage}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Users"
-        component={Users}
-        options={{
-          drawerLabel: 'Users',
-          drawerIcon: ({ color, size }) => (
-            <FontAwesome name="user" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Shipping"
-        component={Homepage}
-        options={{
-          drawerLabel: 'Shipping',
-          drawerIcon: ({ color, size }) => (
-            <FontAwesome5 name="shipping-fast" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Receiving"
-        component={ReceivingNavigator}
-        options={{
-          drawerLabel: 'Receiving',
-          drawerIcon: ({ color, size }) => (
-            <FontAwesome name="inbox" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Trackers"
-        component={Users}
-        options={{
-          drawerLabel: 'Trackers',
-          drawerIcon: ({ color, size }) => (
-            <FontAwesome name="map-marker" size={size} color={color} />
-          ),
-        }}
-      />
-      {/* <Drawer.Screen name="ProfileSettings" component={ProfileSettings} /> */}
+    <Drawer.Navigator 
+      screenOptions={{
+        drawerType: 'slide',
+        overlayColor: 'transparent',
+        drawerStyle: styles.drawerStyle,
+        drawerActiveBackgroundColor: Colors.primary,
+        drawerItemStyle: styles.drawerItemStyles,
+        drawerActiveTintColor: Colors.black,
+        drawerLabelStyle: styles.drawerLabelStyles,
+        headerShown: false 
+      }}
+      drawerContent={props => <CustomDrawer {...props} />}
+    >
+      {ScreensArray.map((item, index) => {
+        return (
+          <Drawer.Screen key={index} name={item.route} component={item.component}
+            options={{
+              item,
+              drawerIcon: ({ color, size, focused }) => (
+                <Icon type={item.type} name={item.icon} size={size} color={color} />
+              )
+            }}
+          />
+        )
+      })}
+
     </Drawer.Navigator>
   );
 };
@@ -105,7 +107,9 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
   // enableFreeze(true);
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Homepage" component={DrawerRoutes} />
+      <Stack.Screen name="Homepage">
+      {props => <DrawerRoutes {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+      </Stack.Screen>
       <Stack.Screen name="ProfileSettings">
         {props => <ProfileSettings {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
       </Stack.Screen>
@@ -160,6 +164,29 @@ const App = () => {
   );
 };
 
-export default App;
-
+// AppRegistry.registerComponent('WarehouseApp', () => App);
+export default App
 // export ANDROID_SDK_ROOT=/home/satendra/Android/Sdk
+
+export const constant = {
+  SPACING: 16,
+  borderRadius: 10,
+  titleFontSize: 24,
+  textFontSize: 16,
+  subTextFontSize: 14,
+}
+
+
+
+const styles = StyleSheet.create({
+  drawerStyle: {
+    width: 240,
+  },
+  drawerItemStyles: {
+    borderRadius: constant.borderRadius,
+  },
+  drawerLabelStyles: {
+    fontSize: constant.textFontSize,
+    marginHorizontal: -constant.SPACING,
+  },
+})

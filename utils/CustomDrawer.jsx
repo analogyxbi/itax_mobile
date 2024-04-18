@@ -32,29 +32,38 @@ const CustomDrawer = (props) => {
       {/* Menu */}
       {drawerMenu.map((item, index) => {
         return (
-          <TouchableOpacity activeOpacity={0.8} key={index}
+          <TouchableOpacity 
+            key={index}
             style={[styles.menu, { backgroundColor: item.bg + '99' }]}
             onPress={() => {
               LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'))
-              setMenuIndex(menuIndex === index ? -1 : index)
-            }}>
+              // Toggle the submenu visibility
+              setMenuIndex(prevIndex => (prevIndex === index ? -1 : index));
+            }}
+          >
             <Row style={styles.item}>
               <Icon type={item.type} name={item.icon} size={22} />
-              <Text style={[styles.text, {
-                color: menuIndex === index ? Colors.black : Colors.gray,
-              }]}>{item.title}</Text>
+              <Text style={[styles.text, { color: menuIndex === index ? Colors.black : Colors.gray }]}>
+                {item.title}
+              </Text>
             </Row>
-            {menuIndex === index && <View style={{ borderRadius: constant.borderRadius, backgroundColor: item.bg }}>
-              {item.menuList.map((subMenu, i) => (
-                <TouchableNativeFeedback key={i} onPress={navigation.navigate(subMenu.screen)}>
-                  <View style={styles.subMenu}>
-                    <Text>{subMenu.title}</Text>
-                  </View>
-                </TouchableNativeFeedback>
-              ))}
-            </View>}
+            {/* Render submenu if the menu is expanded */}
+            {menuIndex === index && (
+              <View style={{ borderRadius: constant.borderRadius, backgroundColor: item.bg }}>
+                {item.menuList.map((subMenu, i) => (
+                  <TouchableNativeFeedback 
+                    key={i} 
+                    onPress={() => navigation.navigate(subMenu.screen)} // Use navigation.navigate with the screen name
+                  >
+                    <View style={styles.subMenu}>
+                      <Text>{subMenu.title}</Text>
+                    </View>
+                  </TouchableNativeFeedback>
+                ))}
+              </View>
+            )}
           </TouchableOpacity>
-        )
+        );
       })}
     </Container>
   )

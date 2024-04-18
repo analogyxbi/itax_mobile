@@ -8,6 +8,7 @@ import Icon from '../src/components/Icons'
 import { Container } from '../src/components/Container'
 import { Row } from '../src/components/Row'
 import Styles from '../src/common/Styles'
+import { Feather } from '@expo/vector-icons'
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -34,7 +35,9 @@ const CustomDrawer = (props) => {
         return (
           <TouchableOpacity 
             key={index}
-            style={[styles.menu, { backgroundColor: item.bg + '99' }]}
+            style={[styles.menu, 
+              { backgroundColor: item.bg + '99' }
+            ]}
             onPress={() => {
               LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'))
               // Toggle the submenu visibility
@@ -43,9 +46,14 @@ const CustomDrawer = (props) => {
           >
             <Row style={styles.item}>
               <Icon type={item.type} name={item.icon} size={22} />
-              <Text style={[styles.text, { color: menuIndex === index ? Colors.black : Colors.gray }]}>
+              <Text style={[styles.text, { color: menuIndex === index ? Colors.black : Colors.gray, flexGrow:1 }]}>
                 {item.title}
               </Text>
+              {
+                menuIndex === index 
+                ? <Feather style={styles.arrowIcon} name="chevron-up" size={24} color="black" />
+                : <Feather stylele={styles.arrowIcon} name="chevron-down" size={24} color="black" />
+              }
             </Row>
             {/* Render submenu if the menu is expanded */}
             {menuIndex === index && (
@@ -112,4 +120,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light,
     alignSelf: 'center',
   },
+  arrowIcon:{position:"absolute", right:10}
 })

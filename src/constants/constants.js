@@ -17,7 +17,7 @@ export const constant = {
 
 export const ScreensArray = [
   { route: 'Home', label: 'Home', type: Icons.Ionicons, icon: 'home-outline', component: Homepage, },
-  { route: 'Users', label: 'Users', type: Icons.FontAwesome, icon: "user", component: Users, },
+  { route: 'Users', label: 'Users', type: Icons.Feather, icon: "users", component: Users, },
 ];
 
 
@@ -29,10 +29,10 @@ export const drawerMenu = [
     type: Icons.Feather, icon: 'settings',
     route: 'Settings',
     menuList: [
-      { title: 'Inventory Transfer' },
-      { title: 'Inventory Count' },
-      { title: 'Tracker' },
-      { title: 'Empty BIN' },
+      { title: 'Inventory Transfer', screen:'po_reciept' },
+      { title: 'Inventory Count', screen:'po_reciept' },
+      { title: 'Tracker', screen:'po_reciept' },
+      { title: 'Empty BIN', screen:'po_reciept' },
     ]
   },
   {

@@ -27,7 +27,7 @@ import { AppRegistry } from 'react-native';
 import CustomDrawer from './utils/CustomDrawer';
 import { ScreensArray } from './src/constants/constants';
 import Icon from './src/components/Icons';
-import POReceipt from './src/shipping/POReceipt';
+import POReceipt from './src/receiving/POReceipt';
 
 
 // import { enableFreeze } from 'react-native-screens';

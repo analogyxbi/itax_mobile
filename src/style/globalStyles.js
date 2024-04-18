@@ -12,4 +12,10 @@ export const globalStyles = {
         flexDirection:"row",
         alignItems:"center",
     },
+    justifySB:{
+        justifyContent:"space-between"
+    },
+    justifySE:{
+        justifyContent:"space-evenly"
+    },
 }

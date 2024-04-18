@@ -27,6 +27,7 @@ import { AppRegistry } from 'react-native';
 import CustomDrawer from './utils/CustomDrawer';
 import { ScreensArray } from './src/constants/constants';
 import Icon from './src/components/Icons';
+import POReceipt from './src/shipping/POReceipt';
 
 
 // import { enableFreeze } from 'react-native-screens';
@@ -113,6 +114,9 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="ProfileSettings">
         {props => <ProfileSettings {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
       </Stack.Screen>
+      {/* <Stack.Screen name="Receiving" component={POReceipt} /> */}
+      <Stack.Screen name="po_reciept" component={POReceipt} />
+      {/* <Stack.Screen name="po_reciept" component={POReceipt} /> */}
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );

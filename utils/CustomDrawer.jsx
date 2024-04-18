@@ -45,8 +45,8 @@ const CustomDrawer = (props) => {
               }]}>{item.title}</Text>
             </Row>
             {menuIndex === index && <View style={{ borderRadius: constant.borderRadius, backgroundColor: item.bg }}>
-              {item.menuList.map((subMenu, index) => (
-                <TouchableNativeFeedback key={index}>
+              {item.menuList.map((subMenu, i) => (
+                <TouchableNativeFeedback key={i} onPress={navigation.navigate(subMenu.screen)}>
                   <View style={styles.subMenu}>
                     <Text>{subMenu.title}</Text>
                   </View>

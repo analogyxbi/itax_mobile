@@ -80,7 +80,7 @@ const DrawerRoutes = (props) => {
     >
       {ScreensArray.map((item, index) => {
         return (
-          <Drawer.Screen key={index} name={item.route} component={item.component}
+          <Drawer.Screen key={index} name={item.label} component={item.component}
             options={{
               item,
               drawerIcon: ({ color, size, focused }) => (

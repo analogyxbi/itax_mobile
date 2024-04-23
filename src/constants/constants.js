@@ -1,4 +1,5 @@
 import Colors from "../../utils/Colors";
+import ApiConfiguration from "../ApiConfiguration";
 import { Icons } from "../components/Icons";
 import Homepage from "../homepage/Homepage";
 import ProfileSettings from "../profile/ProfileSettings";
@@ -14,13 +15,11 @@ export const constant = {
 }
 
 
-
 export const ScreensArray = [
   { route: 'Home', label: 'Home', type: Icons.Ionicons, icon: 'home-outline', component: Homepage, },
   { route: 'Users', label: 'Users', type: Icons.Feather, icon: "users", component: Users, },
+  { route: 'APIConfiguration', label: 'API Configuration', type: Icons.MaterialCommunityIcons, icon: "api", component: ApiConfiguration, },
 ];
-
-
 
 export const drawerMenu = [
   {

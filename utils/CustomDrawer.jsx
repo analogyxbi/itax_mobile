@@ -36,7 +36,7 @@ const CustomDrawer = (props) => {
           <TouchableOpacity 
             key={index}
             style={[styles.menu, 
-              { backgroundColor: item.bg + '99' }
+              // { backgroundColor: item.bg + '99' }
             ]}
             onPress={() => {
               LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'))
@@ -57,7 +57,9 @@ const CustomDrawer = (props) => {
             </Row>
             {/* Render submenu if the menu is expanded */}
             {menuIndex === index && (
-              <View style={{ borderRadius: constant.borderRadius, backgroundColor: item.bg }}>
+              <View style={{ borderRadius: constant.borderRadius, 
+              // backgroundColor: item.bg
+               }}>
                 {item.menuList.map((subMenu, i) => (
                   <TouchableNativeFeedback 
                     key={i} 

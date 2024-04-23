@@ -18,4 +18,7 @@ export const globalStyles = {
     justifySE:{
         justifyContent:"space-evenly"
     },
+    width100:{
+        width: "100%"
+    }
 }

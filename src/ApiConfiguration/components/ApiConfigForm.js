@@ -19,67 +19,24 @@ const ApiConfigform = ({ initialFormData, formData, setFormData}) => {
             <ScrollView style={{ maxHeight: "92%" }}>
                 <TextInput
                     style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'dp_url')}
-                    value={formData?.dp_url}
-                    placeholder="Data Pipeline URL"
+                    onChangeText={(text) => onChangeText(text, 'base_url')}
+                    value={formData?.base_url}
+                    placeholder="Base URL"
                 // autoCapitalize
                 />
                 <TextInput
                     style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'auth_user')}
-                    value={formData?.auth_user}
-                    placeholder="Data Pipeline User"
+                    onChangeText={(text) => onChangeText(text, 'username')}
+                    value={formData?.username}
+                    placeholder="Username"
                 // autoCapitalize
                 />
                 <TextInput
                     style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'auth_password')}
-                    value={formData?.auth_password}
+                    onChangeText={(text) => onChangeText(text, 'password')}
+                    value={formData?.password}
                     secureTextEntry={true}
                     placeholder="password"
-                />
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'S3_ACCESS_KEY_ID')}
-                    value={formData?.S3_ACCESS_KEY_ID}
-                    placeholder="S3 Access Key Id"
-                />
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'S3_SECRET_ACCESS_KEY')}
-                    value={formData?.S3_SECRET_ACCESS_KEY}
-                    placeholder="S3 Access Secret"
-                />
-                 <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'S3_REGION')}
-                    value={formData?.S3_REGION}
-                    placeholder="S3 Region"
-                />
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'S3_BUCKET')}
-                    value={formData?.S3_BUCKET}
-                    placeholder="S3 Bucket"
-                />
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'JDBC_CONNECTION_STRING')}
-                    value={formData?.JDBC_CONNECTION_STRING}
-                    placeholder="DW Connection String"
-                />
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'JDBC_USERNAME')}
-                    value={formData?.JDBC_USERNAME}
-                    placeholder="DW Username"
-                />
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => onChangeText(text, 'JDBC_PASSWORD')}
-                    value={formData?.JDBC_PASSWORD}
-                    secureTextEntry={true}
-                    placeholder="DW Password"
                 />
                 
             </ScrollView>

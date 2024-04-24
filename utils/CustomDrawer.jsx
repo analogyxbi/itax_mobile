@@ -20,7 +20,7 @@ const CustomDrawer = (props) => {
   const [menuIndex, setMenuIndex] = useState(-1);
   return (
     <Container>
-        <View style={{ backgroundColor: '#f4f4f4', padding: 20 }}>
+        <View style={{ backgroundColor: '#f4f4f4', padding: 20, display:"flex", alignItems:"center" }}>
         <Image
           source={require('../assets/icon.png')} // Add your profile picture source here
           style={{ width: 80, height: 80, borderRadius: 40 }}

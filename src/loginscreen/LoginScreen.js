@@ -24,11 +24,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useDispatch } from 'react-redux';
 import { login } from './authSlice';
 
-const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
+const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
   const [passwordHidden, setPasswordHidden] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [url, setUrl] = useState('app.analogyx.com'); //gets overwritten when value is edited
+  const [url, setUrl] = useState('192.168.12.72:8088'); //gets overwritten when value is edited
   const dispatch = useDispatch();
   const [csrf, setCsrf] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,20 +43,17 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
     var myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
 
-    var data = JSON.stringify({
+    var data = {
       password: password,
       provider: 'db',
       refresh: true,
       username: username,
-    });
+    };
 
     var config = {
       method: 'post',
       maxBodyLength: Infinity,
-      url: `https://${url}/api/v1/security/login`,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      url: `http://${url}/api/v1/security/login`,
       data: data,
     };
 
@@ -66,6 +63,18 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
       })
       .catch(function (error) {
         alert('Wrong Credentials');
+        // const csrf =
+        //   'IjU5NDdlOTdiNWQ4MjU0YjJjMWE3ZTI0Zjk2N2Y5NGVlY2U2OGRkODQi.ZiebCQ.jhphhb5RUKzz3_OynmaaGkz1mYM';
+        // setupClient(csrf, url);
+        // dispatch(login({ csrf, url }));
+        // AsyncStorage.multiSet([
+        //   ['csrf', csrf],
+        //   ['url', url],
+        // ]);
+        // setLoading(false);
+        // setIsAuthenticated(true);
+        console.log(error);
+        setLoading(false);
       });
   };
 
@@ -78,12 +87,12 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
     payload.append('csrf_token', csrf_token);
     axios({
       method: 'post',
-      url: `https://${url}/login/`,
+      url: `http://${url}/login/`,
       data: payload,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Content-Type': 'multipart/form-data',
-        Referer: `https://${url}/login/`,
+        Referer: `http://${url}/login/`,
       },
     })
       .then((res) => {
@@ -92,13 +101,13 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
           setLoading(false);
         } else {
           setupClient(csrf_token, url);
-          dispatch(login({csrf: csrf_token, url}));
+          dispatch(login({ csrf: csrf_token, url }));
           AsyncStorage.multiSet([
             ['csrf', csrf],
             ['url', url],
           ]);
           setLoading(false);
-          setIsAuthenticated(true)
+          setIsAuthenticated(true);
         }
       })
       .catch((err) => {
@@ -111,10 +120,11 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
 
   useEffect(() => {
     axios
-      .get(`https://${url}/login/`)
+      .get(`http://${url}/login/`)
       .then((res) => {
         let soup = new JSSoup(res.data);
         let csrf = soup.find('input', { id: 'csrf_token' }).attrs.value;
+        console.log({ csrf });
         setCsrf(csrf);
       })
       .catch((err) => console.log('csrf set err', err));
@@ -156,7 +166,7 @@ const LoginScreen = ({isAuthenticated, setIsAuthenticated}) => {
             <Text style={styles.welcomeText}>Login to your account</Text>
 
             <TextInput
-              defaultValue="app.analogyx.com" //gets overwritten
+              defaultValue="192.168.12.72:8088" //gets overwritten
               onChangeText={setUrl}
               keyboardType={'url'}
               spellCheck={false}

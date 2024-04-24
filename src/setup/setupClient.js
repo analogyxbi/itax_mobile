@@ -3,9 +3,9 @@ import { AnalogyxBIClient } from '@analogyxbi/connection';
 
 export default function setupClient(csrf, url) {
   // success response is the csrf itself
-  console.log({csrf, url})
+  console.log({ csrf, url });
   AnalogyxBIClient.configure({
-    protocol: 'https:',
+    protocol: 'http:',
     host: url,
     csrfToken: csrf,
   })

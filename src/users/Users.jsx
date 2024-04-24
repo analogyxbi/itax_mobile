@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Modal, Alert, Pressable, ToastAndroid } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Modal,
+  Alert,
+  Pressable,
+  ToastAndroid,
+} from 'react-native';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { globalStyles } from '../style/globalStyles';
@@ -7,28 +16,42 @@ import UsersForm from './components/UsersForm';
 import UsersTable from './components/UsersTable';
 import { useNavigation } from '@react-navigation/native';
 import _ from 'lodash';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import getClientErrorObject from '../utils/getClientErrorObject';
-
+import { setUserData } from '../loginscreen/authSlice';
 const initialFormData = {
-  first_name: "",
-  last_name: "",
-  username: "",
+  first_name: '',
+  last_name: '',
+  username: '',
   active: true,
-  email: "",
-  phone: "",
-  roles: "",
-  time_zone: "",
-  user_group: "",
-  password: "",
-  confirm_password: "",
-}
+  email: '',
+  phone: '',
+  roles: '',
+  time_zone: '',
+  user_group: '',
+  password: '',
+  confirm_password: '',
+};
 
 const Users = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
   const [formData, setFormData] = React.useState(initialFormData);
   const userData = useSelector((state) => state.auth.user_data);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const endpoint = `/user_management/users?json=true`;
+    AnalogyxBIClient.get({ endpoint })
+      .then(({ json }) => {
+        dispatch(setUserData(json));
+      })
+      .catch((err) => {
+        getClientErrorObject(err).then((res) => {
+          ToastAndroid.show(t(res), ToastAndroid.SHORT);
+        });
+      });
+  }, []);
 
   const handleValidate = () => {
     if (_.isEmpty(formData)) {
@@ -59,22 +82,8 @@ const Users = () => {
   };
 
   const saveUser = () => {
-    console.log({formData})
-    // const data = { ...formData };
+    const data = { ...formData };
 
-    const data = {
-      active: true,
-      confirm_password: "12345",
-      email: "raj@analogyx.com",
-      first_name: "Raj",
-      last_name: "Raj",
-      password: "12345",
-      phone: "",
-      roles: "[9]",
-      timezone_id: 7,
-      user_group: "[19]",
-      username: "raj"
-    }
     if (handleValidate) {
       // const roles = _.isArray(data.roles)
       //   ? [data.roles[0].value]
@@ -85,43 +94,50 @@ const Users = () => {
         roles: JSON.stringify([data.roles]),
         user_group: '[]',
       };
-      console.log(data)
-
       AnalogyxBIClient.post({
         endpoint: `/user_management/create`,
-        postPayload:data,
+        postPayload: payload,
         stringify: false,
       })
         .then(({ json }) => {
           // onSaveData({ ...data, id: json.id }, type);
-          console.log("Successsss")
+          console.log('Successsss');
           ToastAndroid.show(t(json.message), ToastAndroid.SHORT);
+          setFormData(initialFormData);
+          setModalVisible(false);
         })
         .catch((err) =>
           getClientErrorObject(err).then((res) => {
-            console.log({ err })
+            console.log({ err });
             ToastAndroid.show(t(res), ToastAndroid.SHORT);
           })
         );
       // setModalVisible(!modalVisible)
     }
-  }
-
+  };
 
   return (
     <View>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back-outline" size={24} color={globalStyles.colors.darkGrey} />
+        <Pressable onPress={() => navigation.goBack()}>
+          <Ionicons
+            name="chevron-back-outline"
+            size={24}
+            color={globalStyles.colors.darkGrey}
+          />
         </Pressable>
         <Text style={styles.heading}>Users</Text>
         <Pressable
           // style={[styles.button, styles.buttonClose]}
           onPress={() => {
             setModalVisible(!modalVisible);
-          }}>
-          <AntDesign name="pluscircleo" size={24} color={globalStyles.colors.darkGrey} />
+          }}
+        >
+          <AntDesign
+            name="pluscircleo"
+            size={24}
+            color={globalStyles.colors.darkGrey}
+          />
         </Pressable>
       </View>
       {/* <FlatList
@@ -129,7 +145,10 @@ const Users = () => {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <UserItem user={item} />}
       /> */}
-      <UsersTable users={userData?.users_data || []} roleData={userData?.role_data || []} />
+      <UsersTable
+        users={userData?.users_data || []}
+        roleData={userData?.role_data || []}
+      />
       <Modal
         animationType="slide"
         transparent={true}
@@ -137,17 +156,24 @@ const Users = () => {
         style={styles.modal}
         onRequestClose={() => {
           setModalVisible(!modalVisible);
-        }}>
+        }}
+      >
         <View style={styles.centeredView}>
           <View style={styles.header}>
-            <Pressable
-              onPress={() => setModalVisible(!modalVisible)}>
-              <Ionicons name="chevron-back-outline" size={24} color={globalStyles.colors.darkGrey} />
+            <Pressable onPress={() => setModalVisible(!modalVisible)}>
+              <Ionicons
+                name="chevron-back-outline"
+                size={24}
+                color={globalStyles.colors.darkGrey}
+              />
             </Pressable>
             <Text style={styles.heading}>Create User</Text>
-            <Pressable
-              onPress={saveUser}>
-              <FontAwesome name="save" size={24} color={globalStyles.colors.primary} />
+            <Pressable onPress={saveUser}>
+              <FontAwesome
+                name="save"
+                size={24}
+                color={globalStyles.colors.primary}
+              />
             </Pressable>
           </View>
           <View>
@@ -155,9 +181,10 @@ const Users = () => {
               formData={formData}
               usersData={userData?.users_data || []}
               setFormData={setFormData}
-              roleData={userData?.role_data}
+              roleData={userData?.role_data || []}
               userGroups={userData?.user_group_data || []}
-              timeZone={userData?.timezone} />
+              timeZone={userData?.timezone || []}
+            />
           </View>
         </View>
       </Modal>
@@ -168,24 +195,24 @@ const Users = () => {
 const styles = StyleSheet.create({
   header: {
     padding: 15,
-    display: "flex",
-    flexDirection: "row",
+    display: 'flex',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: "center",
+    alignItems: 'center',
   },
   heading: {
     fontSize: 24,
-    fontWeight: "700",
-    color: globalStyles.colors.darkGrey
+    fontWeight: '700',
+    color: globalStyles.colors.darkGrey,
   },
   modal: {
     padding: 10,
-    backgroundColor: "white"
+    backgroundColor: 'white',
   },
   userItem: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
@@ -200,7 +227,7 @@ const styles = StyleSheet.create({
   },
   centeredView: {
     flex: 1,
-    backgroundColor: 'white'
+    backgroundColor: 'white',
     // justifyContent: 'center',
     // alignItems: 'center',
     // marginTop: 22,
@@ -208,7 +235,7 @@ const styles = StyleSheet.create({
   modalView: {
     // margin: 20,
     flex: 1,
-    width: "100%",
+    width: '100%',
     backgroundColor: 'white',
     borderRadius: 20,
     // padding: 35,
@@ -222,9 +249,7 @@ const styles = StyleSheet.create({
     // shadowRadius: 4,
     // elevation: 5,
   },
-  modalHeader: {
-
-  },
+  modalHeader: {},
   button: {
     borderRadius: 20,
     padding: 10,

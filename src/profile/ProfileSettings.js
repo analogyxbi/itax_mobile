@@ -21,7 +21,7 @@ import { logout } from '../loginscreen/authSlice';
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
-const ProfileSettings = ({isAuthenticated, setIsAuthenticated}) => {
+const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
@@ -38,6 +38,15 @@ const ProfileSettings = ({isAuthenticated, setIsAuthenticated}) => {
     getUrl();
   }, []);
 
+  async function removeItemValue(key) {
+    try {
+      await AsyncStorage.removeItem(key);
+      return true;
+    } catch (exception) {
+      return false;
+    }
+  }
+
   const onLogoutPressed = () => {
     setLoading(true);
     axios({
@@ -49,9 +58,11 @@ const ProfileSettings = ({isAuthenticated, setIsAuthenticated}) => {
       },
     })
       .then((res) => {
-      //  dispatch(clearAllTabs());
-        dispatch(logout(null)); 
-        setIsAuthenticated(false)
+        //  dispatch(clearAllTabs());
+        dispatch(logout(null));
+        setIsAuthenticated(false);
+        removeItemValue('csrf');
+        removeItemValue('url');
         setLoading(false);
       })
       .catch((err) => console.log(err), setIndicator(false));

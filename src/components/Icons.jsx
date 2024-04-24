@@ -11,31 +11,44 @@ import React from 'react';
 // import Octicons from '@expo/Octicons';
 // import Foundation from '@expo/Foundation';
 // import EvilIcons from '@expo/EvilIcons';
-import { IconSize } from '../constants/constants';
-import {AntDesign, FontAwesome, FontAwesome5, FontAwesome6 , Ionicons, Feather, MaterialCommunityIcons , Entypo , MaterialIcons, SimpleLineIcons, Octicons, Foundation, EvilIcons} from '@expo/vector-icons'
+import {
+  AntDesign,
+  FontAwesome,
+  FontAwesome5,
+  FontAwesome6,
+  Ionicons,
+  Feather,
+  MaterialCommunityIcons,
+  Entypo,
+  MaterialIcons,
+  SimpleLineIcons,
+  Octicons,
+  Foundation,
+  EvilIcons,
+} from '@expo/vector-icons';
 export const Icons = {
-	MaterialCommunityIcons,
-	MaterialIcons,
-	Ionicons,
-	Feather,
-	FontAwesome,
-	FontAwesome5,
-	AntDesign,
-	Entypo,
-	SimpleLineIcons,
-	Octicons,
-	Foundation,
-	EvilIcons,
-}
-
+  MaterialCommunityIcons,
+  MaterialIcons,
+  Ionicons,
+  Feather,
+  FontAwesome,
+  FontAwesome5,
+  AntDesign,
+  Entypo,
+  SimpleLineIcons,
+  Octicons,
+  Foundation,
+  EvilIcons,
+};
 
 const Icon = ({ type, name, color, size, style }) => {
-	const fontSize = IconSize;
-	const Tag = type;
-	if (type) {
-		return <Tag name={name} size={size || fontSize} color={color} style={style} />
-	}
-	return null;
-}
+  const Tag = type;
+  if (type) {
+    return (
+      <Tag name={name} size={size || fontSize} color={color} style={style} />
+    );
+  }
+  return null;
+};
 
-export default Icon
+export default Icon;

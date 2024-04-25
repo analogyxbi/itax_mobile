@@ -1,7 +1,7 @@
 export const globalStyles = {
     colors : {
         primary: "#0078D4",
-        success: "#99D700",
+        success: "#8ac961",
         danger: "#EE3A00",
         grey: "#D1D1D1",
         lightGrey: "#E4E4E4",

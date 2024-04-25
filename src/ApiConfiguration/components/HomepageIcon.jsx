@@ -5,7 +5,7 @@ import { globalStyles } from "../../style/globalStyles";
 
 const HomepageIcon = ({ icon, bgcolor, name }) => {
     return (
-        <View style={{ width: "30%", margin:5 }}>
+        <View style={{ width: "21%", margin:5 }}>
             <TouchableOpacity style={[styles.IconContainer, { backgroundColor: bgcolor }]} onPress={() => { }}>
                 {icon}
                 <Text style={styles.iconName}>{name}</Text>
@@ -20,18 +20,17 @@ const styles = StyleSheet.create({
         height: 120,
         // backgroundColor: "FF7474",
         borderRadius: 10,
-        borderColor:"grey",
-        borderWidth: 2,
         alignItems: "center",
         justifyContent: "space-between",
         padding: 10,
-        // margin: 10
     },
     iconName: {
         maxWidth: 60,
         textAlign: "center",
-        marginHorizontal: 10,
-        fontWeight: "600"
+        marginHorizontal: 5,
+        color:globalStyles.colors.darkGrey,
+        // fontWeight: "600",
+        fontSize:10,
     }
 });
 

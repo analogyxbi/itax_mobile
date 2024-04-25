@@ -60,12 +60,12 @@ export default function Homepage() {
         </TouchableOpacity>
       </View>
       <View style={[globalStyles.dFlexR, styles.homepageIcons]}>
-        <HomepageIcon name="Inventory Transfer" bgcolor={getRandomColor()} icon={<MaterialIcons name="inventory" style={styles.iconImage} size={24} />} />
-        <HomepageIcon name="Inventory Count" bgcolor={getRandomColor()} icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage} size={24} />} />
-        <HomepageIcon name="PO Receipt" bgcolor={getRandomColor()} icon={<FontAwesome5 name="receipt" style={styles.iconImage} size={24} />} />
-        <HomepageIcon name="Job Receipt to Inventory" bgcolor={getRandomColor()} icon={<Ionicons name="receipt" style={styles.iconImage} size={24} />} />
-        <HomepageIcon name="Inventory Transfer" bgcolor={getRandomColor()} icon={<MaterialIcons name="inventory" style={styles.iconImage} size={24} />} />
-        <HomepageIcon name="Inventory Count" bgcolor={getRandomColor()} icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage} size={24} />} />
+        <HomepageIcon name="Inventory Transfer" icon={<MaterialIcons name="inventory" color={globalStyles.colors.success} style={styles.iconImage} size={24} />} />
+        <HomepageIcon name="Inventory Count" icon={<MaterialIcons name="production-quantity-limits" color={globalStyles.colors.success} style={styles.iconImage} size={24} />} />
+        <HomepageIcon name="PO Receipt" icon={<FontAwesome5 name="receipt" color={globalStyles.colors.success} style={styles.iconImage} size={24} />} />
+        <HomepageIcon name="Job Receipt to Inventory" icon={<Ionicons name="receipt" color={globalStyles.colors.success} style={styles.iconImage} size={24} />} />
+        <HomepageIcon name="Inventory Transfer" icon={<MaterialIcons name="inventory" color={globalStyles.colors.success} style={styles.iconImage} size={24} />} />
+        <HomepageIcon name="Inventory Count" icon={<MaterialIcons name="production-quantity-limits" color={globalStyles.colors.success} style={styles.iconImage} size={24} />} />
       </View>
     </View>
   );
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap"
   },
   iconImage: {
-    color: "white",
-    fontSize: 30
+    // color: "white",
+    fontSize: 50
   }
 });

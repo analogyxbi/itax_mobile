@@ -19,7 +19,11 @@ import setupClient from './src/setup/setupClient';
 import store from './src/store';
 import Users from './src/users/Users';
 // import { initAuth } from './src/loginscreen/actions/actions';
-import { DrawerContentScrollView, DrawerItemList,createStackNavigator } from '@react-navigation/drawer';
+import {
+  DrawerContentScrollView,
+  DrawerItemList,
+  createStackNavigator,
+} from '@react-navigation/drawer';
 import { Image, Text, View } from 'react-native';
 import Colors from './utils/Colors';
 import { StyleSheet } from 'react-native';
@@ -28,7 +32,7 @@ import CustomDrawer from './utils/CustomDrawer';
 import { ScreensArray } from './src/constants/constants';
 import Icon from './src/components/Icons';
 import POReceipt from './src/receiving/POReceipt';
-
+import { globalStyles } from './src/style/globalStyles';
 
 // import { enableFreeze } from 'react-native-screens';
 
@@ -36,15 +40,16 @@ const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 function ReceivingNavigator() {
-  return <>
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Receiving" component={Users} />
-    <Stack.Screen name="POReceipt" component={Users} />
-    <Stack.Screen name="Orders" component={Users} />
-  </Stack.Navigator>
-  </>
+  return (
+    <>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Receiving" component={Users} />
+        <Stack.Screen name="POReceipt" component={Users} />
+        <Stack.Screen name="Orders" component={Users} />
+      </Stack.Navigator>
+    </>
+  );
 }
-
 
 function CustomDrawerContent(props) {
   return (
@@ -54,10 +59,12 @@ function CustomDrawerContent(props) {
           source={require('./assets/icon.png')} // Add your profile picture source here
           style={{ width: 80, height: 80, borderRadius: 40 }}
         />
-        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>Satendra Kumar R</Text>
+        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>
+          Satendra Kumar R
+        </Text>
       </View>
 
-     <CustomDrawer {...props} />
+      <CustomDrawer {...props} />
     </DrawerContentScrollView>
   );
 }
@@ -65,32 +72,39 @@ function CustomDrawerContent(props) {
 const DrawerRoutes = (props) => {
   // enableFreeze(true);
   return (
-    <Drawer.Navigator 
+    <Drawer.Navigator
       screenOptions={{
         drawerType: 'slide',
         overlayColor: 'transparent',
         drawerStyle: styles.drawerStyle,
-        drawerActiveBackgroundColor: Colors.primary,
+        drawerActiveBackgroundColor: globalStyles.colors.success,
         drawerItemStyle: styles.drawerItemStyles,
         drawerActiveTintColor: Colors.black,
         drawerLabelStyle: styles.drawerLabelStyles,
-        headerShown: false 
+        headerShown: false,
       }}
-      drawerContent={props => <CustomDrawer {...props} />}
+      drawerContent={(props) => <CustomDrawer {...props} />}
     >
       {ScreensArray.map((item, index) => {
         return (
-          <Drawer.Screen key={index} name={item.label} component={item.component}
+          <Drawer.Screen
+            key={index}
+            name={item.label}
+            component={item.component}
             options={{
               item,
               drawerIcon: ({ color, size, focused }) => (
-                <Icon type={item.type} name={item.icon} size={size} color={color} />
-              )
+                <Icon
+                  type={item.type}
+                  name={item.icon}
+                  size={size}
+                  color={color}
+                />
+              ),
             }}
           />
-        )
+        );
       })}
-
     </Drawer.Navigator>
   );
 };
@@ -98,7 +112,13 @@ const AuthStack = ({ isAuthenticated, setIsAuthenticated }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home">
-        {props => <LoginScreen {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+        {(props) => (
+          <LoginScreen
+            {...props}
+            isAuthenticated={isAuthenticated}
+            setIsAuthenticated={setIsAuthenticated}
+          />
+        )}
       </Stack.Screen>
     </Stack.Navigator>
   );
@@ -109,10 +129,22 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Homepage">
-      {props => <DrawerRoutes {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+        {(props) => (
+          <DrawerRoutes
+            {...props}
+            isAuthenticated={isAuthenticated}
+            setIsAuthenticated={setIsAuthenticated}
+          />
+        )}
       </Stack.Screen>
       <Stack.Screen name="ProfileSettings">
-        {props => <ProfileSettings {...props} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}
+        {(props) => (
+          <ProfileSettings
+            {...props}
+            isAuthenticated={isAuthenticated}
+            setIsAuthenticated={setIsAuthenticated}
+          />
+        )}
       </Stack.Screen>
       {/* <Stack.Screen name="Receiving" component={POReceipt} /> */}
       <Stack.Screen name="po_reciept" component={POReceipt} />
@@ -139,7 +171,7 @@ const RootNavigation = () => {
         ['csrf', csrf],
         ['url', url],
       ]);
-      setIsAuthenticated(true)
+      setIsAuthenticated(true);
     }
   };
 
@@ -150,9 +182,15 @@ const RootNavigation = () => {
   return (
     <NavigationContainer>
       {isAuthenticated === false ? (
-        <AuthStack isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
+        <AuthStack
+          isAuthenticated={isAuthenticated}
+          setIsAuthenticated={setIsAuthenticated}
+        />
       ) : (
-        <MainStack isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
+        <MainStack
+          isAuthenticated={isAuthenticated}
+          setIsAuthenticated={setIsAuthenticated}
+        />
       )}
     </NavigationContainer>
   );
@@ -169,7 +207,7 @@ const App = () => {
 };
 
 // AppRegistry.registerComponent('WarehouseApp', () => App);
-export default App
+export default App;
 // export ANDROID_SDK_ROOT=/home/satendra/Android/Sdk
 
 export const constant = {
@@ -178,9 +216,7 @@ export const constant = {
   titleFontSize: 24,
   textFontSize: 16,
   subTextFontSize: 14,
-}
-
-
+};
 
 const styles = StyleSheet.create({
   drawerStyle: {
@@ -193,4 +229,4 @@ const styles = StyleSheet.create({
     fontSize: constant.textFontSize,
     marginHorizontal: -constant.SPACING,
   },
-})
+});

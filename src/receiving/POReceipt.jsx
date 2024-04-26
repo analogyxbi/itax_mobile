@@ -23,6 +23,7 @@ import { globalStyles } from '../style/globalStyles';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { ActivityIndicator, MD2Colors } from 'react-native-paper';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
+import _ from "lodash";
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -38,6 +39,7 @@ const POReceipt = () => {
   const [poNum, setPoNum] = useState('');
   const [loading, setLoading] = useState(false);
   const [POData, setPOData] = useState([]);
+  const [currentLine, setCurrentLine] = useState({});
 
   const handleTabs = (val) => {
     setTabvalue(val);
@@ -94,29 +96,34 @@ const POReceipt = () => {
 
   const getPoReciept = async () => {
     setLoading(true);
-    let filterQuery = encodeURI(`PONum eq ${poNum}`);
-    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=${filterQuery}`;
+    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
+    if (poNum) {
+      let filterQuery = encodeURI(`PONum eq ${poNum}`);
+      epicor_endpoint.concat(`?$filter=${filterQuery}`);
+    }
     try {
       AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/get_woodland_response`,
-        postPayload: { epicor_endpoint },
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: { epicor_endpoint, request_type: 'GET' },
         stringify: false,
       })
         .then(({ json }) => {
-          console.log(json);
           setPOData(() => json.data.value);
           setLoading(false);
         })
         .catch((err) => {
-          console.log({ err });
           setLoading(false);
         });
     } catch (err) {
-      console.log('TRY ERROR LOGGGGGGGGGG');
-      //N
       setLoading(false);
     }
   };
+  
+  const onSelectLine = (po) => {
+    console.log(po)
+    setCurrentLine(po);
+    setTabvalue('3')
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -153,6 +160,7 @@ const POReceipt = () => {
           <View style={styles.body}>
             <SegmentedButtons
               value={tabValue}
+              theme={{ colors: { secondaryContainer: globalStyles.colors.success, onSecondaryContainer: "white"} }}
               onValueChange={handleTabs}
               buttons={[
                 {
@@ -162,7 +170,7 @@ const POReceipt = () => {
                     <Ionicons
                       name="search"
                       size={24}
-                      color={globalStyles.colors.darkGrey}
+                      color={tabValue=== '1' ? "white" : globalStyles.colors.darkGrey}
                     />
                   ),
                 },
@@ -173,18 +181,19 @@ const POReceipt = () => {
                     <FontAwesome5
                       name="receipt"
                       size={24}
-                      color={globalStyles.colors.darkGrey}
+                      color={tabValue=== '2' ? "white" : globalStyles.colors.darkGrey}
                     />
                   ),
                 },
                 {
                   value: '3',
                   label: 'Line',
+                  // disabled: _.isEmpty(currentLine),
                   icon: () => (
                     <Feather
                       name="list"
                       size={24}
-                      color={globalStyles.colors.darkGrey}
+                      color={tabValue=== '3' ? "white" : globalStyles.colors.darkGrey}
                     />
                   ),
                 },
@@ -241,7 +250,7 @@ const POReceipt = () => {
                 </Text>
                 <TouchableOpacity
                   style={styles.receiveButton}
-                  onPress={() => {}}
+                  onPress={() => { }}
                 >
                   <Text style={styles.receiveButtonText}>Receive</Text>
                 </TouchableOpacity>
@@ -261,29 +270,31 @@ const POReceipt = () => {
                 </View>
                 {POData.length > 0 &&
                   POData.map((po) => (
-                    <View>
-                      <Text style={[styles.inputLabel, { color: 'black' }]}>
-                        {po.Company}
-                      </Text>
-                      <Text style={{ paddingLeft: 10 }}>
-                        {' '}
-                        {po.EntryPerson}{' '}
-                      </Text>
-                      <View
-                        style={[
-                          globalStyles.dFlexR,
-                          globalStyles.justifySB,
-                          { fontSize: 13 },
-                        ]}
-                      >
-                        <Text style={{ paddingLeft: 10, fontSize: 13 }}>
-                          Packslip: {po.PackSlip}
+                    <TouchableOpacity onPress={() => onSelectLine(po)}>
+                      <View >
+                        <Text style={[styles.inputLabel, { color: 'black' }]}>
+                          {po.Company}
                         </Text>
-                        <Text style={{ paddingHorizontal: 10, fontSize: 13 }}>
-                          ShipViaCode : {po.ShipViaCode}
+                        <Text style={{ paddingLeft: 10 }}>
+                          {' '}
+                          {po.EntryPerson}{' '}
                         </Text>
+                        <View
+                          style={[
+                            globalStyles.dFlexR,
+                            globalStyles.justifySB,
+                            { fontSize: 13 },
+                          ]}
+                        >
+                          <Text style={{ paddingLeft: 10, fontSize: 13 }}>
+                            Packslip: {po.PackSlip}
+                          </Text>
+                          <Text style={{ paddingHorizontal: 10, fontSize: 13 }}>
+                            ShipViaCode : {po.ShipViaCode}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   ))}
               </View>
             )}
@@ -293,15 +304,15 @@ const POReceipt = () => {
                   <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                     <View>
                       <Text style={styles.inputLabel}>PO</Text>
-                      <Text style={{ padding: 10 }}>4252</Text>
+                      <Text style={{ padding: 10 }}>{currentLine.PONum || "-"}</Text>
                     </View>
                     <View>
                       <Text style={styles.inputLabel}>Line</Text>
-                      <Text style={{ padding: 10 }}>1</Text>
+                      <Text style={{ padding: 10 }}>{currentLine.POLine || "-"}</Text>
                     </View>
                     <View>
                       <Text style={styles.inputLabel}>Rel</Text>
-                      <Text style={{ padding: 10 }}>1</Text>
+                      <Text style={{ padding: 10 }}>{currentLine.PORel || "-"}</Text>
                     </View>
                   </View>
                   <Text style={styles.sideHeading}>Quantities</Text>
@@ -388,7 +399,7 @@ const POReceipt = () => {
                   <View
                     style={[
                       globalStyles.dFlexR,
-                      globalStyles.justifySB,
+                      globalStyles.justifySE,
                       { padding: 5 },
                     ]}
                   >
@@ -399,17 +410,17 @@ const POReceipt = () => {
                       onPress={() => console.log('Pressed')}
                     >
                       PO
-                    </Button>
+                    </Button> */}
                     <Button
-                      buttonColor={globalStyles.colors.primary}
-                      icon="file"
+                      buttonColor={globalStyles.colors.success}
+                      icon="floppy"
                       mode="contained"
                       onPress={() => console.log('Pressed')}
                     >
-                      REC
-                    </Button> */}
+                      Save
+                    </Button>
                     <Button
-                      buttonColor={globalStyles.colors.primary}
+                      buttonColor={globalStyles.colors.success}
                       icon="printer"
                       mode="contained"
                       onPress={() => console.log('Pressed')}
@@ -486,7 +497,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   receiveButton: {
-    backgroundColor: globalStyles.colors.primary,
+    backgroundColor: globalStyles.colors.success,
     padding: 10,
     borderRadius: 5,
     position: 'absolute',

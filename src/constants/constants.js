@@ -28,10 +28,10 @@ export const drawerMenu = [
     type: Icons.Feather, icon: 'settings',
     route: 'Settings',
     menuList: [
-      { title: 'Inventory Transfer', screen:'po_reciept' },
-      { title: 'Inventory Count', screen:'po_reciept' },
-      { title: 'Tracker', screen:'po_reciept' },
-      { title: 'Empty BIN', screen:'po_reciept' },
+      { title: 'Inventory Transfer', screen: 'inventory_transfer' },
+      { title: 'Inventory Count', screen: 'po_reciept' },
+      { title: 'Tracker', screen: 'po_reciept' },
+      { title: 'Empty BIN', screen: 'po_reciept' },
     ]
   },
   {
@@ -40,11 +40,11 @@ export const drawerMenu = [
     type: Icons.Feather, icon: 'check-square',
     route: 'Todo',
     menuList: [
-      { title: 'PO Receipt', screen:'po_reciept'},
-      { title: 'Container Arrival' , screen:'container_arrival' },
-      { title: 'Container Receipt' , screen: 'container_reciept' },
-      { title: 'Mass Receipt', screen:'mass_reciept' },
-      { title: 'Job Receipt to Inventroy', screen:'job_receipt_to_inven' },
+      { title: 'PO Receipt', screen: 'po_reciept' },
+      { title: 'Container Arrival', screen: 'container_arrival' },
+      { title: 'Container Receipt', screen: 'container_reciept' },
+      { title: 'Mass Receipt', screen: 'mass_reciept' },
+      { title: 'Job Receipt to Inventroy', screen: 'job_receipt_to_inven' },
     ]
   },
 ]

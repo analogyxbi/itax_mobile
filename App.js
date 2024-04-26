@@ -33,6 +33,7 @@ import { ScreensArray } from './src/constants/constants';
 import Icon from './src/components/Icons';
 import POReceipt from './src/receiving/POReceipt';
 import { globalStyles } from './src/style/globalStyles';
+import InventoryTransfer from './src/inventory/InventoryTransfer';
 
 // import { enableFreeze } from 'react-native-screens';
 
@@ -148,7 +149,7 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       </Stack.Screen>
       {/* <Stack.Screen name="Receiving" component={POReceipt} /> */}
       <Stack.Screen name="po_reciept" component={POReceipt} />
-      {/* <Stack.Screen name="po_reciept" component={POReceipt} /> */}
+      <Stack.Screen name="inventory_transfer" component={InventoryTransfer} />
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );
@@ -164,7 +165,7 @@ const RootNavigation = () => {
   const Init = async () => {
     let csrf = await AsyncStorage.getItem('csrf');
     if (csrf !== null) {
-      const url = 'app.analogyx.com';
+      const url = '192.168.12.86:8088';
       setupClient(csrf, url);
       dispatch(login({ csrf, url }));
       AsyncStorage.multiSet([

@@ -17,17 +17,14 @@ const HomepageIcon = ({ icon, bgcolor, name }) => {
 const styles = StyleSheet.create({
     IconContainer: {
         width: "100%",
-        height: 120,
-        // backgroundColor: "FF7474",
+        height: 100,
         borderRadius: 10,
         alignItems: "center",
-        justifyContent: "space-between",
         padding: 10,
     },
     iconName: {
         maxWidth: 60,
         textAlign: "center",
-        marginHorizontal: 5,
         color:globalStyles.colors.darkGrey,
         // fontWeight: "600",
         fontSize:10,

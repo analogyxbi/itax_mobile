@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button, Alert, Linking, Dimensions, TouchableOpacity, Image } from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Button,
+  Alert,
+  Linking,
+  Dimensions,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
-import { AntDesign, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import {
+  AntDesign,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
+} from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Entypo } from '@expo/vector-icons';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import getClientErrorObject from '../utils/getClientErrorObject';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setUserData } from '../loginscreen/authSlice';
 import HomepageIcon from '../ApiConfiguration/components/HomepageIcon';
 import { globalStyles } from '../style/globalStyles';
+import { Snackbar } from 'react-native-paper';
 
 const screenWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -19,16 +35,21 @@ const windowWidth = Dimensions.get('window').width;
 export default function Homepage() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const { visible, message } = useSelector((state) => state.snackbar); // Add this line
 
   useEffect(() => {
     const endpoint = `/user_management/users?json=true`;
-    AnalogyxBIClient.get({ endpoint }).then(({ json }) => {
-      dispatch(setUserData(json));
-      console.log({ json })
-    }).catch((err) => {
-      getClientErrorObject(err).then(res => ToastAndroid.show(t(res), ToastAndroid.SHORT))
-    })
-  }, [])
+    AnalogyxBIClient.get({ endpoint })
+      .then(({ json }) => {
+        dispatch(setUserData(json));
+        console.log({ json });
+      })
+      .catch((err) => {
+        getClientErrorObject(err).then((res) =>
+          ToastAndroid.show(t(res), ToastAndroid.SHORT)
+        );
+      });
+  }, []);
   const getRandomColor = () => {
     const letters = '0123456789ABCDEF';
     let color = '#';
@@ -43,13 +64,15 @@ export default function Homepage() {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.openDrawer()}
-          style={styles.leftIcon}>
+          style={styles.leftIcon}
+        >
           <Entypo name="menu" size={28} color="black" />
         </TouchableOpacity>
         <View style={styles.logoContainer}>
           <Image
             source={require('../../images/woodland_logo.jpg')}
-            style={styles.logo} resizeMode='contain'
+            style={styles.logo}
+            resizeMode="contain"
           />
         </View>
         <TouchableOpacity
@@ -60,12 +83,40 @@ export default function Homepage() {
         </TouchableOpacity>
       </View>
       <View style={[globalStyles.dFlexR, styles.homepageIcons]}>
-        <HomepageIcon name="Inventory Transfer" icon={<MaterialIcons name="inventory" style={styles.iconImage} />} />
-        <HomepageIcon name="Inventory Count" icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage} />} />
-        <HomepageIcon name="PO Receipt" icon={<FontAwesome5 name="receipt" style={styles.iconImage} />} />
-        <HomepageIcon name="Job Receipt" icon={<Ionicons name="receipt" style={styles.iconImage} />} />
-        <HomepageIcon name="Inventory Transfer" icon={<MaterialIcons name="inventory" style={styles.iconImage} />} />
-        <HomepageIcon name="Inventory Count" icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage} />} />
+        <HomepageIcon
+          name="Inventory Transfer"
+          icon={<MaterialIcons name="inventory" style={styles.iconImage} />}
+        />
+        <HomepageIcon
+          name="Inventory Count"
+          icon={
+            <MaterialIcons
+              name="production-quantity-limits"
+              style={styles.iconImage}
+            />
+          }
+        />
+        <HomepageIcon
+          name="PO Receipt"
+          icon={<FontAwesome5 name="receipt" style={styles.iconImage} />}
+        />
+        <HomepageIcon
+          name="Job Receipt"
+          icon={<Ionicons name="receipt" style={styles.iconImage} />}
+        />
+        <HomepageIcon
+          name="Inventory Transfer"
+          icon={<MaterialIcons name="inventory" style={styles.iconImage} />}
+        />
+        <HomepageIcon
+          name="Inventory Count"
+          icon={
+            <MaterialIcons
+              name="production-quantity-limits"
+              style={styles.iconImage}
+            />
+          }
+        />
       </View>
     </View>
   );
@@ -94,7 +145,7 @@ const styles = StyleSheet.create({
   buttonBehind: {
     flex: 1,
     marginHorizontal: 5,
-    zIndex: 1
+    zIndex: 1,
   },
   heading: {
     fontSize: 30,
@@ -136,13 +187,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   homepageIcons: {
-    display: "flex",
-    alignItems: "flex-start", 
-    marginTop: 20, 
-    flexWrap: "wrap"
+    display: 'flex',
+    alignItems: 'flex-start',
+    marginTop: 20,
+    flexWrap: 'wrap',
   },
   iconImage: {
     color: globalStyles.colors.success,
     fontSize: 50,
-  }
+  },
 });

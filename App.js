@@ -9,7 +9,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { useEffect } from 'react';
-import { Provider as PaperProvider } from 'react-native-paper';
+import { Provider as PaperProvider, Snackbar } from 'react-native-paper';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import Homepage from './src/homepage/Homepage';
 import LoginScreen from './src/loginscreen/LoginScreen';
@@ -34,6 +34,7 @@ import Icon from './src/components/Icons';
 import POReceipt from './src/receiving/POReceipt';
 import { globalStyles } from './src/style/globalStyles';
 import InventoryTransfer from './src/inventory/InventoryTransfer';
+import { hideSnackbar } from './src/Snackbar/messageSlice';
 
 // import { enableFreeze } from 'react-native-screens';
 
@@ -197,15 +198,38 @@ const RootNavigation = () => {
   );
 };
 
-const App = () => {
+const Component = () => {
+  const { visible, message } = useSelector((state) => state.snackbar);
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(() => {
+        dispatch(hideSnackbar());
+      }, 3000); // 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
   return (
-    <Provider store={store}>
-      <PaperProvider>
-        <RootNavigation />
-      </PaperProvider>
-    </Provider>
+    <>
+      <RootNavigation />
+      <Snackbar
+        visible={visible}
+        onDismiss={() => dispatch(hideSnackbar)} // Update this line
+        duration={Snackbar.DURATION_SHORT}
+      >
+        {message}
+      </Snackbar>
+    </>
   );
 };
+
+const App = () => (
+  <Provider store={store}>
+    <PaperProvider>
+      <Component />
+    </PaperProvider>
+  </Provider>
+);
 
 // AppRegistry.registerComponent('WarehouseApp', () => App);
 export default App;

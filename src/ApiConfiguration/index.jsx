@@ -14,24 +14,15 @@ import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { globalStyles } from '../style/globalStyles';
 import { useNavigation } from '@react-navigation/native';
 import _ from 'lodash';
-import { useSelector } from 'react-redux';
 import getClientErrorObject from '../utils/getClientErrorObject';
 import ApiConfigTable from './components/ApiConfigTable';
 import ApiConfigForm from './components/ApiConfigForm';
-import axios from 'axios';
-
+import { useDispatch } from 'react-redux';
+import { showSnackbar } from '../Snackbar/messageSlice';
 const initialFormData = {
-  dp_url: '',
-  auth_user: '',
-  username: '',
-  auth_password: true,
-  S3_ACCESS_KEY_ID: '',
-  S3_SECRET_ACCESS_KEY: '',
-  S3_REGION: '',
-  S3_BUCKET: '',
-  JDBC_CONNECTION_STRING: '',
-  JDBC_USERNAME: '',
-  JDBC_PASSWORD: '',
+  base_url: '',
+  api_username: '',
+  api_password: '',
 };
 
 const ApiConfiguration = () => {
@@ -40,6 +31,7 @@ const ApiConfiguration = () => {
   const [formData, setFormData] = React.useState(initialFormData);
   const [apiConfigs, setApiconfigs] = useState([]);
   const [message, setMessage] = useState('Edit');
+  const dispatch = useDispatch();
   // const userData = useSelector((state) => state.auth.user_data);
 
   function removeNullValues(form) {
@@ -51,83 +43,6 @@ const ApiConfiguration = () => {
     }
     return obj;
   }
-  async function handleSaveData(form, message) {
-    console.log({ form, message });
-    // if (message === 'New') {
-    //   const postPayload = {
-    //     ...form,
-    //     jobs_list: JSON.stringify(form.jobs_list),
-    //   };
-    //   try {
-    //     const { json } = await AnalogyxBIClient.post({
-    //       endpoint: `/refresh_scheduler/create_refresh_config`,
-    //       postPayload,
-    //       stringify: false,
-    //     });
-    //     setApiconfigs((prev) => [...prev, { ...form, ...json }]);
-    //   } catch (err) {
-    //     getClientErrorObject(err).then((error) => {
-    //       // actions.addDangerToast(t(error.message));
-    //       // setIsLoading(false);
-    //     });
-    //   }
-    // } else {
-    //   const postPayload = {
-    //     ...form,
-    //     jobs_list: JSON.stringify(form.jobs_list),
-    //   };
-    //   try {
-    //     const { json: json_1 } = await AnalogyxBIClient.post({
-    //       endpoint: `/refresh_scheduler/update_refresh_config/${form.id}`,
-    //       postPayload,
-    //       stringify: false,
-    //     });
-    //     let data = [...refresh_config];
-    //     const modified = data.findIndex((o) => o.id === form.id);
-    //     if (modified != -1) {
-    //       data.splice(modified, 1);
-    //       data.unshift({ ...form, ...json_1 });
-    //       setApiconfigs((prev_1) => [...data]);
-    //     }
-    //     // actions.addSuccessToast(t('Scheduler Updated Successfully'));
-
-    //     setIsLoading(false);
-    //   } catch (err_1) {
-    //     console.log({ err });
-    //     getClientErrorObject(err_1).then((error_1) => {
-    //       console.log({ error });
-    //       actions.addDangerToast(t(error_1.message));
-    //       setIsLoading(false);
-    //     });
-    //   }
-    // }
-  }
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    console.log('called');
-    await handleSaveData(removeNullValues({ ...formData }), message);
-    setModalVisible(false);
-    setFormData(initialFormData);
-  };
-
-  // useEffect(() => {
-  //   AnalogyxBIClient.get({ endpoint: '/u/api/read' })
-  //     .then(({ json }) => {
-  //       let apiData = json.result.map((data) => ({
-  //         ...data,
-  //         label: data.username,
-  //         value: data.id,
-  //       }));
-  //       setApiconfigs(() => [...apiData]);
-  //     })
-  //     .catch((err) =>
-  //       props.actions.addDangerToast(
-  //         t('An error occured while fetching users data')
-  //       )
-  //     );
-  //     // https://wlsrv04/E10Dev/api/v1/
-  // }, []);
 
   useEffect(() => {
     AnalogyxBIClient.get({
@@ -136,9 +51,12 @@ const ApiConfiguration = () => {
       .then(({ json }) => {
         const data = json.api_config;
         setApiconfigs(() => data);
+        dispatch(showSnackbar('Details Fetched Successfully'));
       })
       .catch((err) => {
-        console.log({ err });
+        getClientErrorObject(err).then((res) => {
+          dispatch(showSnackbar(res.error));
+        });
       });
   }, []);
 
@@ -155,18 +73,17 @@ const ApiConfiguration = () => {
       postPayload: formData,
       stringify: false,
     })
-      .then((res) => {
+      .then(({ json }) => {
         // console.log({ res });
         setApiconfigs(() => [{ ...formData, id: json.id }]);
         setModalVisible(false);
         setFormData(initialFormData);
+        dispatch(showSnackbar('Configuration saved.'));
       })
       .catch((err) => {
-        console.log({ err });
         getClientErrorObject(err).then((res) => {
-          // console.log({ res });
+          dispatch(showSnackbar(res.error));
         });
-        // setModalVisible(false);
       });
   }
 

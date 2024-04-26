@@ -23,7 +23,7 @@ import { globalStyles } from '../style/globalStyles';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { ActivityIndicator, MD2Colors } from 'react-native-paper';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
-import _ from "lodash";
+import _ from 'lodash';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -96,10 +96,10 @@ const POReceipt = () => {
 
   const getPoReciept = async () => {
     setLoading(true);
-    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
+    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     if (poNum) {
       let filterQuery = encodeURI(`PONum eq ${poNum}`);
-      epicor_endpoint.concat(`?$filter=${filterQuery}`);
+      epicor_endpoint.concat(`&$filter=${filterQuery}`);
     }
     try {
       AnalogyxBIClient.post({
@@ -118,12 +118,12 @@ const POReceipt = () => {
       setLoading(false);
     }
   };
-  
+
   const onSelectLine = (po) => {
-    console.log(po)
+    console.log(po);
     setCurrentLine(po);
-    setTabvalue('3')
-  }
+    setTabvalue('3');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -160,7 +160,12 @@ const POReceipt = () => {
           <View style={styles.body}>
             <SegmentedButtons
               value={tabValue}
-              theme={{ colors: { secondaryContainer: globalStyles.colors.success, onSecondaryContainer: "white"} }}
+              theme={{
+                colors: {
+                  secondaryContainer: globalStyles.colors.success,
+                  onSecondaryContainer: 'white',
+                },
+              }}
               onValueChange={handleTabs}
               buttons={[
                 {
@@ -170,7 +175,11 @@ const POReceipt = () => {
                     <Ionicons
                       name="search"
                       size={24}
-                      color={tabValue=== '1' ? "white" : globalStyles.colors.darkGrey}
+                      color={
+                        tabValue === '1'
+                          ? 'white'
+                          : globalStyles.colors.darkGrey
+                      }
                     />
                   ),
                 },
@@ -181,7 +190,11 @@ const POReceipt = () => {
                     <FontAwesome5
                       name="receipt"
                       size={24}
-                      color={tabValue=== '2' ? "white" : globalStyles.colors.darkGrey}
+                      color={
+                        tabValue === '2'
+                          ? 'white'
+                          : globalStyles.colors.darkGrey
+                      }
                     />
                   ),
                 },
@@ -193,7 +206,11 @@ const POReceipt = () => {
                     <Feather
                       name="list"
                       size={24}
-                      color={tabValue=== '3' ? "white" : globalStyles.colors.darkGrey}
+                      color={
+                        tabValue === '3'
+                          ? 'white'
+                          : globalStyles.colors.darkGrey
+                      }
                     />
                   ),
                 },
@@ -250,7 +267,7 @@ const POReceipt = () => {
                 </Text>
                 <TouchableOpacity
                   style={styles.receiveButton}
-                  onPress={() => { }}
+                  onPress={() => {}}
                 >
                   <Text style={styles.receiveButtonText}>Receive</Text>
                 </TouchableOpacity>
@@ -271,7 +288,7 @@ const POReceipt = () => {
                 {POData.length > 0 &&
                   POData.map((po) => (
                     <TouchableOpacity onPress={() => onSelectLine(po)}>
-                      <View >
+                      <View>
                         <Text style={[styles.inputLabel, { color: 'black' }]}>
                           {po.Company}
                         </Text>
@@ -304,15 +321,21 @@ const POReceipt = () => {
                   <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                     <View>
                       <Text style={styles.inputLabel}>PO</Text>
-                      <Text style={{ padding: 10 }}>{currentLine.PONum || "-"}</Text>
+                      <Text style={{ padding: 10 }}>
+                        {currentLine.PONum || '-'}
+                      </Text>
                     </View>
                     <View>
                       <Text style={styles.inputLabel}>Line</Text>
-                      <Text style={{ padding: 10 }}>{currentLine.POLine || "-"}</Text>
+                      <Text style={{ padding: 10 }}>
+                        {currentLine.POLine || '-'}
+                      </Text>
                     </View>
                     <View>
                       <Text style={styles.inputLabel}>Rel</Text>
-                      <Text style={{ padding: 10 }}>{currentLine.PORel || "-"}</Text>
+                      <Text style={{ padding: 10 }}>
+                        {currentLine.PORel || '-'}
+                      </Text>
                     </View>
                   </View>
                   <Text style={styles.sideHeading}>Quantities</Text>

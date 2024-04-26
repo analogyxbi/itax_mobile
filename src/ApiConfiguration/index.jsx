@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Modal, Alert, Pressable, ToastAndroid } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Modal,
+  Alert,
+  Pressable,
+  ToastAndroid,
+} from 'react-native';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { globalStyles } from '../style/globalStyles';
@@ -8,28 +17,28 @@ import _ from 'lodash';
 import { useSelector } from 'react-redux';
 import getClientErrorObject from '../utils/getClientErrorObject';
 import ApiConfigTable from './components/ApiConfigTable';
-import ApiConfigForm from "./components/ApiConfigForm";
+import ApiConfigForm from './components/ApiConfigForm';
 import axios from 'axios';
 
 const initialFormData = {
-  dp_url: "",
-  auth_user: "",
-  username: "",
+  dp_url: '',
+  auth_user: '',
+  username: '',
   auth_password: true,
-  S3_ACCESS_KEY_ID: "",
-  S3_SECRET_ACCESS_KEY: "",
-  S3_REGION: "",
-  S3_BUCKET: "",
-  JDBC_CONNECTION_STRING: "",
-  JDBC_USERNAME: "",
-  JDBC_PASSWORD: "",
-}
+  S3_ACCESS_KEY_ID: '',
+  S3_SECRET_ACCESS_KEY: '',
+  S3_REGION: '',
+  S3_BUCKET: '',
+  JDBC_CONNECTION_STRING: '',
+  JDBC_USERNAME: '',
+  JDBC_PASSWORD: '',
+};
 
 const ApiConfiguration = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
   const [formData, setFormData] = React.useState(initialFormData);
-  const [apiConfigs, setApiconfigs] = useState([])
+  const [apiConfigs, setApiconfigs] = useState([]);
   const [message, setMessage] = useState('Edit');
   // const userData = useSelector((state) => state.auth.user_data);
 
@@ -43,7 +52,7 @@ const ApiConfiguration = () => {
     return obj;
   }
   async function handleSaveData(form, message) {
-    console.log({form, message})
+    console.log({ form, message });
     // if (message === 'New') {
     //   const postPayload = {
     //     ...form,
@@ -96,7 +105,7 @@ const ApiConfiguration = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    console.log("called")
+    console.log('called');
     await handleSaveData(removeNullValues({ ...formData }), message);
     setModalVisible(false);
     setFormData(initialFormData);
@@ -121,36 +130,79 @@ const ApiConfiguration = () => {
   // }, []);
 
   useEffect(() => {
-    fetch('https://wlsrv04/E10Dev/api/v1/Erp.BO.ReceiptSvc/Receipts')
-      .then((res) => {
-       console.log("res", res)
+    AnalogyxBIClient.get({
+      endpoint: `/erp_woodland/show_woodland_apis_config`,
+    })
+      .then(({ json }) => {
+        const data = json.api_config;
+        setApiconfigs(() => data);
       })
-      .catch((err) =>
-        console.log("err", err)
-      );
-      // https://wlsrv04/E10Dev/api/v1/
+      .catch((err) => {
+        console.log({ err });
+      });
   }, []);
-  console.log({apiConfigs})
 
+  function saveFormData(e) {
+    if (
+      !formData.base_url ||
+      !formData.api_username ||
+      !formData.api_password
+    ) {
+      return console.log('Please Enter the Required fields');
+    }
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/create_or_update_woodland_api_config`,
+      postPayload: formData,
+      stringify: false,
+    })
+      .then((res) => {
+        // console.log({ res });
+        setApiconfigs(() => [{ ...formData, id: json.id }]);
+        setModalVisible(false);
+        setFormData(initialFormData);
+      })
+      .catch((err) => {
+        console.log({ err });
+        getClientErrorObject(err).then((res) => {
+          // console.log({ res });
+        });
+        // setModalVisible(false);
+      });
+  }
 
   return (
     <View>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back-outline" size={24} color={globalStyles.colors.darkGrey} />
+        <Pressable onPress={() => navigation.goBack()}>
+          <Ionicons
+            name="chevron-back-outline"
+            size={24}
+            color={globalStyles.colors.darkGrey}
+          />
         </Pressable>
         <Text style={styles.heading}>Api Configuration</Text>
         <Pressable
           // style={[styles.button, styles.buttonClose]}
           onPress={() => {
             setModalVisible(!modalVisible);
-            setMessage('New')
-          }}>
-          <AntDesign name="pluscircleo" size={24} color={globalStyles.colors.darkGrey} />
+            setMessage('New');
+          }}
+        >
+          <AntDesign
+            name="pluscircleo"
+            size={24}
+            color={globalStyles.colors.darkGrey}
+          />
         </Pressable>
       </View>
-      <ApiConfigTable setModalVisible={setModalVisible} setMessage={setMessage} message={message} users={apiConfigs || []} roleData={apiConfigs || []} />
+      <ApiConfigTable
+        setModalVisible={setModalVisible}
+        setMessage={setMessage}
+        message={message}
+        apiConfigs={apiConfigs || []}
+        roleData={apiConfigs || []}
+        setFormData={setFormData}
+      />
       <Modal
         animationType="slide"
         transparent={true}
@@ -158,17 +210,24 @@ const ApiConfiguration = () => {
         style={styles.modal}
         onRequestClose={() => {
           setModalVisible(!modalVisible);
-        }}>
+        }}
+      >
         <View style={styles.centeredView}>
           <View style={styles.header}>
-            <Pressable
-              onPress={() => setModalVisible(!modalVisible)}>
-              <Ionicons name="chevron-back-outline" size={24} color={globalStyles.colors.darkGrey} />
+            <Pressable onPress={() => setModalVisible(!modalVisible)}>
+              <Ionicons
+                name="chevron-back-outline"
+                size={24}
+                color={globalStyles.colors.darkGrey}
+              />
             </Pressable>
             <Text style={styles.heading}>Api Configuration</Text>
-            <Pressable
-              onPress={handleSave}>
-              <FontAwesome name="save" size={24} color={globalStyles.colors.primary} />
+            <Pressable onPress={saveFormData}>
+              <FontAwesome
+                name="save"
+                size={24}
+                color={globalStyles.colors.primary}
+              />
             </Pressable>
           </View>
           <View>
@@ -176,10 +235,11 @@ const ApiConfiguration = () => {
               formData={formData}
               // usersData={userData?.users_data || []}
               setFormData={setFormData}
+              saveFormData={saveFormData}
               // roleData={userData?.role_data}
               // userGroups={userData?.user_group_data || []}
-              // timeZone={userData?.timezone} 
-              />
+              // timeZone={userData?.timezone}
+            />
           </View>
         </View>
       </Modal>
@@ -190,24 +250,24 @@ const ApiConfiguration = () => {
 const styles = StyleSheet.create({
   header: {
     padding: 15,
-    display: "flex",
-    flexDirection: "row",
+    display: 'flex',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: "center",
+    alignItems: 'center',
   },
   heading: {
     fontSize: 24,
-    fontWeight: "700",
-    color: globalStyles.colors.darkGrey
+    fontWeight: '700',
+    color: globalStyles.colors.darkGrey,
   },
   modal: {
     padding: 10,
-    backgroundColor: "white"
+    backgroundColor: 'white',
   },
   userItem: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
@@ -222,7 +282,7 @@ const styles = StyleSheet.create({
   },
   centeredView: {
     flex: 1,
-    backgroundColor: 'white'
+    backgroundColor: 'white',
     // justifyContent: 'center',
     // alignItems: 'center',
     // marginTop: 22,
@@ -230,7 +290,7 @@ const styles = StyleSheet.create({
   modalView: {
     // margin: 20,
     flex: 1,
-    width: "100%",
+    width: '100%',
     backgroundColor: 'white',
     borderRadius: 20,
     // padding: 35,
@@ -244,9 +304,7 @@ const styles = StyleSheet.create({
     // shadowRadius: 4,
     // elevation: 5,
   },
-  modalHeader: {
-
-  },
+  modalHeader: {},
   button: {
     borderRadius: 20,
     padding: 10,

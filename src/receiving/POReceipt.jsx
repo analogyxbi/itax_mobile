@@ -18,7 +18,7 @@ import {
   View,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
-import { Button, Checkbox, SegmentedButtons } from 'react-native-paper';
+import { Button, Checkbox, Portal, SegmentedButtons, Modal, FAB } from 'react-native-paper';
 import { globalStyles } from '../style/globalStyles';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { ActivityIndicator, MD2Colors } from 'react-native-paper';
@@ -30,6 +30,20 @@ import _ from 'lodash';
 // const username = 'Analogyx1';
 // const password = '3xt3rn@l1!';
 
+const initialFormdata = {
+  poNum: "",
+  packslip: "",
+  supplier_name: "",
+  line: "",
+  rel: "",
+  order_qty: "",
+  arrived_qty: "",
+  input: "",
+  note: "",
+  warehouse_code: "",
+  bin_number: ""
+}
+
 const POReceipt = () => {
   const [hasPermission, setHasPermission] = useState(null);
   const navigation = useNavigation();
@@ -39,7 +53,9 @@ const POReceipt = () => {
   const [poNum, setPoNum] = useState('');
   const [loading, setLoading] = useState(false);
   const [POData, setPOData] = useState([]);
+  const [selectedPOdata, setSelectedPOdata] = useState({});
   const [currentLine, setCurrentLine] = useState({});
+  const [showPOModal, setShowPOModal] = useState(false);
 
   const handleTabs = (val) => {
     setTabvalue(val);
@@ -52,6 +68,10 @@ const POReceipt = () => {
   const closeScanner = () => {
     setScannerVisible(false);
   };
+
+  useEffect(() => {
+    setPoNum(parseInt(selectedPOdata?.PONum))
+  }, [selectedPOdata])
 
   // if (hasPermission === null) {
   //     return <Text>Requesting for camera permission</Text>;
@@ -118,6 +138,17 @@ const POReceipt = () => {
       setLoading(false);
     }
   };
+
+  const searchPoNum = () => {
+    setShowPOModal(true);
+  }
+
+  useEffect(() => {
+    console.log({POData})
+    if (POData.length < 0) {
+      getPoReciept()
+    }
+  }, [])
 
   const onSelectLine = (po) => {
     console.log(po);
@@ -218,13 +249,35 @@ const POReceipt = () => {
             />
             {tabValue == '1' && (
               <View style={styles.tabView}>
+                <Portal>
+                  <Modal visible={showPOModal} onDismiss={() => setShowPOModal(false)} contentContainerStyle={styles.poModalContainer}>
+                    <View style={[globalStyles.dFlexR, globalStyles.justifySB, styles.poModalHeader]}>
+                      <Text style={{ color: "white" }}>PoNum</Text>
+                      <Text style={{ color: "white" }}>VendorNumName</Text>
+                    </View>
+                    <ScrollView>
+                      {
+                        POData?.map(po => (
+                          <View key={po.PONum}>
+                            <TouchableOpacity onPress={() => { setSelectedPOdata(po); setPoNum(po.PONum); setShowPOModal(false) }}>
+                              <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
+                                <Text>{po.PONum}</Text>
+                                <Text>{po.VendorNumName}</Text>
+                              </View>
+                            </TouchableOpacity>
+                          </View>
+                        ))
+                      }
+                    </ScrollView>
+                  </Modal>
+                </Portal>
                 <Text style={styles.inputLabel}>PO Num</Text>
                 <View style={globalStyles.dFlexR}>
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     onChangeText={(text) => setPoNum(text)}
                     value={poNum}
-                    // secureTextEntry={true}
+                    editable={!loading}
                     placeholder="PO Num"
                     keyboardType="numeric"
                   />
@@ -236,7 +289,7 @@ const POReceipt = () => {
                       <AntDesign name="scan1" size={24} color="black" />
                     </Text>
                   </TouchableOpacity>
-                  <Pressable onPress={getPoReciept}>
+                  <Pressable onPress={searchPoNum}>
                     {!loading ? (
                       <Ionicons
                         name="search"
@@ -254,6 +307,8 @@ const POReceipt = () => {
                 <Text style={styles.inputLabel}>Packslip</Text>
                 <TextInput
                   style={styles.input}
+                  editable={!loading}
+                  value={selectedPOdata?.PackSlip}
                   // onChangeText={(text) => onChangeText(text, 'confirm_password')}
                   // value={formData?.confirm_password}
                   // secureTextEntry={true}
@@ -263,14 +318,19 @@ const POReceipt = () => {
                 <Text
                   style={{ color: globalStyles.colors.darkGrey, margin: 10 }}
                 >
-                  ABC Metals
+                  {selectedPOdata?.VendorNumName}
                 </Text>
                 <TouchableOpacity
                   style={styles.receiveButton}
-                  onPress={() => {}}
+                  onPress={() => setTabvalue('2')}
                 >
                   <Text style={styles.receiveButtonText}>Receive</Text>
                 </TouchableOpacity>
+                <FAB
+                  icon="plus"
+                  style={styles.fab}
+                  onPress={() => console.log('Pressed')}
+                />
               </View>
             )}
             {tabValue == '2' && (
@@ -285,34 +345,40 @@ const POReceipt = () => {
                     placeholder="Filter"
                   />
                 </View>
-                {POData.length > 0 &&
-                  POData.map((po) => (
-                    <TouchableOpacity onPress={() => onSelectLine(po)}>
-                      <View>
-                        <Text style={[styles.inputLabel, { color: 'black' }]}>
-                          {po.Company}
-                        </Text>
-                        <Text style={{ paddingLeft: 10 }}>
-                          {' '}
-                          {po.EntryPerson}{' '}
-                        </Text>
-                        <View
-                          style={[
-                            globalStyles.dFlexR,
-                            globalStyles.justifySB,
-                            { fontSize: 13 },
-                          ]}
-                        >
-                          <Text style={{ paddingLeft: 10, fontSize: 13 }}>
-                            Packslip: {po.PackSlip}
-                          </Text>
-                          <Text style={{ paddingHorizontal: 10, fontSize: 13 }}>
-                            ShipViaCode : {po.ShipViaCode}
-                          </Text>
+                <View style={{ maxHeight: "80%" }}>
+                  <ScrollView >
+                    {selectedPOdata &&
+                      selectedPOdata?.RcvDtls?.map((po) => (
+                        <View key={po.PONum}>
+                          <TouchableOpacity onPress={() => onSelectLine(po)}>
+                            <View>
+                              <Text style={[styles.inputLabel, { color: 'black' }]}>
+                                {po.Company}
+                              </Text>
+                              <Text style={{ paddingLeft: 10 }}>
+                                {' '}
+                                {selectedPOdata.EntryPerson}{' '}
+                              </Text>
+                              <View
+                                style={[
+                                  globalStyles.dFlexR,
+                                  globalStyles.justifySB,
+                                  { fontSize: 13 },
+                                ]}
+                              >
+                                <Text style={{ paddingLeft: 10, fontSize: 13 }}>
+                                  Packslip: {selectedPOdata.PackSlip}
+                                </Text>
+                                <Text style={{ paddingHorizontal: 10, fontSize: 13 }}>
+                                  ShipViaCode : {selectedPOdata.ShipViaCode}
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
                         </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                      ))}
+                  </ScrollView>
+                </View>
               </View>
             )}
             {tabValue == '3' && (
@@ -342,11 +408,11 @@ const POReceipt = () => {
                   <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.inputLabel}>Order</Text>
-                      <Text style={{ padding: 10 }}>10/EA</Text>
+                      <Text style={{ padding: 10 }}>{currentLine.OrderQty && parseInt(currentLine.OrderQty) || "-"}/{currentLine.PartNumSalesUM || "-"}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.inputLabel}>Arrived</Text>
-                      <Text style={{ padding: 10 }}>0/EA</Text>
+                      <Text style={{ padding: 10 }}>{currentLine.PORelArrivedQty && parseInt(currentLine.PORelArrivedQty) || "-"}/{currentLine.PartNumSalesUM || "-"}</Text>
                     </View>
                   </View>
                   <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
@@ -403,7 +469,7 @@ const POReceipt = () => {
                       <TextInput
                         style={styles.input}
                         // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-                        // value={formData?.confirm_password}
+                        value={currentLine?.WareHouseCode || "-"}
                         // secureTextEntry={true}
                         placeholder="Warehouse Code"
                       />
@@ -413,7 +479,7 @@ const POReceipt = () => {
                       <TextInput
                         style={styles.input}
                         // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-                        // value={formData?.confirm_password}
+                        value={currentLine?.BinNum}
                         // secureTextEntry={true}
                         placeholder="Bin Number"
                       />
@@ -541,6 +607,23 @@ const styles = StyleSheet.create({
     // color: '#ffffff',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  poModalContainer: {
+    backgroundColor: 'white',
+    padding: 10,
+    margin: 10,
+    height: "80%",
+    overflow: "scroll"
+  },
+  poModalHeader: {
+    padding: 5,
+    backgroundColor: globalStyles.colors.success,
+  },
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 50,
   },
 });
 

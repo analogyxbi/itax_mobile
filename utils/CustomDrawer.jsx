@@ -9,6 +9,7 @@ import { Container } from '../src/components/Container'
 import { Row } from '../src/components/Row'
 import Styles from '../src/common/Styles'
 import { Feather } from '@expo/vector-icons'
+import { useSelector } from 'react-redux'
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -18,14 +19,20 @@ if (Platform.OS === 'android') {
 const CustomDrawer = (props) => {
   const navigation = useNavigation()
   const [menuIndex, setMenuIndex] = useState(-1);
+  const userData = useSelector((state) => state.auth.user_data);
   return (
     <Container>
         <View style={{ backgroundColor: '#f4f4f4', padding: 20, display:"flex", alignItems:"center" }}>
         <Image
-          source={require('../assets/icon.png')} // Add your profile picture source here
+          width={'100%'}
           style={{ width: 80, height: 80, borderRadius: 40 }}
+          src={
+            userData?.user?.profile_pic
+              ? `data:image/jpg;base64,${userData?.user?.profile_pic}`
+              : '/static/assets/images/profile_dummy.webp'
+          }
         />
-        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>Satendra Kumar R</Text>
+        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>{userData?.user?.firstName + " " + userData?.user?.lastName}</Text>
       </View>
       {/* DrawerList */}
       <DrawerItemList {...props} />

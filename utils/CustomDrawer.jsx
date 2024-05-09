@@ -23,16 +23,20 @@ const CustomDrawer = (props) => {
   return (
     <Container>
         <View style={{ backgroundColor: '#f4f4f4', padding: 20, display:"flex", alignItems:"center" }}>
+        {/* <Image
+          source={require('../assets/icon.png')} // Add your profile picture source here
+          style={{ width: 80, height: 80, borderRadius: 40 }}
+        /> */}
         <Image
           width={'100%'}
           style={{ width: 80, height: 80, borderRadius: 40 }}
-          src={
+          source={
             userData?.user?.profile_pic
               ? `data:image/jpg;base64,${userData?.user?.profile_pic}`
-              : '/static/assets/images/profile_dummy.webp'
+              : require('../assets/profile_dummy.webp')
           }
         />
-        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>{userData?.user?.firstName + " " + userData?.user?.lastName}</Text>
+        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>{userData?.user?.firstName ? userData?.user?.firstName + " " + userData?.user?.lastName : "User"}</Text>
       </View>
       {/* DrawerList */}
       <DrawerItemList {...props} />

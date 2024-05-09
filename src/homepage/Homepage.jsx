@@ -85,6 +85,7 @@ export default function Homepage() {
       <View style={[globalStyles.dFlexR, styles.homepageIcons]}>
         <HomepageIcon
           name="Inventory Transfer"
+          onPress={() => navigation.navigate('inventory_transfer')}
           icon={<MaterialIcons name="inventory" style={styles.iconImage} />}
         />
         <HomepageIcon
@@ -98,13 +99,14 @@ export default function Homepage() {
         />
         <HomepageIcon
           name="PO Receipt"
+          onPress={() => navigation.navigate('po_reciept')}
           icon={<FontAwesome5 name="receipt" style={styles.iconImage} />}
         />
         <HomepageIcon
           name="Job Receipt"
           icon={<Ionicons name="receipt" style={styles.iconImage} />}
         />
-        <HomepageIcon
+        {/* <HomepageIcon
           name="Inventory Transfer"
           icon={<MaterialIcons name="inventory" style={styles.iconImage} />}
         />
@@ -116,7 +118,7 @@ export default function Homepage() {
               style={styles.iconImage}
             />
           }
-        />
+        /> */}
       </View>
     </View>
   );

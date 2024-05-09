@@ -1,12 +1,14 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { globalStyles } from "../../style/globalStyles";
+import { useNavigation } from "@react-navigation/native";
 
 
-const HomepageIcon = ({ icon, bgcolor, name }) => {
+const HomepageIcon = ({ icon, bgcolor, name, onPress }) => {
+    const navigation = useNavigation();
     return (
-        <View style={{ width: "21%", margin:5 }}>
-            <TouchableOpacity style={[styles.IconContainer, { backgroundColor: bgcolor }]} onPress={() => { }}>
+        <View style={{ width: "21%", margin: 5 }}>
+            <TouchableOpacity onPress={onPress} style={[styles.IconContainer, { backgroundColor: bgcolor }]}>
                 {icon}
                 <Text style={styles.iconName}>{name}</Text>
             </TouchableOpacity>
@@ -25,9 +27,9 @@ const styles = StyleSheet.create({
     iconName: {
         maxWidth: 60,
         textAlign: "center",
-        color:globalStyles.colors.darkGrey,
+        color: globalStyles.colors.darkGrey,
         // fontWeight: "600",
-        fontSize:10,
+        fontSize: 10,
     }
 });
 

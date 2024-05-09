@@ -110,7 +110,6 @@ const UsersForm = ({
     validatePassword(e, name);
   };
   const renderLabelsValues = (values) => {
-    print({ values });
     const result = values.map((val) => ({
       ...val,
       label: val.name,

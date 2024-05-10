@@ -16,7 +16,7 @@ export const savePDF = async (pdfBytes) => {
   }
 };
 
-export const generatePDF = async () => {
+export const generatePDF = async (currentLine, formData) => {
   const { uri } = await Print.printToFileAsync({
     html: `<html lang="en">
     <head>
@@ -110,8 +110,8 @@ export const generatePDF = async () => {
             <tr style="height: 170px">
               <td class="tg-0lax" colspan="2">
                 <div>
-                  <div><i>Part : </i> <span class="value">RM</span></div>
-                  <div class="barcode">RM</div>
+                  <div><i>Part : </i> <span class="value">${currentLine?.POLinePartNum}</span></div>
+                  <div class="barcode">*${currentLine?.POLinePartNum}*</div>
                   <div><i>Rivision </i></div>
                   <div class="value">Remote Monitoring & Patch Managment</div>
                 </div>
@@ -120,15 +120,15 @@ export const generatePDF = async () => {
             <tr style="height: 120px">
               <td class="tg-0lax">
                 <div>
-                  <div><i>Vendor :</i> <span class="value">FINT001 / Fintec Ltd</span></div>
-                  <div  class="barcode">FINT001</div>
-                  <div><i>PO/Line/Rel :</i> <b>26871 / 1 / 1</b></div>
+                  <div><i>Vendor :</i> <span class="value">${currentLine?.VendorID} / ${currentLine?.VendorName}</span></div>
+                  <div  class="barcode">*${currentLine?.VendorID}*</div>
+                  <div><i>PO/Line/Rel :</i> <b>${currentLine?.PONum} / ${currentLine?.POLine} / ${currentLine?.PORelNum}</b></div>
                 </div>
               </td>
               <td class="tg-0lax">
                 <div>
-                  <div><i>Quantity</i> : <span class="value" style="padding-left: 10px;">10.00 EA</span></span></div>
-                  <div style="padding-left: 75px; padding-top: 12px;" class="barcode">10.000000</div>
+                  <div><i>Quantity</i> : <span class="value" style="padding-left: 10px;">${currentLine?.ArrivedQty} ${currentLine?.IUM}</span></span></div>
+                  <div style="padding-left: 75px; padding-top: 12px;" class="barcode">*${currentLine?.ArrivedQty}*</div>
                 </div>
               </td>
             </tr>
@@ -137,13 +137,13 @@ export const generatePDF = async () => {
                 <div class="bottom_container">
                   <div class="receipt_part"> <span class="value">Miscellaneous Receipt</span> </div>
                   <div class="bot_two">
-                    <div class="warehouse_part"> 
-                      <div><i>Warehouse :</i> <span class="value">Main</span></div>
-                      <div class="barcode">Main</div>
+                    <div class="warehouse_part">
+                      <div><i>Warehouse :</i> <span class="value">${formData?.WareHouseCode}</span></div>
+                      <div class="barcode">*${formData?.WareHouseCode}*</div>
                     </div>
                     <div class="bin_part">
-                      <div><i>Bin :</i> <span class="value">RCV</span></div>
-                      <div class="barcode">RCV</div>
+                      <div><i>Bin :</i> <span class="value">${formData?.BinNum}</span></div>
+                      <div class="barcode">*${formData?.BinNum}*</div>
                     </div>
                   </div>
                 </div>
@@ -157,7 +157,4 @@ export const generatePDF = async () => {
   });
   console.log('File has been saved to:', uri);
   await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-  // await Print.printAsync({
-  //   html: POTag,
-  // });
 };

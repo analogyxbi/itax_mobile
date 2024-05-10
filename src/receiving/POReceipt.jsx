@@ -9,6 +9,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -17,6 +18,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import {
@@ -37,6 +39,7 @@ import { showSnackbar } from '../Snackbar/messageSlice';
 import { Barcode } from 'expo-barcode-generator';
 import PrintBarcodeScreen from './PrintBarcodesScreen';
 import { generatePDF } from '../utils/PDFGenerator';
+import CustomDatatable from '../components/CustomDatatable';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -84,6 +87,11 @@ const POReceipt = () => {
   const [bins, setBins] = useState([]);
   const [filteredPos, setFilteredPos] = useState([]);
   const [openBarcodescreen, setOpenBarcodeScreen] = useState(false);
+  const [customTableState, setCustomTableState] = useState({
+    page: 1,
+    totalPages: 1000,
+    limit: 100,
+  });
   const dispatch = useDispatch();
 
   const handleTabs = (val) => {
@@ -177,8 +185,11 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log('po data', json.data.value);
-            setPOData(() => json.data.value);
+            if (json.data.value.length == 0) {
+              dispatch(showSnackbar('PO Not Found'));
+            } else {
+              setPOData(() => json.data.value);
+            }
             setLoading(false);
           })
           .catch((err) => {
@@ -198,7 +209,7 @@ const POReceipt = () => {
     setPackslipLoading(true);
     if (poNum) {
       setIsNewpackslip(false);
-      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,EntryPerson,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls&$filter=PONum eq ${poNum}`;
+      const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -206,7 +217,6 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log('packslip data', json.data.value);
             setPackSlipData(() => json.data.value);
             setPackslipLoading(false);
             setIsNewpackslip(false);
@@ -224,14 +234,18 @@ const POReceipt = () => {
       setPackslipLoading(false);
     }
   };
+
   useEffect(() => {
     if (tabValue === '2') {
-      fetchPackslips();
+      // getWareHouseList()
+      fetchPoLines();
+    } else {
+      setPackSlipData([]);
     }
   }, [tabValue]);
 
-  const getWareHouseList = () => {
-    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins`;
+  const getWareHouseList = (warehouseCode) => {
+    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$filter=WarehouseCode eq ${warehouseCode}`;
     // if (poNum) {
     //   let filterQuery = encodeURI(`PONum eq ${poNum}`);
     //   epicor_endpoint.concat(`&$filter=${filterQuery}`);
@@ -244,6 +258,7 @@ const POReceipt = () => {
       })
         .then(({ json }) => {
           setWarehouseCodes(() => json.data.value);
+          setBins(() => json.data.value);
           // setLoading(false);
         })
         .catch((err) => {
@@ -256,14 +271,16 @@ const POReceipt = () => {
   const onChangeText = (val, name) => {
     setFormdata((form) => ({ ...form, [name]: val }));
     if (name === 'WareHouseCode') {
-      console.log({ warehouseCodes, val, name });
       const filteredWareHouse = warehouseCodes?.filter(
         (warehouse) => warehouse?.WarehouseCode === val
       );
-      console.log({ filteredWareHouse });
       setBins(filteredWareHouse);
     }
     setSaved(false);
+  };
+
+  const onSelectPoNum = (po) => {
+    setPoNum(po.PONum);
   };
 
   const handleCreateUpdatePackSlip = () => {
@@ -317,12 +334,19 @@ const POReceipt = () => {
     }
   };
 
-  const searchPoNum = () => {
+  const searchPoNum = (page) => {
+    let pageValue = page ? page : customTableState.page;
+    console.log({ pageValue, page });
     setIsPOsLoading(true);
     // if (vendorNameSearch) {
     setIsNewpackslip(false);
+    let epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$select=PONum,VendorName&$skip=${pageValue}&$top=${customTableState.limit}`;
+    if (vendorNameSearch && vendorNameSearch.length > 0) {
+      const str = encodeURI(`startswith(VendorName,${vendorNameSearch})`);
+      epicor_endpoint.concat(`&$filter=${str}`);
+    }
+    console.log({ epicor_endpoint });
     // const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=startswith(VendorName,${vendorNameSearch})`;
-    const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches`;
     try {
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -330,9 +354,12 @@ const POReceipt = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          console.log('Po nums', json.data.value);
           setpoDataResponse(() => json.data.value);
           setFilteredPos(json.data.value);
+          setCustomTableState((prev) => ({
+            ...prev,
+            page: pageValue,
+          }));
           setIsPOsLoading(false);
         })
         .catch((err) => {
@@ -351,10 +378,12 @@ const POReceipt = () => {
 
   const onChangeSearchQuery = (val) => {
     setVendorNameSearch(val);
-    const filteredData = poDataResponse?.filter((data) =>
-      data?.VendorName?.lowerCase().includes(val.lowerCase())
-    );
-    setFilteredPos(filteredData);
+    if (val) {
+      const filteredData = poDataResponse?.filter((data) =>
+        data?.VendorName?.toLowerCase().includes(val.toLowerCase())
+      );
+      setFilteredPos(filteredData);
+    }
   };
 
   useEffect(() => {
@@ -365,28 +394,34 @@ const POReceipt = () => {
   }, [showPOModal]);
 
   const onSelectPackslip = (po) => {
-    console.log(po.PONum, po);
     setPackSlipNUm(po?.PackSlip);
     setSelectedPackslip(po);
   };
 
   const onSelectLine = (po) => {
+    getWareHouseList(po?.WarehouseCode);
     setCurrentLine(po);
     setTabvalue('3');
   };
 
   const handleSave = () => {
     const postPayload = {
-      RcvHead_PONum: 26876,
-      RcvHead_VendorNum: 1,
-      RcvHead_ArrivedDate: '2024-05-02',
-      RcvHead_ReceiptDate: '2024-05-02',
-      RcvDtl_POLine: 1,
-      RcvDtl_PORelNum: 1,
-      RcvDtl_PackLine: 1,
-      RcvHead_PackSlip: '000097',
+      Company: POData[0]?.Company,
+      VendorNum: POData[0]?.VendorNum,
+      PackSlip: packSLipNUm,
+      PackLine: currentLine,
+      OurQty: formData.input,
+      IUM: currentLine?.IUM,
+      ReceiptType: 'P',
+      TranType: 'PUR-STK',
+      PONum: POData[0]?.PONum,
+      POLine: currentLine?.POLine,
+      PORelNum: currentLine?.PORelNum,
+      Received: true,
+      InputOurQty: formData.input,
+      RowMod: 'A',
     };
-    console.log({ formData });
+    console.log({ postPayload });
     setSaved(true);
   };
 
@@ -494,6 +529,10 @@ const POReceipt = () => {
                     onDismiss={() => setShowPOModal(false)}
                     contentContainerStyle={styles.poModalContainer}
                   >
+                    {/* <KeyboardAvoidingView
+                      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Adjust behavior based on platform
+                      style={{ flex: 1 }}
+                    > */}
                     <View style={globalStyles.dFlexR}>
                       <TextInput
                         style={[styles.input, { flex: 1 }]}
@@ -501,12 +540,13 @@ const POReceipt = () => {
                         value={vendorNameSearch || ''}
                         placeholder="Search by vendorname"
                       />
-                      {/* <Pressable onPress={searchPoNum}>
+                      <Pressable>
                         {!isPosLoading ? (
                           <Ionicons
                             name="search"
                             size={24}
                             color={globalStyles.colors.darkGrey}
+                            onPress={searchPoNum}
                           />
                         ) : (
                           <ActivityIndicator
@@ -514,54 +554,24 @@ const POReceipt = () => {
                             color={MD2Colors.red800}
                           />
                         )}
-                      </Pressable> */}
+                      </Pressable>
                     </View>
-                    <View
-                      style={[
-                        globalStyles.dFlexR,
-                        globalStyles.justifySB,
-                        styles.poModalHeader,
-                      ]}
-                    >
-                      <Text style={{ color: 'white' }}>PoNum</Text>
-                      <Text style={{ color: 'white' }}>VendorNumName</Text>
-                    </View>
-                    {isPosLoading ? (
-                      <ActivityIndicator
-                        animating={true}
-                        color={MD2Colors.red800}
-                      />
-                    ) : (
-                      <ScrollView>
-                        {filteredPos?.length > 0 ? (
-                          filteredPos?.map((po, id) => (
-                            <View key={id}>
-                              <TouchableOpacity
-                                onPress={() => onSelectPoNUm(po)}
-                              >
-                                <View
-                                  style={[
-                                    globalStyles.dFlexR,
-                                    globalStyles.justifySB,
-                                  ]}
-                                >
-                                  <Text style={{ marginLeft: 10 }}>
-                                    {po.PONum}
-                                  </Text>
-                                  <Text style={{ marginRight: 10 }}>
-                                    {po.VendorName}
-                                  </Text>
-                                </View>
-                              </TouchableOpacity>
-                            </View>
-                          ))
-                        ) : (
-                          <Text style={{ textAlign: 'center', marginTop: 30 }}>
-                            No Data Found
-                          </Text>
-                        )}
-                      </ScrollView>
-                    )}
+                    {/* </KeyboardAvoidingView> */}
+                    <CustomDatatable
+                      data={filteredPos.filter((o) =>
+                        o.VendorName.includes(vendorNameSearch)
+                      )}
+                      columnHeaders={['PONum', 'VendorName']}
+                      page={customTableState.page}
+                      onPageChange={(value) => {
+                        searchPoNum(value);
+                      }}
+                      onRowPress={(value) => {
+                        setPoNum(value.PONum);
+                        setShowPOModal(false);
+                      }}
+                      loading={isPosLoading}
+                    />
                   </Modal>
                 </Portal>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
@@ -734,34 +744,20 @@ const POReceipt = () => {
                     <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>+ Create New Line</Text>
                   </TouchableOpacity> */}
                   <ScrollView>
+                    {packslipLoading && (
+                      <ActivityIndicator
+                        animating={true}
+                        color={MD2Colors.red800}
+                      />
+                    )}
+                    <Text style={{ fontSize: 15, fontWeight: '600' }}>
+                      Packslip: {packSLipNUm}
+                    </Text>
                     {packslipData && packslipData?.length > 0 ? (
                       packslipData?.map((po) => (
                         <View key={po.PONum}>
                           <TouchableOpacity onPress={() => onSelectLine(po)}>
-                            <View>
-                              {/* <Text style={[styles.inputLabel, { color: 'black' }]}>
-                                {po.PackId}
-                              </Text> */}
-                              {/* <Text style={{ paddingLeft: 10 }}>
-                                {' '}
-                                Entry Person: {po.EntryPerson}{' '}
-                              </Text> */}
-                              {/* <View
-                                style={[
-                                  globalStyles.dFlexR,
-                                  globalStyles.justifySB,
-                                  { fontSize: 13 },
-                                ]}
-                              > */}
-                              <Text
-                                style={{
-                                  paddingLeft: 10,
-                                  fontSize: 15,
-                                  fontWeight: '600',
-                                }}
-                              >
-                                Packslip: {po?.PackSlip || 'N/A'}
-                              </Text>
+                            <View style={styles.poNum}>
                               <Text
                                 style={{ paddingHorizontal: 10, fontSize: 13 }}
                               >
@@ -802,7 +798,7 @@ const POReceipt = () => {
                     <View>
                       <Text style={styles.inputLabel}>Rel</Text>
                       <Text style={{ padding: 10 }}>
-                        {selectedPOdata.PORel || 'N/A'}
+                        {currentLine.PORelNum || 'N/A'}
                       </Text>
                     </View>
                   </View>
@@ -811,19 +807,19 @@ const POReceipt = () => {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.inputLabel}>Order</Text>
                       <Text style={{ padding: 10 }}>
-                        {(currentLine.OrderQty &&
-                          parseInt(currentLine.OrderQty)) ||
+                        {(currentLine.XRelQty &&
+                          parseInt(currentLine.XRelQty)) ||
                           '-'}
-                        /{currentLine.PartNumSalesUM || '-'}
+                        /{currentLine.PUM || '-'}
                       </Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.inputLabel}>Arrived</Text>
                       <Text style={{ padding: 10 }}>
-                        {(currentLine.PORelArrivedQty &&
-                          parseInt(currentLine.PORelArrivedQty)) ||
+                        {(currentLine.ArrivedQty &&
+                          parseInt(currentLine.ArrivedQty)) ||
                           '-'}
-                        /{currentLine.PartNumSalesUM || '-'}
+                        /{currentLine.IUM || '-'}
                       </Text>
                       {/* <TextInput
                         style={styles.input}
@@ -839,11 +835,7 @@ const POReceipt = () => {
                       <TextInput
                         style={styles.input}
                         onChangeText={(text) => onChangeText(text, 'input')}
-                        value={
-                          formData?.InputOurQty ||
-                          (currentLine?.InputOurQty &&
-                            Math.round(currentLine?.InputOurQty)?.toString())
-                        }
+                        value={formData.input}
                         placeholder="Input"
                       />
                     </View>
@@ -882,17 +874,9 @@ const POReceipt = () => {
                         value={formData?.WareHouseCode || currentLine?.WareHouseCode || "-"}
                         placeholder="Warehouse Code"
                       /> */}
-                      <RNPickerSelect
-                        onValueChange={(text) =>
-                          onChangeText(text, 'WareHouseCode')
-                        }
-                        items={renderWarehouseOptions(warehouseCodes)}
-                        placeholder={{
-                          label: 'WareHouseCode',
-                          value: null,
-                        }}
-                        value={formData?.WareHouseCode}
-                      />
+                      <Text style={{ padding: 10 }}>
+                        {currentLine?.WarehouseCode}
+                      </Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.inputLabel}>Bin Number</Text>
@@ -941,19 +925,12 @@ const POReceipt = () => {
                       icon="printer"
                       mode="contained"
                       // disabled={!saved}
-                      onPress={() => generatePDF()}
+                      onPress={() => generatePDF(currentLine, formData)}
                     >
                       Print Tags
                     </Button>
                   </View>
                 </ScrollView>
-                {openBarcodescreen && (
-                  <PrintBarcodeScreen
-                    selectedPackSlip={selectedPackSlip}
-                    openBarcodescreen={openBarcodescreen}
-                    setOpenBarcodeScreen={setOpenBarcodeScreen}
-                  />
-                )}
               </View>
             )}
           </View>
@@ -1042,8 +1019,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 10,
     margin: 10,
-    height: '80%',
     overflow: 'scroll',
+    borderRadius: 8,
   },
   poModalHeader: {
     padding: 5,

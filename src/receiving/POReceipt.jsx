@@ -300,6 +300,7 @@ const POReceipt = () => {
             console.log('add packslip', json.data.value);
             dispatch(showSnackbar('Packslip added succesfully'));
             setCreatepackslipLoading(false);
+            setTabvalue('2');
           })
           .catch((err) => {
             console.log({ err });
@@ -696,13 +697,19 @@ const POReceipt = () => {
                   placeholder="Packslip"
                 />
 
-                <TouchableOpacity
-                  disabled={_.isEmpty(packSLipNUm)}
-                  style={styles.receiveButton}
-                  onPress={handleCreateUpdatePackSlip}
-                >
-                  <Text style={styles.receiveButtonText}>Create Packslip</Text>
-                </TouchableOpacity>
+                {createPackslipLoading ? (
+                  <ActivityIndicator />
+                ) : (
+                  <TouchableOpacity
+                    disabled={_.isEmpty(packSLipNUm)}
+                    style={styles.receiveButton}
+                    onPress={handleCreateUpdatePackSlip}
+                  >
+                    <Text style={styles.receiveButtonText}>
+                      Create Packslip
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 {/* <FAB
                   icon="plus"
                   style={styles.fab}

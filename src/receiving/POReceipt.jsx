@@ -19,7 +19,14 @@ import {
   View,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
-import { Button, Checkbox, Portal, SegmentedButtons, Modal, FAB } from 'react-native-paper';
+import {
+  Button,
+  Checkbox,
+  Portal,
+  SegmentedButtons,
+  Modal,
+  FAB,
+} from 'react-native-paper';
 import { globalStyles } from '../style/globalStyles';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { ActivityIndicator, MD2Colors } from 'react-native-paper';
@@ -29,6 +36,7 @@ import { useDispatch } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import { Barcode } from 'expo-barcode-generator';
 import PrintBarcodeScreen from './PrintBarcodesScreen';
+import { generatePDF } from '../utils/PDFGenerator';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -36,18 +44,18 @@ import PrintBarcodeScreen from './PrintBarcodesScreen';
 // const password = '3xt3rn@l1!';
 
 const initialFormdata = {
-  poNum: "",
-  packslip: "",
-  supplier_name: "",
-  line: "",
-  rel: "",
-  order_qty: "",
-  arrived_qty: "",
-  input: "",
-  note: "",
-  WareHouseCode: "",
-  BinNum: ""
-}
+  poNum: '',
+  packslip: '',
+  supplier_name: '',
+  line: '',
+  rel: '',
+  order_qty: '',
+  arrived_qty: '',
+  input: '',
+  note: '',
+  WareHouseCode: '',
+  BinNum: '',
+};
 
 const POReceipt = () => {
   const [hasPermission, setHasPermission] = useState(null);
@@ -58,12 +66,12 @@ const POReceipt = () => {
   const navigation = useNavigation();
   const [tabValue, setTabvalue] = useState('1');
   const [scanned, setScanned] = useState(false);
-  const [vendorNameSearch, setVendorNameSearch] = useState("");
+  const [vendorNameSearch, setVendorNameSearch] = useState('');
   const [scannerVisible, setScannerVisible] = useState(false);
   const [poNum, setPoNum] = useState();
   const [loading, setLoading] = useState(false);
   const [POData, setPOData] = useState([]);
-  const [packSLipNUm, setPackSlipNUm] = useState("");
+  const [packSLipNUm, setPackSlipNUm] = useState('');
   const [packslipData, setPackSlipData] = useState([]);
   const [selectedPackSlip, setSelectedPackslip] = useState({});
   const [packslipLoading, setPackslipLoading] = useState(false);
@@ -110,7 +118,7 @@ const POReceipt = () => {
       value: val.BinNum,
     }));
     return result;
-  }
+  };
   // if (hasPermission === null) {
   //     return <Text>Requesting for camera permission</Text>;
   // }
@@ -160,7 +168,7 @@ const POReceipt = () => {
       // let filterQuery = encodeURI(`PONum eq ${poNum}`);
       // epicor_endpoint = epicor_endpoint + `&$filter=${filterQuery}`
       // const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=PONum eq ${poNum}`
-      const epicor_endpoint = `/Erp.BO.POSvc/POes?$filter=PONum eq ${poNum}&$expand=PODetails`
+      const epicor_endpoint = `/Erp.BO.POSvc/POes?$filter=PONum eq ${poNum}&$expand=PODetails`;
       // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls&$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
@@ -169,25 +177,25 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log("po data", json.data.value)
-            setPOData(() => json.data.value)
+            console.log('po data', json.data.value);
+            setPOData(() => json.data.value);
             setLoading(false);
           })
           .catch((err) => {
             setLoading(false);
-            console.log({ err })
+            console.log({ err });
           });
       } catch (err) {
         setLoading(false);
       }
     } else {
       dispatch(showSnackbar('Enter the PO Num first'));
-      setLoading(false)
+      setLoading(false);
     }
   };
 
   const fetchPackslips = () => {
-    setPackslipLoading(true)
+    setPackslipLoading(true);
     if (poNum) {
       setIsNewpackslip(false);
       const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,EntryPerson,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls&$filter=PONum eq ${poNum}`;
@@ -198,8 +206,8 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log("packslip data", json.data.value)
-            setPackSlipData(() => json.data.value)
+            console.log('packslip data', json.data.value);
+            setPackSlipData(() => json.data.value);
             setPackslipLoading(false);
             setIsNewpackslip(false);
           })
@@ -213,14 +221,14 @@ const POReceipt = () => {
       }
     } else {
       dispatch(showSnackbar('Enter the PO Num first'));
-      setPackslipLoading(false)
+      setPackslipLoading(false);
     }
-  }
+  };
   useEffect(() => {
-    if (tabValue === "2") {
+    if (tabValue === '2') {
       fetchPackslips();
     }
-  }, [tabValue])
+  }, [tabValue]);
 
   const getWareHouseList = () => {
     const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins`;
@@ -244,23 +252,25 @@ const POReceipt = () => {
     } catch (err) {
       // setLoading(false);
     }
-  }
+  };
   const onChangeText = (val, name) => {
-    setFormdata(form => ({ ...form, [name]: val }));
-    if (name === "WareHouseCode") {
-      console.log({ warehouseCodes, val, name })
-      const filteredWareHouse = warehouseCodes?.filter(warehouse => warehouse?.WarehouseCode === val);
-      console.log({ filteredWareHouse })
+    setFormdata((form) => ({ ...form, [name]: val }));
+    if (name === 'WareHouseCode') {
+      console.log({ warehouseCodes, val, name });
+      const filteredWareHouse = warehouseCodes?.filter(
+        (warehouse) => warehouse?.WarehouseCode === val
+      );
+      console.log({ filteredWareHouse });
       setBins(filteredWareHouse);
     }
     setSaved(false);
-  }
+  };
 
   const handleCreateUpdatePackSlip = () => {
-      createPackSlip();
-  }
+    createPackSlip();
+  };
   const createPackSlip = () => {
-    setCreatepackslipLoading(true)
+    setCreatepackslipLoading(true);
     if (packSLipNUm) {
       setIsNewpackslip(false);
       const today = new Date().toISOString();
@@ -273,41 +283,45 @@ const POReceipt = () => {
         ReceiptDate: formattedDate,
         Invoiced: false,
         PONum: POData[0]?.PONum,
-        RowMod: "A"
+        RowMod: 'A',
       };
-      console.log({postData})
+      console.log({ postData });
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
-          postPayload: { epicor_endpoint, request_type: 'POST', data: JSON.stringify(postData) },
+          postPayload: {
+            epicor_endpoint,
+            request_type: 'POST',
+            data: JSON.stringify(postData),
+          },
           stringify: false,
         })
           .then(({ json }) => {
-            console.log("add packslip", json.data.value)
+            console.log('add packslip', json.data.value);
             dispatch(showSnackbar('Packslip added succesfully'));
             setCreatepackslipLoading(false);
           })
           .catch((err) => {
-            console.log({ err })
+            console.log({ err });
             dispatch(showSnackbar('Error adding the Packslip'));
             setCreatepackslipLoading(false);
           });
       } catch (err) {
-        console.log({ err })
+        console.log({ err });
         setCreatepackslipLoading(false);
       }
     } else {
       dispatch(showSnackbar('Enter the Packslip first'));
-      setCreatepackslipLoading(false)
+      setCreatepackslipLoading(false);
     }
-  }
+  };
 
   const searchPoNum = () => {
-    setIsPOsLoading(true)
+    setIsPOsLoading(true);
     // if (vendorNameSearch) {
     setIsNewpackslip(false);
     // const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=startswith(VendorName,${vendorNameSearch})`;
-    const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches`
+    const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches`;
     try {
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -315,43 +329,45 @@ const POReceipt = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          console.log("Po nums", json.data.value)
-          setpoDataResponse(() => json.data.value)
+          console.log('Po nums', json.data.value);
+          setpoDataResponse(() => json.data.value);
           setFilteredPos(json.data.value);
           setIsPOsLoading(false);
         })
         .catch((err) => {
-          console.log({ err })
+          console.log({ err });
           setIsPOsLoading(false);
         });
     } catch (err) {
-      console.log({ err })
+      console.log({ err });
       setIsPOsLoading(false);
     }
     // } else {
     //   dispatch(showSnackbar('Enter the vendor name first'));
     //   setIsPOsLoading(false)
     // }
-  }
+  };
 
   const onChangeSearchQuery = (val) => {
     setVendorNameSearch(val);
-    const filteredData = poDataResponse?.filter(data => data?.VendorName?.lowerCase().includes(val.lowerCase()))
-    setFilteredPos(filteredData)
-  }
+    const filteredData = poDataResponse?.filter((data) =>
+      data?.VendorName?.lowerCase().includes(val.lowerCase())
+    );
+    setFilteredPos(filteredData);
+  };
 
   useEffect(() => {
     // getWareHouseList()
     if (showPOModal) {
-      searchPoNum()
+      searchPoNum();
     }
-  }, [showPOModal])
+  }, [showPOModal]);
 
   const onSelectPackslip = (po) => {
-    console.log(po.PONum, po)
-    setPackSlipNUm(po?.PackSlip)
+    console.log(po.PONum, po);
+    setPackSlipNUm(po?.PackSlip);
     setSelectedPackslip(po);
-  }
+  };
 
   const onSelectLine = (po) => {
     setCurrentLine(po);
@@ -362,20 +378,20 @@ const POReceipt = () => {
     const postPayload = {
       RcvHead_PONum: 26876,
       RcvHead_VendorNum: 1,
-      RcvHead_ArrivedDate: "2024-05-02",
-      RcvHead_ReceiptDate: "2024-05-02",
+      RcvHead_ArrivedDate: '2024-05-02',
+      RcvHead_ReceiptDate: '2024-05-02',
       RcvDtl_POLine: 1,
       RcvDtl_PORelNum: 1,
       RcvDtl_PackLine: 1,
-      RcvHead_PackSlip: "000097"
-    }
-    console.log({ formData })
-    setSaved(true)
-  }
+      RcvHead_PackSlip: '000097',
+    };
+    console.log({ formData });
+    setSaved(true);
+  };
 
   const onSearchPoChange = (text) => {
-    setPoNum(text)
-  }
+    setPoNum(text);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -472,12 +488,16 @@ const POReceipt = () => {
             {tabValue == '1' && (
               <View style={styles.tabView}>
                 <Portal>
-                  <Modal visible={showPOModal} onDismiss={() => setShowPOModal(false)} contentContainerStyle={styles.poModalContainer}>
+                  <Modal
+                    visible={showPOModal}
+                    onDismiss={() => setShowPOModal(false)}
+                    contentContainerStyle={styles.poModalContainer}
+                  >
                     <View style={globalStyles.dFlexR}>
                       <TextInput
                         style={[styles.input, { flex: 1 }]}
                         onChangeText={onChangeSearchQuery}
-                        value={vendorNameSearch || ""}
+                        value={vendorNameSearch || ''}
                         placeholder="Search by vendorname"
                       />
                       {/* <Pressable onPress={searchPoNum}>
@@ -495,50 +515,83 @@ const POReceipt = () => {
                         )}
                       </Pressable> */}
                     </View>
-                    <View style={[globalStyles.dFlexR, globalStyles.justifySB, styles.poModalHeader]}>
-                      <Text style={{ color: "white" }}>PoNum</Text>
-                      <Text style={{ color: "white" }}>VendorNumName</Text>
+                    <View
+                      style={[
+                        globalStyles.dFlexR,
+                        globalStyles.justifySB,
+                        styles.poModalHeader,
+                      ]}
+                    >
+                      <Text style={{ color: 'white' }}>PoNum</Text>
+                      <Text style={{ color: 'white' }}>VendorNumName</Text>
                     </View>
-                    {
-                      isPosLoading ? <ActivityIndicator
+                    {isPosLoading ? (
+                      <ActivityIndicator
                         animating={true}
                         color={MD2Colors.red800}
-                      /> :
-                        <ScrollView>
-                          {filteredPos?.length > 0 ?
-                            filteredPos?.map((po, id) => (
-                              <View key={id}>
-                                <TouchableOpacity onPress={() => onSelectPoNUm(po)}>
-                                  <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                                    <Text style={{ marginLeft: 10 }}>{po.PONum}</Text>
-                                    <Text style={{ marginRight: 10 }}>{po.VendorName}</Text>
-                                  </View>
-                                </TouchableOpacity>
-                              </View>
-                            )) : <Text style={{ textAlign: "center", marginTop: 30 }}>No Data Found</Text>
-                          }
-                        </ScrollView>
-                    }
+                      />
+                    ) : (
+                      <ScrollView>
+                        {filteredPos?.length > 0 ? (
+                          filteredPos?.map((po, id) => (
+                            <View key={id}>
+                              <TouchableOpacity
+                                onPress={() => onSelectPoNUm(po)}
+                              >
+                                <View
+                                  style={[
+                                    globalStyles.dFlexR,
+                                    globalStyles.justifySB,
+                                  ]}
+                                >
+                                  <Text style={{ marginLeft: 10 }}>
+                                    {po.PONum}
+                                  </Text>
+                                  <Text style={{ marginRight: 10 }}>
+                                    {po.VendorName}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                            </View>
+                          ))
+                        ) : (
+                          <Text style={{ textAlign: 'center', marginTop: 30 }}>
+                            No Data Found
+                          </Text>
+                        )}
+                      </ScrollView>
+                    )}
                   </Modal>
                 </Portal>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                   <Text style={styles.inputLabel}>PO Num</Text>
-                  <TouchableOpacity onPress={() => setShowPOModal(true)} >
-                    <Text style={{ color: globalStyles.colors.primary, marginRight: 10 }}>Search POs</Text>
+                  <TouchableOpacity onPress={() => setShowPOModal(true)}>
+                    <Text
+                      style={{
+                        color: globalStyles.colors.primary,
+                        marginRight: 10,
+                      }}
+                    >
+                      Search POs
+                    </Text>
                   </TouchableOpacity>
                 </View>
                 <View style={globalStyles.dFlexR}>
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     onChangeText={onSearchPoChange}
-                    value={poNum ? poNum?.toString() : ""}
+                    value={poNum ? poNum?.toString() : ''}
                     editable={!loading}
                     placeholder="PO Num"
                     keyboardType="numeric"
                   />
                   <Pressable onPress={getPoReciept}>
                     {!loading ? (
-                      <Feather name="search" size={24} color={globalStyles.colors.darkGrey} />
+                      <Feather
+                        name="search"
+                        size={24}
+                        color={globalStyles.colors.darkGrey}
+                      />
                     ) : (
                       <ActivityIndicator
                         animating={true}
@@ -551,7 +604,11 @@ const POReceipt = () => {
                     onPress={openScanner}
                   >
                     <Text style={styles.closeButtonText}>
-                      <AntDesign name="scan1" size={24} color={globalStyles.colors.darkGrey} />
+                      <AntDesign
+                        name="scan1"
+                        size={24}
+                        color={globalStyles.colors.darkGrey}
+                      />
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -578,36 +635,59 @@ const POReceipt = () => {
                     <Text style={{ color: globalStyles.colors.primary, marginRight: 10 }}>{isNewPackSlip ? "Edit Existing Packslips" : "Enter New Packslip"}</Text>
                   </TouchableOpacity> */}
                 </View>
-                {
-                  packslipLoading ? <ActivityIndicator
+                {packslipLoading ? (
+                  <ActivityIndicator
                     animating={true}
                     color={MD2Colors.red800}
-                  /> :
-                    packslipData.length > 0 && (
-                      <View style={{ margin: 7, borderColor: globalStyles.colors.success, borderWidth: 1 }}>
-                        <View style={[globalStyles.dFlexR, globalStyles.justifySB, styles.poModalHeader]}>
-                          {/* <Text style={{ color: "white" }}>PoNum</Text> */}
-                          <Text style={{ color: "white" }}>Packslip</Text>
-                          <Text style={{ color: "white" }}>Vendor Name</Text>
-                        </View>
-                        <ScrollView>
-                          {packslipData?.length > 0 ?
-                            packslipData?.map((po, id) => (
-                              <View key={id} style={{ padding: 2 }}>
-                                <TouchableOpacity onPress={() => onSelectPackslip(po)}>
-                                  <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                                    <Text>{po.PackSlip}</Text>
-                                    <Text>{po.VendorNumName}</Text>
-                                  </View>
-                                </TouchableOpacity>
-                              </View>
-                            ))
-                            : <Text style={{ textAlign: "center", marginTop: 30 }}>No Data Found</Text>
-                          }
-                        </ScrollView>
+                  />
+                ) : (
+                  packslipData.length > 0 && (
+                    <View
+                      style={{
+                        margin: 7,
+                        borderColor: globalStyles.colors.success,
+                        borderWidth: 1,
+                      }}
+                    >
+                      <View
+                        style={[
+                          globalStyles.dFlexR,
+                          globalStyles.justifySB,
+                          styles.poModalHeader,
+                        ]}
+                      >
+                        {/* <Text style={{ color: "white" }}>PoNum</Text> */}
+                        <Text style={{ color: 'white' }}>Packslip</Text>
+                        <Text style={{ color: 'white' }}>Vendor Name</Text>
                       </View>
-                    )
-                }
+                      <ScrollView>
+                        {packslipData?.length > 0 ? (
+                          packslipData?.map((po, id) => (
+                            <View key={id} style={{ padding: 2 }}>
+                              <TouchableOpacity
+                                onPress={() => onSelectPackslip(po)}
+                              >
+                                <View
+                                  style={[
+                                    globalStyles.dFlexR,
+                                    globalStyles.justifySB,
+                                  ]}
+                                >
+                                  <Text>{po.PackSlip}</Text>
+                                  <Text>{po.VendorNumName}</Text>
+                                </View>
+                              </TouchableOpacity>
+                            </View>
+                          ))
+                        ) : (
+                          <Text style={{ textAlign: 'center', marginTop: 30 }}>
+                            No Data Found
+                          </Text>
+                        )}
+                      </ScrollView>
+                    </View>
+                  )
+                )}
                 <TextInput
                   style={styles.input}
                   // editable={!loading}
@@ -642,13 +722,12 @@ const POReceipt = () => {
                     placeholder="Filter"
                   />
                 </View> */}
-                <View style={{ maxHeight: "80%" }}>
+                <View style={{ maxHeight: '80%' }}>
                   {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={() => setTabvalue("3")} >
                     <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>+ Create New Line</Text>
                   </TouchableOpacity> */}
-                  <ScrollView >
-
-                    {packslipData && packslipData?.length > 0 ?
+                  <ScrollView>
+                    {packslipData && packslipData?.length > 0 ? (
                       packslipData?.map((po) => (
                         <View key={po.PONum}>
                           <TouchableOpacity onPress={() => onSelectLine(po)}>
@@ -667,19 +746,32 @@ const POReceipt = () => {
                                   { fontSize: 13 },
                                 ]}
                               > */}
-                              <Text style={{ paddingLeft: 10, fontSize: 15, fontWeight: "600" }}>
-                                Packslip: {po?.PackSlip || "N/A"}
+                              <Text
+                                style={{
+                                  paddingLeft: 10,
+                                  fontSize: 15,
+                                  fontWeight: '600',
+                                }}
+                              >
+                                Packslip: {po?.PackSlip || 'N/A'}
                               </Text>
-                              <Text style={{ paddingHorizontal: 10, fontSize: 13 }}>
-                                Line : {po?.POLine || "N/A"},
-                                Rel: {po?.PORelNum || "N/A"},
-                                Part: {po.POLinePartNum || "N/A"}
+                              <Text
+                                style={{ paddingHorizontal: 10, fontSize: 13 }}
+                              >
+                                Line : {po?.POLine || 'N/A'}, Rel:{' '}
+                                {po?.PORelNum || 'N/A'}, Part:{' '}
+                                {po.POLinePartNum || 'N/A'}
                               </Text>
                               {/* </View> */}
                             </View>
                           </TouchableOpacity>
                         </View>
-                      )) : <Text style={{ textAlign: "center" }}>No Lines Found</Text>}
+                      ))
+                    ) : (
+                      <Text style={{ textAlign: 'center' }}>
+                        No Lines Found
+                      </Text>
+                    )}
                   </ScrollView>
                 </View>
               </View>
@@ -711,11 +803,21 @@ const POReceipt = () => {
                   <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.inputLabel}>Order</Text>
-                      <Text style={{ padding: 10 }}>{currentLine.OrderQty && parseInt(currentLine.OrderQty) || "-"}/{currentLine.PartNumSalesUM || "-"}</Text>
+                      <Text style={{ padding: 10 }}>
+                        {(currentLine.OrderQty &&
+                          parseInt(currentLine.OrderQty)) ||
+                          '-'}
+                        /{currentLine.PartNumSalesUM || '-'}
+                      </Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.inputLabel}>Arrived</Text>
-                      <Text style={{ padding: 10 }}>{currentLine.PORelArrivedQty && parseInt(currentLine.PORelArrivedQty) || "-"}/{currentLine.PartNumSalesUM || "-"}</Text>
+                      <Text style={{ padding: 10 }}>
+                        {(currentLine.PORelArrivedQty &&
+                          parseInt(currentLine.PORelArrivedQty)) ||
+                          '-'}
+                        /{currentLine.PartNumSalesUM || '-'}
+                      </Text>
                       {/* <TextInput
                         style={styles.input}
                         onChangeText={(text) => onChangeText(text, 'arrived_qty')}
@@ -730,7 +832,11 @@ const POReceipt = () => {
                       <TextInput
                         style={styles.input}
                         onChangeText={(text) => onChangeText(text, 'input')}
-                        value={formData?.InputOurQty || currentLine?.InputOurQty && Math.round(currentLine?.InputOurQty)?.toString()}
+                        value={
+                          formData?.InputOurQty ||
+                          (currentLine?.InputOurQty &&
+                            Math.round(currentLine?.InputOurQty)?.toString())
+                        }
                         placeholder="Input"
                       />
                     </View>
@@ -770,7 +876,9 @@ const POReceipt = () => {
                         placeholder="Warehouse Code"
                       /> */}
                       <RNPickerSelect
-                        onValueChange={(text) => onChangeText(text, 'WareHouseCode')}
+                        onValueChange={(text) =>
+                          onChangeText(text, 'WareHouseCode')
+                        }
                         items={renderWarehouseOptions(warehouseCodes)}
                         placeholder={{
                           label: 'WareHouseCode',
@@ -826,7 +934,7 @@ const POReceipt = () => {
                       icon="printer"
                       mode="contained"
                       // disabled={!saved}
-                      onPress={() => setOpenBarcodeScreen(true)}
+                      onPress={() => generatePDF()}
                     >
                       Print Tags
                     </Button>
@@ -836,7 +944,8 @@ const POReceipt = () => {
                   <PrintBarcodeScreen
                     selectedPackSlip={selectedPackSlip}
                     openBarcodescreen={openBarcodescreen}
-                    setOpenBarcodeScreen={setOpenBarcodeScreen} />
+                    setOpenBarcodeScreen={setOpenBarcodeScreen}
+                  />
                 )}
               </View>
             )}
@@ -926,8 +1035,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 10,
     margin: 10,
-    height: "80%",
-    overflow: "scroll"
+    height: '80%',
+    overflow: 'scroll',
   },
   poModalHeader: {
     padding: 5,

@@ -40,6 +40,7 @@ import { Barcode } from 'expo-barcode-generator';
 import PrintBarcodeScreen from './PrintBarcodesScreen';
 import { generatePDF } from '../utils/PDFGenerator';
 import CustomDatatable from '../components/CustomDatatable';
+import LinesCard from '../components/LinesCard';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -92,6 +93,8 @@ const POReceipt = () => {
     totalPages: 1000,
     limit: 100,
   });
+  const [whseBin, setWhseBin] = useState([]);
+
   const dispatch = useDispatch();
 
   const handleTabs = (val) => {
@@ -133,12 +136,39 @@ const POReceipt = () => {
   // if (hasPermission === false) {
   //     return <Text>No access to camera</Text>;
   // }
+
+  function getWhseBin() {
+    console.log('GETING BINSSSSSSSS');
+    const postPayload = {
+      epicor_endpoint:
+        '/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum',
+      request_type: 'GET',
+    };
+    try {
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+      })
+        .then(({ json }) => {
+          setWhseBin(() => json.data.value);
+          console.log({ json });
+        })
+        .catch((err) => {
+          // setLoading(false);
+          console.log('Err', err);
+        });
+    } catch (err) {
+      console.log({ err });
+    }
+  }
+
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
       setHasPermission(status === 'granted');
     };
-
+    getWhseBin();
     getBarCodeScannerPermissions();
   }, []);
   const handleBarCodeScanned = ({ type, data }) => {
@@ -238,10 +268,11 @@ const POReceipt = () => {
   useEffect(() => {
     if (tabValue === '2') {
       // getWareHouseList()
-      fetchPoLines();
-    } else {
-      setPackSlipData([]);
+      fetchPackslips();
     }
+    // else {
+    //   setPackSlipData([]);
+    // }
   }, [tabValue]);
 
   const getWareHouseList = (warehouseCode) => {
@@ -739,7 +770,7 @@ const POReceipt = () => {
                     placeholder="Filter"
                   />
                 </View> */}
-                <View style={{ maxHeight: '80%' }}>
+                <View style={{ height: '100%' }}>
                   {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={() => setTabvalue("3")} >
                     <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>+ Create New Line</Text>
                   </TouchableOpacity> */}
@@ -750,29 +781,22 @@ const POReceipt = () => {
                         color={MD2Colors.red800}
                       />
                     )}
-                    <Text style={{ fontSize: 15, fontWeight: '600' }}>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: '600',
+                        marginBottom: 8,
+                      }}
+                    >
                       Packslip: {packSLipNUm}
                     </Text>
                     {packslipData && packslipData?.length > 0 ? (
                       packslipData?.map((po) => (
-                        <View key={po.PONum}>
-                          <TouchableOpacity onPress={() => onSelectLine(po)}>
-                            <View style={styles.poNum}>
-                              <Text
-                                style={{ paddingHorizontal: 10, fontSize: 13 }}
-                              >
-                                Line : {po?.POLine || 'N/A'}, Rel:{' '}
-                                {po?.PORelNum || 'N/A'}, Part:{' '}
-                                {po.POLinePartNum || 'N/A'}
-                              </Text>
-                              {/* </View> */}
-                            </View>
-                          </TouchableOpacity>
-                        </View>
+                        <LinesCard data={po} onSelectLine={onSelectLine} />
                       ))
                     ) : (
                       <Text style={{ textAlign: 'center' }}>
-                        No Lines Found
+                        {packslipLoading ? 'Please wait' : 'No Lines Found'}
                       </Text>
                     )}
                   </ScrollView>

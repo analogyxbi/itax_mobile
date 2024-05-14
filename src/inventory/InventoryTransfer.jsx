@@ -33,24 +33,184 @@ const InventoryTransfer = () => {
   const dispatch = useDispatch();
   const [current, setCurrent] = useState({});
   const [target, setTarget] = useState({});
-  const [bins, setBins] = useState([]);
   const navigation = useNavigation();
   const animationRef = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [selectedPart, setSelectedPart] = useState({});
+  const [error, setError] = useState({});
+  const [bins, setBins] = useState({
+    from: [],
+    to: [],
+  });
+  const [formData, setFormData] = useState({});
   const restartAnimation = () => {
     animationRef.current?.restartAnimation();
   };
+  const [currentParts, setCurrentParts] = useState([]);
+
+  function createPayload() {
+    const currentDate = new Date();
+    const InvTrans = [
+      {
+        Company: selectedPart.Company,
+        TranDate: currentDate.toISOString(),
+        FromWarehouseCode: formData.current_whse,
+        // FromWarehouseCode: formData.current_whse,
+        Plant: selectedPart.PlantName, // PlantName
+        Plant2: selectedPart.Plant, // Plant
+        ToWarehouseCode: formData.to_whse,
+        FromBinNum: formData.current_bin,
+        ToBinNum: formData.to_bin,
+        PartNum: selectedPart.PartNum,
+        TransferQty: formData.quantity,
+        TransferQtyUOM: selectedPart.IUM,
+        ToOnHandUOM: selectedPart.IUM,
+        TrackingUOM: selectedPart.IUM,
+        RowMod: 'A',
+      },
+    ];
+    const Parts = [
+      {
+        Company: selectedPart.Company,
+        PartNum: selectedPart.PartNum,
+        RowMod: 'U',
+      },
+    ];
+
+    return {
+      ds: {
+        InvTrans: InvTrans,
+        Parts: Parts,
+      },
+    };
+  }
 
   function initiateTransfer() {
     dispatch(setIsLoading(true));
-    // async code to transfer the part and bin
-    setTimeout(() => {
-      // on Success
-      dispatch(setOnSuccess(true));
-      // on failed transfer
-      // dispatch(setOnError(true));
-    }, 2000);
+    const data = createPayload();
+    const epicor_endpoint = `/Erp.BO.InvTransferSvc/CommitTransfer`;
+    const postPayload = {
+      epicor_endpoint,
+      request_type: 'POST',
+      data: JSON.stringify(data),
+    };
+    try {
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+      })
+        .then(({ json }) => {
+          dispatch(setOnSuccess(true));
+          setSelectedPart((prev) => ({
+            ...prev,
+            QtyOnHand: prev.QtyOnHand - parseInt(formData.quantity),
+          }));
+        })
+        .catch((err) => {
+          err.json().then((res) => {
+            dispatch(setOnError(true));
+            const response = JSON.parse(res.error);
+            dispatch(showSnackbar(response.data.ErrorMessage));
+          });
+        });
+    } catch (err) {
+      dispatch(setOnError(true));
+    }
+  }
+
+  function fetchPartDetails(data) {
+    setRefreshing(true);
+    const epicor_endpoint = `/Erp.BO.PartBinSearchSvc/GetBinContents`;
+    const postPayload = {
+      epicor_endpoint,
+      request_type: 'POST',
+      data: JSON.stringify(data),
+    };
+
+    try {
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+      })
+        .then(({ json }) => {
+          const part = json.data.returnObj.PartBinSearch;
+          setCurrentParts(() => [...part]);
+          setRefreshing(false);
+          dispatch(
+            showSnackbar(
+              `Parts fetched for warehouse ${data.whseCode} and bin ${data.binNum}`
+            )
+          );
+        })
+        .catch((err) => {
+          // setLoading(false);
+          setRefreshing(false);
+          dispatch(
+            showSnackbar(
+              `Error fetching Parts for warehouse ${data.whseCode} and bin ${data.binNum}`
+            )
+          );
+          setRefreshing(false);
+        });
+    } catch (err) {
+      dispatch(
+        showSnackbar(
+          `Error fetching Parts for warehouse ${data.whseCode} and bin ${data.binNum}`
+        )
+      );
+    }
+  }
+
+  useEffect(() => {
+    if (formData.current_whse && formData.current_bin) {
+      fetchPartDetails({
+        whseCode: formData.current_whse,
+        binNum: formData.current_bin,
+      });
+    }
+  }, [formData.current_whse, formData.current_bin]);
+
+  function getBins(to, warehouse) {
+    setRefreshing(true);
+    const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
+    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+    const postPayload = {
+      epicor_endpoint,
+      request_type: 'GET',
+    };
+
+    try {
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+      })
+        .then(({ json }) => {
+          setBins((prev) => ({ ...prev, [to]: json.data.value }));
+          dispatch(showSnackbar(`Bins fetched for ${warehouse}`));
+          setRefreshing(false);
+        })
+        .catch((err) => {
+          // setLoading(false);
+          setRefreshing(false);
+          dispatch(
+            showSnackbar(
+              'Error getting the list of warehouses',
+              JSON.stringify(err)
+            )
+          );
+          setRefreshing(false);
+        });
+    } catch (err) {
+      dispatch(
+        showSnackbar(
+          'Error getting the list of warehouses',
+          JSON.stringify(err)
+        )
+      );
+    }
   }
 
   function getWarehouse() {
@@ -82,7 +242,12 @@ const InventoryTransfer = () => {
           );
         });
     } catch (err) {
-      console.log({ err });
+      dispatch(
+        showSnackbar(
+          'Error getting the list of warehouses',
+          JSON.stringify(err)
+        )
+      );
     }
   }
 
@@ -98,6 +263,10 @@ const InventoryTransfer = () => {
 
   function onSelectTarget(value, key) {
     setTarget((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function onSelectBins(key, value) {
+    setFormData((prev) => ({ ...prev, [key]: value }));
   }
 
   return (
@@ -116,7 +285,11 @@ const InventoryTransfer = () => {
       <ScrollView
         contentContainerStyle={styles.scrollView}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={getWarehouse} />
+          <RefreshControl
+            title={'Please wait'}
+            refreshing={refreshing}
+            onRefresh={getWarehouse}
+          />
         }
       >
         <View style={styles.container}>
@@ -147,10 +320,12 @@ const InventoryTransfer = () => {
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Current Warehouse</Text>
               <RNPickerSelect
-                selectedValue={current.warehouse}
+                selectedValue={formData.current_whse}
                 onValueChange={(itemValue) => {
-                  onSelectWarehouse(itemValue, 'warehouse');
-                  // loadBins(itemValue);
+                  onSelectBins('current_whse', itemValue);
+                  formData.current_bin = '';
+                  setBins((prev) => ({ ...prev, from: [] }));
+                  getBins('from', itemValue);
                 }}
                 items={warehouses.map((data) => ({
                   ...data,
@@ -161,43 +336,85 @@ const InventoryTransfer = () => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Current Bin</Text>
-              <TextInput
-                style={styles.input}
-                onChangeText={(text) => onSelectWarehouse(text, 'curr_bin')}
-                value={current?.curr_bin}
-                placeholder="Current Bin"
+              <RNPickerSelect
+                selectedValue={formData.current_bin}
+                onValueChange={(itemValue) => {
+                  onSelectBins('current_bin', itemValue);
+                }}
+                items={bins.from.map((data) => ({
+                  ...data,
+                  label: data.BinNum,
+                  value: data.BinNum,
+                }))}
               />
             </View>
           </View>
           <View>
             <Text style={styles.inputLabel}>Select Product</Text>
-            <TextInput
-              style={styles.input}
-              // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-              // value={formData?.confirm_password}
-              placeholder="Select Product"
+            <RNPickerSelect
+              selectedValue={formData.current_part}
+              onValueChange={(itemValue) => {
+                onSelectBins('current_part', itemValue);
+                const stock = currentParts.find(
+                  (data) => data.PartNum === itemValue
+                );
+                if (stock) {
+                  setSelectedPart(stock);
+                }
+              }}
+              items={currentParts.map((data) => ({
+                ...data,
+                label: data.PartNum,
+                value: data.PartNum,
+              }))}
             />
           </View>
           <Text style={{ margin: 10, color: globalStyles.colors.darkGrey }}>
-            Stock: ##{' '}
+            Stock: # {selectedPart ? selectedPart.QtyOnHand : ''}
           </Text>
           <View>
             <Text style={styles.inputLabel}>Quantity</Text>
             <TextInput
               style={styles.input}
               keyboardType="numeric"
-              // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-              // value={formData?.confirm_password}
+              onChangeText={(text) => {
+                onSelectBins('quantity', text);
+                if (selectedPart && selectedPart.QtyOnHand < parseInt(text)) {
+                  setError((prev) => ({
+                    ...prev,
+                    quantity:
+                      'Quantity Must be less than or equal to the QtyOnHand',
+                  }));
+                } else {
+                  setError((prev) => ({
+                    ...prev,
+                    quantity: '',
+                  }));
+                }
+                if (!selectedPart) {
+                  setError((prev) => ({
+                    ...prev,
+                    quantity: 'Part Not Found',
+                  }));
+                }
+              }}
+              value={formData?.quantity}
               placeholder="Enter Quantity here"
             />
+            {error?.quantity ? (
+              <Text style={styles.errorText}>{error.quantity}</Text>
+            ) : null}
           </View>
           <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>To Warehouse</Text>
               <RNPickerSelect
-                selectedValue={target.warehouse}
+                selectedValue={formData.to_whse}
                 onValueChange={(itemValue) => {
-                  onSelectTarget(itemValue, 'warehouse');
+                  onSelectBins('to_whse', itemValue);
+                  formData.tobin = '';
+                  setBins((prev) => ({ ...prev, to: [] }));
+                  getBins('to', itemValue);
                 }}
                 items={warehouses.map((data) => ({
                   ...data,
@@ -208,11 +425,16 @@ const InventoryTransfer = () => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>To Bin</Text>
-              <TextInput
-                style={styles.input}
-                onChangeText={(text) => onSelectTarget(text, 'to_bin')}
-                value={target?.to_bin}
-                placeholder="Target Bin"
+              <RNPickerSelect
+                selectedValue={formData.tobin}
+                onValueChange={(itemValue) => {
+                  onSelectBins('to_bin', itemValue);
+                }}
+                items={bins.to.map((data) => ({
+                  ...data,
+                  label: data.BinNum,
+                  value: data.BinNum,
+                }))}
               />
             </View>
           </View>
@@ -270,5 +492,14 @@ const styles = StyleSheet.create({
   receiveButtonText: {
     color: 'white',
     textAlign: 'center',
+  },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginLeft: 5,
+    marginBottom: 7,
   },
 });

@@ -42,7 +42,6 @@ export default function Homepage() {
     AnalogyxBIClient.get({ endpoint })
       .then(({ json }) => {
         dispatch(setUserData(json));
-        console.log({ json });
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) =>

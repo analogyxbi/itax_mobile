@@ -15,7 +15,7 @@ const CustomDatatable = ({
   loading = false,
 }) => {
   const [rows, setRows] = useState(data);
-  console.log({ data, totalPages, onPageChange, label, page, columnHeaders });
+
   useEffect(() => {
     setRows(() => data);
   }, [data]);

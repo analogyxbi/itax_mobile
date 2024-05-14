@@ -124,7 +124,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       .then((res) => {
         let soup = new JSSoup(res.data);
         let csrf = soup.find('input', { id: 'csrf_token' }).attrs.value;
-        console.log({ csrf });
         setCsrf(csrf);
       })
       .catch((err) => console.log('csrf set err', err));

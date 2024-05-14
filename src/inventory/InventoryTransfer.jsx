@@ -3,43 +3,58 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 import { globalStyles } from '../style/globalStyles';
-import { Button } from 'react-native-paper';
-import ReusableAnimation from '../components/LottieFiles';
-import Transfer from '../../assets/Lottie/transfer.json';
 import Transferbackdrop from '../components/Loaders/Transferbackdrop';
 import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import RNPickerSelect from 'react-native-picker-select';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  setIsLoading,
+  setOnError,
+  setOnSuccess,
+  setWarehouses,
+} from './reducer/inventory';
+import { showSnackbar } from '../Snackbar/messageSlice';
+import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
+
 const InventoryTransfer = () => {
-  const [warehouses, setWarehouses] = useState([]);
+  const { warehouses, isLoading, onSuccess, onError } = useSelector(
+    (state) => state.inventory
+  );
+  const dispatch = useDispatch();
   const [current, setCurrent] = useState({});
   const [target, setTarget] = useState({});
   const [bins, setBins] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [onSuccess, setOnSuccess] = useState(false);
   const navigation = useNavigation();
   const animationRef = useRef(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const restartAnimation = () => {
     animationRef.current?.restartAnimation();
   };
 
   function initiateTransfer() {
-    setIsLoading(true);
+    dispatch(setIsLoading(true));
     // async code to transfer the part and bin
     setTimeout(() => {
-      setOnSuccess(true);
-    }, 5000);
+      // on Success
+      dispatch(setOnSuccess(true));
+      // on failed transfer
+      // dispatch(setOnError(true));
+    }, 2000);
   }
 
   function getWarehouse() {
+    setRefreshing(true);
     const postPayload = {
       epicor_endpoint:
         '/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description',
@@ -52,12 +67,19 @@ const InventoryTransfer = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          setWarehouses(() => json.data.value);
-          console.log({ json });
+          dispatch(setWarehouses(json.data.value));
+          setRefreshing(false);
+          dispatch(showSnackbar('Warehouse List refreshed'));
         })
         .catch((err) => {
           // setLoading(false);
-          console.log('Err', err);
+          setRefreshing(false);
+          dispatch(
+            showSnackbar(
+              'Error getting the list of warehouses',
+              JSON.stringify(err)
+            )
+          );
         });
     } catch (err) {
       console.log({ err });
@@ -65,7 +87,9 @@ const InventoryTransfer = () => {
   }
 
   useEffect(() => {
-    getWarehouse();
+    if (warehouses.length == 0) {
+      getWarehouse();
+    }
   }, []);
 
   function onSelectWarehouse(value, key) {
@@ -75,32 +99,6 @@ const InventoryTransfer = () => {
   function onSelectTarget(value, key) {
     setTarget((prev) => ({ ...prev, [key]: value }));
   }
-
-  //   function loadBins() {
-  //     console.log('GETING BINSSSSSSSS');
-  //     const postPayload = {
-  //       epicor_endpoint:
-  //         '/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum',
-  //       request_type: 'GET',
-  //     };
-  //     try {
-  //       AnalogyxBIClient.post({
-  //         endpoint: `/erp_woodland/resolve_api`,
-  //         postPayload,
-  //         stringify: false,
-  //       })
-  //         .then(({ json }) => {
-  //           setWhseBin(() => json.data.value);
-  //           console.log({ json });
-  //         })
-  //         .catch((err) => {
-  //           // setLoading(false);
-  //           console.log('Err', err);
-  //         });
-  //     } catch (err) {
-  //       console.log({ err });
-  //     }
-  //   }
 
   return (
     <View style={{ flex: 1 }}>
@@ -114,83 +112,112 @@ const InventoryTransfer = () => {
         </Pressable>
         <Text style={styles.heading}>Inventory Transfer</Text>
       </View>
-      <View style={styles.container}>
-        <Transferbackdrop
-          loading={isLoading && !onSuccess}
-          setLoading={setIsLoading}
-        />
-        <SuccessBackdrop
-          visible={onSuccess}
-          onDismiss={() => {
-            setTimeout(() => {
-              setOnSuccess(false);
-              setIsLoading(false);
-            }, 500);
-          }}
-        />
-        <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.inputLabel}>Current Warehouse</Text>
-            <RNPickerSelect
-              selectedValue={current.warehouse}
-              onValueChange={(itemValue) => {
-                onSelectWarehouse(itemValue, 'warehouse');
-                // loadBins(itemValue);
-              }}
-              items={warehouses.map((data) => ({
-                ...data,
-                label: data.WarehouseCode,
-                value: data.WarehouseCode,
-              }))}
-            />
+
+      <ScrollView
+        contentContainerStyle={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={getWarehouse} />
+        }
+      >
+        <View style={styles.container}>
+          <Transferbackdrop
+            loading={isLoading && !onSuccess}
+            setLoading={(value) => dispatch(setIsLoading(value))}
+          />
+          <SuccessBackdrop
+            visible={onSuccess}
+            onDismiss={() => {
+              setTimeout(() => {
+                dispatch(setOnSuccess(false));
+                dispatch(setIsLoading(false));
+              }, 500);
+            }}
+          />
+          <ErrorBackdrop
+            visible={onError}
+            onDismiss={() => {
+              setTimeout(() => {
+                dispatch(setOnError(false));
+                dispatch(setIsLoading(false));
+              }, 500);
+            }}
+          />
+
+          <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.inputLabel}>Current Warehouse</Text>
+              <RNPickerSelect
+                selectedValue={current.warehouse}
+                onValueChange={(itemValue) => {
+                  onSelectWarehouse(itemValue, 'warehouse');
+                  // loadBins(itemValue);
+                }}
+                items={warehouses.map((data) => ({
+                  ...data,
+                  label: data.WarehouseCode,
+                  value: data.WarehouseCode,
+                }))}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.inputLabel}>Current Bin</Text>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => onSelectWarehouse(text, 'curr_bin')}
+                value={current?.curr_bin}
+                placeholder="Current Bin"
+              />
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.inputLabel}>Current Bin</Text>
+          <View>
+            <Text style={styles.inputLabel}>Select Product</Text>
             <TextInput
               style={styles.input}
-              onChangeText={(text) => onSelectWarehouse(text, 'curr_bin')}
-              value={current?.curr_bin}
-              placeholder="Current Bin"
+              // onChangeText={(text) => onChangeText(text, 'confirm_password')}
+              // value={formData?.confirm_password}
+              placeholder="Select Product"
             />
           </View>
+          <Text style={{ margin: 10, color: globalStyles.colors.darkGrey }}>
+            Stock: ##{' '}
+          </Text>
+          <View>
+            <Text style={styles.inputLabel}>Quantity</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              // onChangeText={(text) => onChangeText(text, 'confirm_password')}
+              // value={formData?.confirm_password}
+              placeholder="Enter Quantity here"
+            />
+          </View>
+          <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.inputLabel}>To Warehouse</Text>
+              <RNPickerSelect
+                selectedValue={target.warehouse}
+                onValueChange={(itemValue) => {
+                  onSelectTarget(itemValue, 'warehouse');
+                }}
+                items={warehouses.map((data) => ({
+                  ...data,
+                  label: data.WarehouseCode,
+                  value: data.WarehouseCode,
+                }))}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.inputLabel}>To Bin</Text>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => onSelectTarget(text, 'to_bin')}
+                value={target?.to_bin}
+                placeholder="Target Bin"
+              />
+            </View>
+          </View>
         </View>
-        <View>
-          <Text style={styles.inputLabel}>Select Product</Text>
-          <TextInput
-            style={styles.input}
-            // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-            // value={formData?.confirm_password}
-            placeholder="Select Product"
-          />
-        </View>
-        <Text style={{ margin: 10, color: globalStyles.colors.darkGrey }}>
-          Stock: ##{' '}
-        </Text>
-        <View>
-          <Text style={styles.inputLabel}>Quantity</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-            // value={formData?.confirm_password}
-            placeholder="Enter Quantity here"
-          />
-        </View>
-        <View>
-          <Text style={styles.inputLabel}>Select Warehouse</Text>
-          <RNPickerSelect
-            selectedValue={target.warehouse}
-            onValueChange={(itemValue) => {
-              onSelectTarget(itemValue, 'warehouse');
-            }}
-            items={warehouses.map((data) => ({
-              ...data,
-              label: data.WarehouseCode,
-              value: data.WarehouseCode,
-            }))}
-          />
-        </View>
-      </View>
+      </ScrollView>
       <TouchableOpacity style={styles.receiveButton} onPress={initiateTransfer}>
         <Text style={styles.receiveButtonText}>Transfer</Text>
       </TouchableOpacity>

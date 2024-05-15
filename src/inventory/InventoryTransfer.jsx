@@ -18,16 +18,18 @@ import { AnalogyxBIClient } from '@analogyxbi/connection';
 import RNPickerSelect from 'react-native-picker-select';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  clearBinData,
   setIsLoading,
   setOnError,
   setOnSuccess,
   setWarehouses,
+  setWhseBins,
 } from './reducer/inventory';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 
 const InventoryTransfer = () => {
-  const { warehouses, isLoading, onSuccess, onError } = useSelector(
+  const { warehouses, isLoading, onSuccess, onError, binsData } = useSelector(
     (state) => state.inventory
   );
   const dispatch = useDispatch();
@@ -190,6 +192,7 @@ const InventoryTransfer = () => {
         .then(({ json }) => {
           setBins((prev) => ({ ...prev, [to]: json.data.value }));
           dispatch(showSnackbar(`Bins fetched for ${warehouse}`));
+          dispatch(setWhseBins({ warehouse, bins: json.data.value }));
           setRefreshing(false);
         })
         .catch((err) => {
@@ -288,7 +291,10 @@ const InventoryTransfer = () => {
           <RefreshControl
             title={'Please wait'}
             refreshing={refreshing}
-            onRefresh={getWarehouse}
+            onRefresh={() => {
+              dispatch(clearBinData());
+              getWarehouse();
+            }}
           />
         }
       >
@@ -325,7 +331,9 @@ const InventoryTransfer = () => {
                   onSelectBins('current_whse', itemValue);
                   formData.current_bin = '';
                   setBins((prev) => ({ ...prev, from: [] }));
-                  getBins('from', itemValue);
+                  if (!binsData[itemValue]) {
+                    getBins('from', itemValue);
+                  }
                 }}
                 items={warehouses.map((data) => ({
                   ...data,
@@ -341,11 +349,13 @@ const InventoryTransfer = () => {
                 onValueChange={(itemValue) => {
                   onSelectBins('current_bin', itemValue);
                 }}
-                items={bins.from.map((data) => ({
-                  ...data,
-                  label: data.BinNum,
-                  value: data.BinNum,
-                }))}
+                items={
+                  binsData[formData?.current_whse]?.map((data) => ({
+                    ...data,
+                    label: data.BinNum,
+                    value: data.BinNum,
+                  })) || []
+                }
               />
             </View>
           </View>
@@ -414,7 +424,9 @@ const InventoryTransfer = () => {
                   onSelectBins('to_whse', itemValue);
                   formData.tobin = '';
                   setBins((prev) => ({ ...prev, to: [] }));
-                  getBins('to', itemValue);
+                  if (!binsData[itemValue]) {
+                    getBins('to', itemValue);
+                  }
                 }}
                 items={warehouses.map((data) => ({
                   ...data,
@@ -430,11 +442,13 @@ const InventoryTransfer = () => {
                 onValueChange={(itemValue) => {
                   onSelectBins('to_bin', itemValue);
                 }}
-                items={bins.to.map((data) => ({
-                  ...data,
-                  label: data.BinNum,
-                  value: data.BinNum,
-                }))}
+                items={
+                  binsData[formData?.to_whse]?.map((data) => ({
+                    ...data,
+                    label: data.BinNum,
+                    value: data.BinNum,
+                  })) || []
+                }
               />
             </View>
           </View>

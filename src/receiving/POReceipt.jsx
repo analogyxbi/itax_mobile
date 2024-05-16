@@ -34,13 +34,17 @@ import { BarCodeScanner } from 'expo-barcode-scanner';
 import { ActivityIndicator, MD2Colors } from 'react-native-paper';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import _ from 'lodash';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import { Barcode } from 'expo-barcode-generator';
 import PrintBarcodeScreen from './PrintBarcodesScreen';
 import { generatePDF } from '../utils/PDFGenerator';
 import CustomDatatable from '../components/CustomDatatable';
 import LinesCard from '../components/LinesCard';
+import { setIsLoading, setOnError, setOnSuccess, setPOdataResponse } from './reducer/poReceipts';
+import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
+import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
+import Transferbackdrop from '../components/Loaders/Transferbackdrop';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -62,8 +66,9 @@ const initialFormdata = {
 };
 
 const POReceipt = () => {
+  const { podata, isLoading, onSuccess, onError } = useSelector(state => state.poReceipts);
+  const [localPoData, setLocalPoData] = useState({1:podata});
   const [hasPermission, setHasPermission] = useState(null);
-  const [poDataResponse, setpoDataResponse] = useState([]);
   const [warehouseCodes, setWarehouseCodes] = useState([]);
   const [isNewPackSlip, setIsNewpackslip] = useState(true);
   const [createPackslipLoading, setCreatepackslipLoading] = useState(false);
@@ -137,39 +142,13 @@ const POReceipt = () => {
   //     return <Text>No access to camera</Text>;
   // }
 
-  function getWhseBin() {
-    console.log('GETING BINSSSSSSSS');
-    const postPayload = {
-      epicor_endpoint:
-        '/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum',
-      request_type: 'GET',
-    };
-    try {
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload,
-        stringify: false,
-      })
-        .then(({ json }) => {
-          setWhseBin(() => json.data.value);
-          console.log({ json });
-        })
-        .catch((err) => {
-          // setLoading(false);
-          console.log('Err', err);
-        });
-    } catch (err) {
-      console.log({ err });
-    }
-  }
-
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
       setHasPermission(status === 'granted');
     };
-    getWhseBin();
     getBarCodeScannerPermissions();
+    setLocalPoData({})
   }, []);
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
@@ -276,7 +255,12 @@ const POReceipt = () => {
   }, [tabValue]);
 
   const getWareHouseList = (warehouseCode) => {
-    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$filter=WarehouseCode eq ${warehouseCode}`;
+    const filter = encodeURI(`WarehouseCode eq '${warehouseCode}'`);
+    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}&$top=1000`;
+    const postPayload = {
+      epicor_endpoint,
+      request_type: 'GET',
+    };
     // if (poNum) {
     //   let filterQuery = encodeURI(`PONum eq ${poNum}`);
     //   epicor_endpoint.concat(`&$filter=${filterQuery}`);
@@ -284,15 +268,17 @@ const POReceipt = () => {
     try {
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
-        postPayload: { epicor_endpoint, request_type: 'GET' },
+        postPayload,
         stringify: false,
       })
         .then(({ json }) => {
+          console.log(json.data.value)
           setWarehouseCodes(() => json.data.value);
           setBins(() => json.data.value);
           // setLoading(false);
         })
         .catch((err) => {
+          console.log(err)
           // setLoading(false);
         });
     } catch (err) {
@@ -333,7 +319,6 @@ const POReceipt = () => {
         PONum: POData[0]?.PONum,
         RowMod: 'A',
       };
-      console.log({ postData });
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -345,7 +330,6 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log('add packslip', json.data.value);
             dispatch(showSnackbar('Packslip added succesfully'));
             setCreatepackslipLoading(false);
             setTabvalue('2');
@@ -367,38 +351,49 @@ const POReceipt = () => {
 
   const searchPoNum = (page) => {
     let pageValue = page ? page : customTableState.page;
-    console.log({ pageValue, page });
-    setIsPOsLoading(true);
-    // if (vendorNameSearch) {
-    setIsNewpackslip(false);
-    let epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$select=PONum,VendorName&$skip=${pageValue}&$top=${customTableState.limit}`;
-    if (vendorNameSearch && vendorNameSearch.length > 0) {
-      const str = encodeURI(`startswith(VendorName,${vendorNameSearch})`);
-      epicor_endpoint.concat(`&$filter=${str}`);
-    }
-    console.log({ epicor_endpoint });
-    // const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=startswith(VendorName,${vendorNameSearch})`;
-    try {
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload: { epicor_endpoint, request_type: 'GET' },
-        stringify: false,
-      })
-        .then(({ json }) => {
-          setpoDataResponse(() => json.data.value);
-          setFilteredPos(json.data.value);
-          setCustomTableState((prev) => ({
-            ...prev,
-            page: pageValue,
-          }));
-          setIsPOsLoading(false);
+    console.log({ localPoData })
+    if (_.isEmpty(localPoData[pageValue])) {
+      setIsPOsLoading(true);
+      // if (vendorNameSearch) {
+      setIsNewpackslip(false);
+      let epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$select=PONum,VendorName&$skip=${pageValue}&$top=${customTableState.limit}`;
+      if (vendorNameSearch && vendorNameSearch.length > 0) {
+        const str = encodeURI(`startswith(VendorName,${vendorNameSearch})`);
+        epicor_endpoint.concat(`&$filter=${str}`);
+      }
+      // const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=startswith(VendorName,${vendorNameSearch})`;
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: { epicor_endpoint, request_type: 'GET' },
+          stringify: false,
         })
-        .catch((err) => {
-          console.log({ err });
-          setIsPOsLoading(false);
-        });
-    } catch (err) {
-      console.log({ err });
+          .then(({ json }) => {
+            dispatch(setPOdataResponse(json.data.value))
+            setLocalPoData(prev => ({ ...prev, [pageValue]: json?.data?.value }))
+            setFilteredPos(json.data.value);
+            setCustomTableState((prev) => ({
+              ...prev,
+              page: pageValue,
+            }));
+            setIsPOsLoading(false);
+          })
+          .catch((err) => {
+            console.log({ err });
+            setIsPOsLoading(false);
+          });
+      } catch (err) {
+        console.log({ err });
+        setIsPOsLoading(false);
+      }
+    } else {
+      setIsPOsLoading(true);
+      setFilteredPos(localPoData[pageValue]);
+      dispatch(setPOdataResponse(localPoData[pageValue]))
+      setCustomTableState((prev) => ({
+        ...prev,
+        page: pageValue,
+      }));
       setIsPOsLoading(false);
     }
     // } else {
@@ -410,7 +405,7 @@ const POReceipt = () => {
   const onChangeSearchQuery = (val) => {
     setVendorNameSearch(val);
     if (val) {
-      const filteredData = poDataResponse?.filter((data) =>
+      const filteredData = podata?.filter((data) =>
         data?.VendorName?.toLowerCase().includes(val.toLowerCase())
       );
       setFilteredPos(filteredData);
@@ -419,7 +414,8 @@ const POReceipt = () => {
 
   useEffect(() => {
     // getWareHouseList()
-    if (showPOModal) {
+    console.log({podata})
+    if (showPOModal && _.isEmpty(localPoData) ) {
       searchPoNum();
     }
   }, [showPOModal]);
@@ -436,6 +432,7 @@ const POReceipt = () => {
   };
 
   const handleSave = () => {
+    dispatch(setIsLoading(true));
     const postPayload = {
       Company: POData[0]?.Company,
       VendorNum: POData[0]?.VendorNum,
@@ -452,8 +449,13 @@ const POReceipt = () => {
       InputOurQty: formData.input,
       RowMod: 'A',
     };
-    console.log({ postPayload });
-    setSaved(true);
+    if (true) {
+      console.log({ postPayload });
+      setSaved(true);
+      dispatch(setOnSuccess(true));
+    } else {
+      dispatch(setOnError(true));
+    }
   };
 
   const onSearchPoChange = (text) => {
@@ -482,6 +484,29 @@ const POReceipt = () => {
         </View>
       ) : (
         <View>
+          <Transferbackdrop
+            loading={isLoading && !onSuccess}
+            setLoading={(value) => dispatch(setIsLoading(value))}
+          />
+          <SuccessBackdrop
+            visible={onSuccess}
+            onDismiss={() => {
+              setTimeout(() => {
+                dispatch(setOnSuccess(false));
+                dispatch(setIsLoading(false));
+              }, 500);
+            }}
+          />
+          <ErrorBackdrop
+            visible={onError}
+            onDismiss={() => {
+              setTimeout(() => {
+                dispatch(setOnError(false));
+                dispatch(setIsLoading(false));
+              }, 500);
+            }}
+          />
+
           <View style={styles.header}>
             <Pressable onPress={() => navigation.goBack()}>
               <Ionicons
@@ -537,7 +562,7 @@ const POReceipt = () => {
                 {
                   value: '3',
                   label: 'Line',
-                  // disabled: _.isEmpty(currentLine),
+                  disabled: _.isEmpty(currentLine),
                   icon: () => (
                     <Feather
                       name="list"
@@ -677,7 +702,7 @@ const POReceipt = () => {
                     <Text style={{ color: globalStyles.colors.primary, marginRight: 10 }}>{isNewPackSlip ? "Edit Existing Packslips" : "Enter New Packslip"}</Text>
                   </TouchableOpacity> */}
                 </View>
-                {packslipLoading ? (
+                {/* {packslipLoading ? (
                   <ActivityIndicator
                     animating={true}
                     color={MD2Colors.red800}
@@ -698,7 +723,6 @@ const POReceipt = () => {
                           styles.poModalHeader,
                         ]}
                       >
-                        {/* <Text style={{ color: "white" }}>PoNum</Text> */}
                         <Text style={{ color: 'white' }}>Packslip</Text>
                         <Text style={{ color: 'white' }}>Vendor Name</Text>
                       </View>
@@ -729,7 +753,7 @@ const POReceipt = () => {
                       </ScrollView>
                     </View>
                   )
-                )}
+                )} */}
                 <TextInput
                   style={styles.input}
                   // editable={!loading}
@@ -884,7 +908,7 @@ const POReceipt = () => {
                     <TextInput
                       style={styles.input}
                       onChangeText={(text) => onChangeText(text, 'note')}
-                      value={formData?.note}
+                      value={formData?.note || currentLine?.POLineLineDesc}
                       multiline={true}
                       placeholder="Note"
                     />

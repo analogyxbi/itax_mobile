@@ -19,6 +19,7 @@ import RNPickerSelect from 'react-native-picker-select';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   clearBinData,
+  setInitialState,
   setIsLoading,
   setOnError,
   setOnSuccess,
@@ -27,6 +28,15 @@ import {
 } from './reducer/inventory';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
+import PopUpDialog from '../components/PopUpDialog';
+
+const initForm = {
+  current_whse: null,
+  current_bin: null,
+  quantity: 0,
+  to_whse: null,
+  to_bin: null,
+};
 
 const InventoryTransfer = () => {
   const { warehouses, isLoading, onSuccess, onError, binsData } = useSelector(
@@ -49,6 +59,7 @@ const InventoryTransfer = () => {
     animationRef.current?.restartAnimation();
   };
   const [currentParts, setCurrentParts] = useState([]);
+  const [submitConfirm, setSubmitConfirm] = useState(false);
 
   function createPayload() {
     const currentDate = new Date();
@@ -88,6 +99,11 @@ const InventoryTransfer = () => {
   }
 
   function initiateTransfer() {
+    setSubmitConfirm(false);
+    if (formData.quantity <= 0 || selectedPart.QtyOnHand <= formData.quantity) {
+      return dispatch(showSnackbar('Error setting Quantity'));
+    }
+
     dispatch(setIsLoading(true));
     const data = createPayload();
     const epicor_endpoint = `/Erp.BO.InvTransferSvc/CommitTransfer`;
@@ -108,6 +124,7 @@ const InventoryTransfer = () => {
             ...prev,
             QtyOnHand: prev.QtyOnHand - parseInt(formData.quantity),
           }));
+          setFormData({});
         })
         .catch((err) => {
           err.json().then((res) => {
@@ -218,6 +235,7 @@ const InventoryTransfer = () => {
 
   function getWarehouse() {
     setRefreshing(true);
+
     const postPayload = {
       epicor_endpoint:
         '/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description',
@@ -272,6 +290,21 @@ const InventoryTransfer = () => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }
 
+  function handleValidate() {
+    if (
+      !formData ||
+      !formData.current_whse ||
+      !formData.current_bin ||
+      !formData.to_whse ||
+      !formData.to_bin ||
+      !formData.quantity ||
+      formData.quantity == 0
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.header}>
@@ -292,7 +325,9 @@ const InventoryTransfer = () => {
             title={'Please wait'}
             refreshing={refreshing}
             onRefresh={() => {
-              dispatch(clearBinData());
+              setFormData({});
+              dispatch(setInitialState());
+              setCurrentParts([]);
               getWarehouse();
             }}
           />
@@ -326,11 +361,11 @@ const InventoryTransfer = () => {
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Current Warehouse</Text>
               <RNPickerSelect
-                selectedValue={formData.current_whse}
+                selectedValue={formData.current_whse || null}
                 onValueChange={(itemValue) => {
-                  onSelectBins('current_whse', itemValue);
                   formData.current_bin = '';
-                  setBins((prev) => ({ ...prev, from: [] }));
+                  formData.current_part = '';
+                  onSelectBins('current_whse', itemValue);
                   if (!binsData[itemValue]) {
                     getBins('from', itemValue);
                   }
@@ -348,6 +383,7 @@ const InventoryTransfer = () => {
                 selectedValue={formData.current_bin}
                 onValueChange={(itemValue) => {
                   onSelectBins('current_bin', itemValue);
+                  formData.current_part = '';
                 }}
                 items={
                   binsData[formData?.current_whse]?.map((data) => ({
@@ -356,6 +392,7 @@ const InventoryTransfer = () => {
                     value: data.BinNum,
                   })) || []
                 }
+                placeholder=""
               />
             </View>
           </View>
@@ -423,7 +460,6 @@ const InventoryTransfer = () => {
                 onValueChange={(itemValue) => {
                   onSelectBins('to_whse', itemValue);
                   formData.tobin = '';
-                  setBins((prev) => ({ ...prev, to: [] }));
                   if (!binsData[itemValue]) {
                     getBins('to', itemValue);
                   }
@@ -452,9 +488,22 @@ const InventoryTransfer = () => {
               />
             </View>
           </View>
+          <PopUpDialog
+            visible={submitConfirm}
+            setVisible={setSubmitConfirm}
+            handleCancel={() => setSubmitConfirm(false)}
+            handleOk={initiateTransfer}
+            title="Transfer Stock"
+            message={'Are you sure you want to tranfer the stock?'}
+          />
         </View>
       </ScrollView>
-      <TouchableOpacity style={styles.receiveButton} onPress={initiateTransfer}>
+
+      <TouchableOpacity
+        style={styles.receiveButton}
+        onPress={() => setSubmitConfirm(true)}
+        disabled={handleValidate()}
+      >
         <Text style={styles.receiveButtonText}>Transfer</Text>
       </TouchableOpacity>
     </View>

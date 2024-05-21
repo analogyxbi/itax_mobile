@@ -35,11 +35,13 @@ import POReceipt from './src/receiving/POReceipt';
 import { globalStyles } from './src/style/globalStyles';
 import InventoryTransfer from './src/inventory/InventoryTransfer';
 import { hideSnackbar } from './src/Snackbar/messageSlice';
-
+import * as SplashScreen from 'expo-splash-screen';
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
+
+SplashScreen.preventAutoHideAsync(); // Prevent the splash screen from auto-hiding
 
 function ReceivingNavigator() {
   return (
@@ -169,12 +171,13 @@ const RootNavigation = () => {
       const url = '192.168.12.86:8088';
       setupClient(csrf, url);
       dispatch(login({ csrf, url }));
-      AsyncStorage.multiSet([
+      await AsyncStorage.multiSet([
         ['csrf', csrf],
         ['url', url],
       ]);
       setIsAuthenticated(true);
     }
+    await SplashScreen.hideAsync();
   };
 
   useEffect(() => {

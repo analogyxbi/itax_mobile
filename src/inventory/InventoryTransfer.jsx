@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -26,9 +26,12 @@ import {
   setWarehouses,
   setWhseBins,
 } from './reducer/inventory';
+import { Button } from 'react-native-paper';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 import PopUpDialog from '../components/PopUpDialog';
+import Icon from '../components/Icons';
+import { generatePDF } from '../utils/PDFGenerator';
 
 const initForm = {
   current_whse: null,
@@ -60,6 +63,7 @@ const InventoryTransfer = () => {
   };
   const [currentParts, setCurrentParts] = useState([]);
   const [submitConfirm, setSubmitConfirm] = useState(false);
+  const [enablePrint, setEnablePrint] = useState(false);
 
   function createPayload() {
     const currentDate = new Date();
@@ -125,6 +129,7 @@ const InventoryTransfer = () => {
             QtyOnHand: prev.QtyOnHand - parseInt(formData.quantity),
           }));
           setFormData({});
+          setEnablePrint(true);
         })
         .catch((err) => {
           err.json().then((res) => {
@@ -498,14 +503,26 @@ const InventoryTransfer = () => {
           />
         </View>
       </ScrollView>
-
-      <TouchableOpacity
-        style={styles.receiveButton}
-        onPress={() => setSubmitConfirm(true)}
-        disabled={handleValidate()}
-      >
-        <Text style={styles.receiveButtonText}>Transfer</Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <Button
+          buttonColor={globalStyles.colors.success}
+          icon="transfer"
+          mode="contained"
+          onPress={() => setSubmitConfirm(true)}
+          disabled={handleValidate()}
+        >
+          Save
+        </Button>
+        <Button
+          buttonColor={globalStyles.colors.success}
+          icon="printer"
+          mode="contained"
+          disabled={!enablePrint}
+          onPress={() => generatePDF('', {})}
+        >
+          Print Tags
+        </Button>
+      </View>
     </View>
   );
 };
@@ -514,6 +531,7 @@ export default InventoryTransfer;
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 10,
   },
   header: {
@@ -535,7 +553,6 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 5,
     borderColor: globalStyles.colors.grey,
-    borderWidth: 1,
   },
   inputLabel: {
     color: globalStyles.colors.darkGrey,
@@ -547,10 +564,8 @@ const styles = StyleSheet.create({
     backgroundColor: globalStyles.colors.success,
     padding: 10,
     borderRadius: 5,
-    position: 'absolute',
-    bottom: 10,
-    marginLeft: '5%',
-    width: '90%',
+    margin: 10,
+    flex: 1,
   },
   receiveButtonText: {
     color: 'white',
@@ -564,5 +579,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 5,
     marginBottom: 7,
+  },
+  footer: {
+    width: '100%',
+    padding: 10,
+    backgroundColor: '#fff',
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 0,
   },
 });

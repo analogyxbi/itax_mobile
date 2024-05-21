@@ -1,0 +1,51 @@
+// Api to save the receipt is /Erp.BO.ReceiptSvc/UpdateMaster
+
+export const receiptSaveJson = {
+  RunChkLCAmtBeforeUpdate: true,
+  RunChkHdrBeforeUpdate: true,
+  ipPurPoint: '',
+  ipVendorNum: 1,
+  ipPackSlip: 'packslip2',
+  ipPackLine: 1,
+  lRunChkDtl: true,
+  lRunChkDtlCompliance: false,
+  lRunCheckCompliance: false,
+  lRunPreUpdate: true,
+  lRunCreatePartLot: true,
+  partNum: '26883',
+  lotNum: '',
+  lOkToUpdate: false,
+  ds: {
+    RcvHead: [
+      {
+        Company: 'WOOD01',
+        VendorNum: 1,
+        PackSlip: 'packslip2',
+        ReceiptDate: '2024-05-13',
+        PONum: 26883,
+        POType: 'Std',
+        ArrivedDate: '2024-05-13',
+        RowMod: 'A',
+      },
+    ],
+    RcvDtl: [
+      {
+        Company: 'WOOD01',
+        VendorNum: 1,
+        PackSlip: 'packslip2',
+        PackLine: 1,
+        PartNum: 'B61',
+        OurQty: '1',
+        IUM: 'EA',
+        PONum: 26883,
+        POLine: 1,
+        PORelNum: 1,
+        ReceiptType: 'P',
+        ReceivedTo: 'PUR-STK',
+        POType: 'Std',
+        QtyOption: 'Vendor',
+        RowMod: 'A',
+      },
+    ],
+  },
+};

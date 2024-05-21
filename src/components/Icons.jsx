@@ -44,9 +44,7 @@ export const Icons = {
 const Icon = ({ type, name, color, size, style }) => {
   const Tag = type;
   if (type) {
-    return (
-      <Tag name={name} size={size || fontSize} color={color} style={style} />
-    );
+    return <Tag name={name} size={size} color={color} style={style} />;
   }
   return null;
 };

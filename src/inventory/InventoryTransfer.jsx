@@ -32,6 +32,7 @@ import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 import PopUpDialog from '../components/PopUpDialog';
 import Icon from '../components/Icons';
 import { generatePDF } from '../utils/PDFGenerator';
+import { BarCodeScanner } from 'expo-barcode-scanner';
 
 const initForm = {
   current_whse: null,
@@ -64,6 +65,52 @@ const InventoryTransfer = () => {
   const [currentParts, setCurrentParts] = useState([]);
   const [submitConfirm, setSubmitConfirm] = useState(false);
   const [enablePrint, setEnablePrint] = useState(false);
+  const [hasPermission, setHasPermission] = useState(null);
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [scanned, setScanned] = useState(false);
+
+  const openScanner = () => {
+    setScannerVisible(true);
+    setScanned(false);
+  };
+  const closeScanner = () => {
+    setScannerVisible(false);
+  };
+
+  useEffect(() => {
+    const getBarCodeScannerPermissions = async () => {
+      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      setHasPermission(status === 'granted');
+    };
+    getBarCodeScannerPermissions();
+  }, []);
+
+  const handleBarCodeScanned = ({ type, data }) => {
+    setScanned(true);
+    if (data.startsWith('http')) {
+      Alert.alert(
+        'Open URL',
+        `Do you want to open this URL?\n${data}`,
+        [
+          {
+            text: 'Cancel',
+            onPress: () => setScanned(false),
+            style: 'cancel',
+          },
+          {
+            text: 'Open',
+            onPress: () => {
+              setScanned(false);
+              Linking.openURL(data);
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } else {
+      alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+    }
+  };
 
   function createPayload() {
     const currentDate = new Date();
@@ -308,6 +355,28 @@ const InventoryTransfer = () => {
       return true;
     }
     return false;
+  }
+
+  if (scannerVisible) {
+    return (
+      <View style={{ flex: 1 }}>
+        <BarCodeScanner
+          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.bottomButtonsContainer}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setScanned(false)}
+          >
+            <Text style={styles.closeButtonText}>Scan Again</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.closeButton} onPress={closeScanner}>
+            <Text style={styles.closeButtonText}>Close Scanner</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -590,5 +659,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     position: 'absolute',
     bottom: 0,
+  },
+  closeButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  bottomButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 'auto',
+  },
+  closeButtonText: {
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

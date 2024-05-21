@@ -153,6 +153,11 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       {/* <Stack.Screen name="Receiving" component={POReceipt} /> */}
       <Stack.Screen name="po_reciept" component={POReceipt} />
       <Stack.Screen name="inventory_transfer" component={InventoryTransfer} />
+      <Stack.Screen name="cycle_count_period" component={CycleCountPeriod} />
+      <Stack.Screen name="po_reciept" component={POReceipt} />
+      <Stack.Screen name="inventory_transfer" component={InventoryTransfer} />
+      <Stack.Screen name="inventory_count" component={InventoryCount} />
+      <Stack.Screen name="inventory_cycle_schedule" component={CycleSchedule} />
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );

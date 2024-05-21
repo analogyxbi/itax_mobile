@@ -1,4 +1,8 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  AntDesign,
+  Ionicons,
+  MaterialCommunityIcons,
+} from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -430,7 +434,32 @@ const InventoryTransfer = () => {
               }, 500);
             }}
           />
-
+          <View
+            style={[
+              globalStyles.dFlexR,
+              { justifyContent: 'flex-end', marginBottom: 20 },
+            ]}
+          >
+            <TouchableOpacity style={styles.closeButton} onPress={openScanner}>
+              <Text
+                style={[
+                  styles.closeButtonText,
+                  {
+                    color: globalStyles.colors.primary,
+                    fontWeight: 600,
+                    fontSize: 16,
+                  },
+                ]}
+              >
+                {' Scan Code '}
+                <AntDesign
+                  name="scan1"
+                  size={24}
+                  color={globalStyles.colors.darkGrey}
+                />
+              </Text>
+            </TouchableOpacity>
+          </View>
           <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>Current Warehouse</Text>

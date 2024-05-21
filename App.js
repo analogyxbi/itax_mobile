@@ -36,6 +36,9 @@ import { globalStyles } from './src/style/globalStyles';
 import InventoryTransfer from './src/inventory/InventoryTransfer';
 import { hideSnackbar } from './src/Snackbar/messageSlice';
 import * as SplashScreen from 'expo-splash-screen';
+import CycleCountPeriod from './src/inventory/inventoryCount/CycleCountPeriod';
+import InventoryCount from './src/inventory/inventoryCount';
+import CycleSchedule from './src/inventory/inventoryCount/CycleSchedule';
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
@@ -154,8 +157,6 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="po_reciept" component={POReceipt} />
       <Stack.Screen name="inventory_transfer" component={InventoryTransfer} />
       <Stack.Screen name="cycle_count_period" component={CycleCountPeriod} />
-      <Stack.Screen name="po_reciept" component={POReceipt} />
-      <Stack.Screen name="inventory_transfer" component={InventoryTransfer} />
       <Stack.Screen name="inventory_count" component={InventoryCount} />
       <Stack.Screen name="inventory_cycle_schedule" component={CycleSchedule} />
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}

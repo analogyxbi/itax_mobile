@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 const HomepageIcon = ({ icon, bgcolor, name, onPress }) => {
     const navigation = useNavigation();
     return (
-        <View style={{ width: "21%", margin: 5 }}>
+        <View style={{ width: "47%", margin: 5 }}>
             <TouchableOpacity onPress={onPress} style={[styles.IconContainer, { backgroundColor: bgcolor }]}>
                 {icon}
                 <Text style={styles.iconName}>{name}</Text>
@@ -19,7 +19,7 @@ const HomepageIcon = ({ icon, bgcolor, name, onPress }) => {
 const styles = StyleSheet.create({
     IconContainer: {
         width: "100%",
-        height: 100,
+        height: 200,
         borderRadius: 10,
         alignItems: "center",
         padding: 10,
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: globalStyles.colors.darkGrey,
         // fontWeight: "600",
-        fontSize: 10,
+        fontSize: 12,
     }
 });
 

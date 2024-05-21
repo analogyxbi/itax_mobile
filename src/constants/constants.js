@@ -29,7 +29,7 @@ export const drawerMenu = [
     route: 'Settings',
     menuList: [
       { title: 'Inventory Transfer', screen: 'inventory_transfer' },
-      { title: 'Inventory Count', screen: 'po_reciept' },
+      { title: 'Inventory Count', screen: 'inventory_count' },
       { title: 'Tracker', screen: 'po_reciept' },
       { title: 'Empty BIN', screen: 'po_reciept' },
     ]

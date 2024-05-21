@@ -89,12 +89,8 @@ export default function Homepage() {
         />
         <HomepageIcon
           name="Inventory Count"
-          icon={
-            <MaterialIcons
-              name="production-quantity-limits"
-              style={styles.iconImage}
-            />
-          }
+          onPress={() => navigation.navigate('inventory_count')}
+          icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage}/>}
         />
         <HomepageIcon
           name="PO Receipt"
@@ -105,19 +101,6 @@ export default function Homepage() {
           name="Job Receipt"
           icon={<Ionicons name="receipt" style={styles.iconImage} />}
         />
-        {/* <HomepageIcon
-          name="Inventory Transfer"
-          icon={<MaterialIcons name="inventory" style={styles.iconImage} />}
-        />
-        <HomepageIcon
-          name="Inventory Count"
-          icon={
-            <MaterialIcons
-              name="production-quantity-limits"
-              style={styles.iconImage}
-            />
-          }
-        /> */}
       </View>
     </View>
   );
@@ -195,6 +178,6 @@ const styles = StyleSheet.create({
   },
   iconImage: {
     color: globalStyles.colors.success,
-    fontSize: 50,
+    fontSize: 100,
   },
 });

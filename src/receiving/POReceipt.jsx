@@ -430,7 +430,7 @@ const POReceipt = () => {
     setTabvalue('3');
   };
 
-  const handleSave = () => {
+  const handleSave = (reverse) => {
     dispatch(setIsLoading(true));
     const today = new Date();
     const postPayload = {
@@ -453,18 +453,19 @@ const POReceipt = () => {
           ReceiptDate: today.toISOString(),
           Invoiced: true,
           PONum: POData[0]?.PONum,
-          AutoReceipt: true,
+          AutoReceipt: false,
           POType: POData[0]?.POType,
-          Received: true,
+          Received: reverse,
           ReceivedTo: 'PUR-STK',
           ReceivedComplete: false,
           ArrivedDate: today.toISOString(),
           VendorQty: currentLine?.RelQty,
+          PORelArrivedQty: formData?.input,
           POLine: currentLine?.POLine,
           PORelNum: currentLine?.PORelNum,
           PartNum: currentLine?.POLinePartNum,
           BinNum: formData?.BinNum,
-          EnableBin: false,
+          EnableBin: true,
           WareHouseCode: currentLine?.WarehouseCode,
           // JobSeqType: currentLine?.JobSeqType,
           // JobSeq: currentLine?.JobSeq,
@@ -472,10 +473,11 @@ const POReceipt = () => {
           InputOurQty: formData.input,
           IUM: currentLine?.IUM,
           PUM: currentLine?.PUM,
-          RowMod: 'A',
+          RowMod: !reverse ? 'U':'A',
         },
       ],
     };
+
     console.log({postPayload})
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
     AnalogyxBIClient.post({
@@ -992,7 +994,7 @@ const POReceipt = () => {
                       buttonColor={globalStyles.colors.primary}
                       mode="contained"
                       // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
-                      onPress={() => console.log('Pressed')}
+                      onPress={()=>handleSave(false)}
                     >
                       PO Reversal
                     </Button>
@@ -1000,7 +1002,7 @@ const POReceipt = () => {
                       buttonColor={globalStyles.colors.success}
                       icon="floppy"
                       mode="contained"
-                      onPress={handleSave}
+                      onPress={()=>handleSave(true)}
                     >
                       Save
                     </Button>

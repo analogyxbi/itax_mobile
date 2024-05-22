@@ -440,29 +440,19 @@ const InventoryTransfer = () => {
               { justifyContent: 'flex-end', marginBottom: 20 },
             ]}
           >
-            <TouchableOpacity style={styles.closeButton} onPress={openScanner}>
-              <Text
-                style={[
-                  styles.closeButtonText,
-                  {
-                    color: globalStyles.colors.primary,
-                    fontWeight: 600,
-                    fontSize: 16,
-                  },
-                ]}
-              >
-                {' Scan Code '}
-                <AntDesign
-                  name="scan1"
-                  size={24}
-                  color={globalStyles.colors.darkGrey}
-                />
-              </Text>
-            </TouchableOpacity>
           </View>
           <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.inputLabel}>Current Warehouse</Text>
+              <View style={globalStyles.dFlexR}>
+                <Text style={styles.inputLabel}>Current Warehouse </Text>
+                <TouchableOpacity onPress={openScanner}>
+                  <AntDesign
+                    name="scan1"
+                    size={24}
+                    color={globalStyles.colors.darkGrey}
+                  />
+                </TouchableOpacity>
+              </View>
               <RNPickerSelect
                 selectedValue={formData.current_whse || null}
                 onValueChange={(itemValue) => {
@@ -481,7 +471,16 @@ const InventoryTransfer = () => {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.inputLabel}>Current Bin</Text>
+              <View style={globalStyles.dFlexR}>
+                <Text style={styles.inputLabel}>Current Bin </Text>
+                <TouchableOpacity onPress={openScanner}>
+                  <AntDesign
+                    name="scan1"
+                    size={24}
+                    color={globalStyles.colors.darkGrey}
+                  />
+                </TouchableOpacity>
+              </View>
               <RNPickerSelect
                 selectedValue={formData.current_bin}
                 onValueChange={(itemValue) => {
@@ -500,7 +499,16 @@ const InventoryTransfer = () => {
             </View>
           </View>
           <View>
-            <Text style={styles.inputLabel}>Select Product</Text>
+            <View style={globalStyles.dFlexR}>
+              <Text style={styles.inputLabel}>Select Product </Text>
+              <TouchableOpacity onPress={openScanner}>
+                <AntDesign
+                  name="scan1"
+                  size={24}
+                  color={globalStyles.colors.darkGrey}
+                />
+              </TouchableOpacity>
+            </View>
             <RNPickerSelect
               selectedValue={formData.current_part}
               onValueChange={(itemValue) => {

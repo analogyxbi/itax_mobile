@@ -414,7 +414,6 @@ const POReceipt = () => {
 
   useEffect(() => {
     // getWareHouseList()
-    console.log({podata})
     if (showPOModal && _.isEmpty(localPoData) ) {
       searchPoNum();
     }
@@ -433,29 +432,65 @@ const POReceipt = () => {
 
   const handleSave = () => {
     dispatch(setIsLoading(true));
+    const today = new Date();
     const postPayload = {
       Company: POData[0]?.Company,
       VendorNum: POData[0]?.VendorNum,
+      PurPoint: '',
       PackSlip: packSLipNUm,
-      PackLine: currentLine,
-      OurQty: formData.input,
-      IUM: currentLine?.IUM,
-      ReceiptType: 'P',
-      TranType: 'PUR-STK',
-      PONum: POData[0]?.PONum,
-      POLine: currentLine?.POLine,
-      PORelNum: currentLine?.PORelNum,
-      Received: true,
-      InputOurQty: formData.input,
+      ReceiptDate: today.toISOString(),
+      SaveForInvoicing: true,
+      Invoiced: true,
       RowMod: 'A',
+      ReceivePerson: 'analogyx1',
+      RcvDtls: [
+        {
+          Company: POData[0]?.Company,
+          VendorNum: POData[0]?.VendorNum,
+          PurPoint: '',
+          PackSlip: packSLipNUm,
+          // PackLine: currentLine,
+          ReceiptDate: today.toISOString(),
+          Invoiced: true,
+          PONum: POData[0]?.PONum,
+          AutoReceipt: true,
+          POType: POData[0]?.POType,
+          Received: true,
+          ReceivedTo: 'PUR-STK',
+          ReceivedComplete: false,
+          ArrivedDate: today.toISOString(),
+          VendorQty: currentLine?.RelQty,
+          POLine: currentLine?.POLine,
+          PORelNum: currentLine?.PORelNum,
+          PartNum: currentLine?.POLinePartNum,
+          BinNum: formData?.BinNum,
+          EnableBin: false,
+          WareHouseCode: currentLine?.WarehouseCode,
+          // JobSeqType: currentLine?.JobSeqType,
+          // JobSeq: currentLine?.JobSeq,
+          OurQty: formData.input,
+          InputOurQty: formData.input,
+          IUM: currentLine?.IUM,
+          PUM: currentLine?.PUM,
+          RowMod: 'A',
+        },
+      ],
     };
-    if (true) {
-      console.log({ postPayload });
-      setSaved(true);
-      dispatch(setOnSuccess(true));
-    } else {
-      dispatch(setOnError(true));
-    }
+    console.log({postPayload})
+    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: { epicor_endpoint, request_type: 'POST', data: JSON.stringify(postPayload) },
+      stringify: false,
+    })
+      .then(({ json }) => {
+        console.log(json)
+        setSaved(true);
+        dispatch(setOnSuccess(true));
+      }).catch(err => {
+        dispatch(setOnError(true));
+        console.log(err)
+      })
   };
 
   const onSearchPoChange = (text) => {
@@ -945,6 +980,7 @@ const POReceipt = () => {
                       />
                     </View>
                   </View>
+                  {/* <TouchableOpacity style={styles.reverse}><Text style={{color:"white", textAlign:"center", fontSize:12}}>PO Reversal</Text></TouchableOpacity> */}
                   <View
                     style={[
                       globalStyles.dFlexR,
@@ -952,14 +988,14 @@ const POReceipt = () => {
                       { padding: 5 },
                     ]}
                   >
-                    {/* <Button
+                    <Button
                       buttonColor={globalStyles.colors.primary}
-                      icon="receipt"
                       mode="contained"
+                      // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
                       onPress={() => console.log('Pressed')}
                     >
-                      PO
-                    </Button> */}
+                      PO Reversal
+                    </Button>
                     <Button
                       buttonColor={globalStyles.colors.success}
                       icon="floppy"
@@ -1080,6 +1116,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 50,
   },
+  reverse: {
+    backgroundColor: globalStyles.colors.primary,
+    padding: 3,
+    width: 80,
+    alignSelf: "flex-end",
+    borderRadius: 50,
+    marginVertical: 10
+  }
 });
 
 export default POReceipt;

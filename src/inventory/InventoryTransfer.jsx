@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
 import { globalStyles } from '../style/globalStyles';
 import Transferbackdrop from '../components/Loaders/Transferbackdrop';
@@ -35,8 +36,10 @@ import { showSnackbar } from '../Snackbar/messageSlice';
 import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 import PopUpDialog from '../components/PopUpDialog';
 import Icon from '../components/Icons';
-import { generatePDF } from '../utils/PDFGenerator';
+import { generatTransferPDF, generatePDF } from '../utils/PDFGenerator';
 import { BarCodeScanner } from 'expo-barcode-scanner';
+import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
+import SelectInput from '../components/SelectInput';
 
 const initForm = {
   current_whse: null,
@@ -72,6 +75,9 @@ const InventoryTransfer = () => {
   const [hasPermission, setHasPermission] = useState(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [scannedBarcodes, setScannedBarcodes] = useState([]);
+  const [lastScannedTime, setLastScannedTime] = useState(null);
+  const [cameraState, setCameraState] = useState(null);
 
   const openScanner = () => {
     setScannerVisible(true);
@@ -88,33 +94,6 @@ const InventoryTransfer = () => {
     };
     getBarCodeScannerPermissions();
   }, []);
-
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true);
-    if (data.startsWith('http')) {
-      Alert.alert(
-        'Open URL',
-        `Do you want to open this URL?\n${data}`,
-        [
-          {
-            text: 'Cancel',
-            onPress: () => setScanned(false),
-            style: 'cancel',
-          },
-          {
-            text: 'Open',
-            onPress: () => {
-              setScanned(false);
-              Linking.openURL(data);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } else {
-      alert(`Bar code with type ${type} and data ${data} has been scanned!`);
-    }
-  };
 
   function createPayload() {
     const currentDate = new Date();
@@ -174,12 +153,13 @@ const InventoryTransfer = () => {
         stringify: false,
       })
         .then(({ json }) => {
+          console.log({ json });
           dispatch(setOnSuccess(true));
           setSelectedPart((prev) => ({
             ...prev,
             QtyOnHand: prev.QtyOnHand - parseInt(formData.quantity),
           }));
-          setFormData({});
+          // setFormData({});
           setEnablePrint(true);
         })
         .catch((err) => {
@@ -361,25 +341,32 @@ const InventoryTransfer = () => {
     return false;
   }
 
+  function captureDetails(details, state) {
+    if (
+      cameraState === 'current_part' &&
+      (!formData.current_whse ||
+        !formData.current_bin ||
+        formData.current_whse === '' ||
+        formData.current_bin === '')
+    ) {
+      setCameraState(null);
+      closeScanner();
+      return dispatch(
+        showSnackbar('Warehouse or bin not found for the part number')
+      );
+    }
+    setFormData((prev) => ({ ...prev, [state]: details }));
+    setCameraState(null);
+    closeScanner();
+  }
+
   if (scannerVisible) {
     return (
-      <View style={{ flex: 1 }}>
-        <BarCodeScanner
-          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={styles.bottomButtonsContainer}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setScanned(false)}
-          >
-            <Text style={styles.closeButtonText}>Scan Again</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.closeButton} onPress={closeScanner}>
-            <Text style={styles.closeButtonText}>Close Scanner</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <BarcodeScannerComponent
+        closeScanner={closeScanner}
+        captureDetails={captureDetails}
+        cameraState={cameraState}
+      />
     );
   }
 
@@ -434,18 +421,25 @@ const InventoryTransfer = () => {
               }, 500);
             }}
           />
+          {/* <View
+            style={[globalStyles.dFlexR, { justifyContent: 'flex-end' }]}
+          ></View> */}
           <View
             style={[
               globalStyles.dFlexR,
-              { justifyContent: 'flex-end', marginBottom: 20 },
+              globalStyles.justifySB,
+              { marginBottom: 20 },
             ]}
           >
-          </View>
-          <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
             <View style={{ flex: 1 }}>
               <View style={globalStyles.dFlexR}>
                 <Text style={styles.inputLabel}>Current Warehouse </Text>
-                <TouchableOpacity onPress={openScanner}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCameraState('current_whse');
+                    openScanner();
+                  }}
+                >
                   <AntDesign
                     name="scan1"
                     size={24}
@@ -453,17 +447,18 @@ const InventoryTransfer = () => {
                   />
                 </TouchableOpacity>
               </View>
-              <RNPickerSelect
-                selectedValue={formData.current_whse || null}
-                onValueChange={(itemValue) => {
+              <SelectInput
+                value={formData.current_whse || null}
+                onChange={(itemValue) => {
                   formData.current_bin = '';
                   formData.current_part = '';
                   onSelectBins('current_whse', itemValue);
+
                   if (!binsData[itemValue]) {
                     getBins('from', itemValue);
                   }
                 }}
-                items={warehouses.map((data) => ({
+                options={warehouses.map((data) => ({
                   ...data,
                   label: data.WarehouseCode,
                   value: data.WarehouseCode,
@@ -473,7 +468,12 @@ const InventoryTransfer = () => {
             <View style={{ flex: 1 }}>
               <View style={globalStyles.dFlexR}>
                 <Text style={styles.inputLabel}>Current Bin </Text>
-                <TouchableOpacity onPress={openScanner}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCameraState('current_bin');
+                    openScanner();
+                  }}
+                >
                   <AntDesign
                     name="scan1"
                     size={24}
@@ -481,27 +481,31 @@ const InventoryTransfer = () => {
                   />
                 </TouchableOpacity>
               </View>
-              <RNPickerSelect
-                selectedValue={formData.current_bin}
-                onValueChange={(itemValue) => {
-                  onSelectBins('current_bin', itemValue);
+              <SelectInput
+                value={formData.current_bin}
+                onChange={(itemValue) => {
                   formData.current_part = '';
+                  onSelectBins('current_bin', itemValue);
                 }}
-                items={
+                options={
                   binsData[formData?.current_whse]?.map((data) => ({
                     ...data,
                     label: data.BinNum,
                     value: data.BinNum,
                   })) || []
                 }
-                placeholder=""
               />
             </View>
           </View>
           <View>
             <View style={globalStyles.dFlexR}>
               <Text style={styles.inputLabel}>Select Product </Text>
-              <TouchableOpacity onPress={openScanner}>
+              <TouchableOpacity
+                onPress={() => {
+                  setCameraState('current_part');
+                  openScanner();
+                }}
+              >
                 <AntDesign
                   name="scan1"
                   size={24}
@@ -509,9 +513,9 @@ const InventoryTransfer = () => {
                 />
               </TouchableOpacity>
             </View>
-            <RNPickerSelect
-              selectedValue={formData.current_part}
-              onValueChange={(itemValue) => {
+            <SelectInput
+              value={formData.current_part}
+              onChange={(itemValue) => {
                 onSelectBins('current_part', itemValue);
                 const stock = currentParts.find(
                   (data) => data.PartNum === itemValue
@@ -520,14 +524,20 @@ const InventoryTransfer = () => {
                   setSelectedPart(stock);
                 }
               }}
-              items={currentParts.map((data) => ({
+              options={currentParts.map((data) => ({
                 ...data,
                 label: data.PartNum,
                 value: data.PartNum,
               }))}
             />
           </View>
-          <Text style={{ margin: 10, color: globalStyles.colors.darkGrey }}>
+          <Text
+            style={{
+              margin: 10,
+              marginTop: 30,
+              color: globalStyles.colors.darkGrey,
+            }}
+          >
             Stock: # {selectedPart ? selectedPart.QtyOnHand : ''}
           </Text>
           <View>
@@ -566,16 +576,16 @@ const InventoryTransfer = () => {
           <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>To Warehouse</Text>
-              <RNPickerSelect
-                selectedValue={formData.to_whse}
-                onValueChange={(itemValue) => {
+              <SelectInput
+                value={formData.to_whse}
+                onChange={(itemValue) => {
                   onSelectBins('to_whse', itemValue);
                   formData.tobin = '';
                   if (!binsData[itemValue]) {
                     getBins('to', itemValue);
                   }
                 }}
-                items={warehouses.map((data) => ({
+                options={warehouses.map((data) => ({
                   ...data,
                   label: data.WarehouseCode,
                   value: data.WarehouseCode,
@@ -584,12 +594,12 @@ const InventoryTransfer = () => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.inputLabel}>To Bin</Text>
-              <RNPickerSelect
-                selectedValue={formData.tobin}
-                onValueChange={(itemValue) => {
+              <SelectInput
+                value={formData.to_bin}
+                onChange={(itemValue) => {
                   onSelectBins('to_bin', itemValue);
                 }}
-                items={
+                options={
                   binsData[formData?.to_whse]?.map((data) => ({
                     ...data,
                     label: data.BinNum,
@@ -617,14 +627,14 @@ const InventoryTransfer = () => {
           onPress={() => setSubmitConfirm(true)}
           disabled={handleValidate()}
         >
-          Save
+          Transfer
         </Button>
         <Button
           buttonColor={globalStyles.colors.success}
           icon="printer"
           mode="contained"
-          disabled={!enablePrint}
-          onPress={() => generatePDF('', {})}
+          disabled={false}
+          onPress={() => generatTransferPDF(formData, currentParts)}
         >
           Print Tags
         </Button>

@@ -16,7 +16,7 @@ const LinesCard = ({ data, onSelectLine }) => {
         <Text style={styles.description}>{data?.POLineLineDesc}</Text>
         <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
           <Text style={styles.description}>Xrel Qty: {data?.XRelQty ? parseInt(data?.XRelQty) : "N/A"}</Text>
-          <Text style={styles.description}>Arrived Qty: {data?.XRelQty ? parseInt(data?.ArrivedQty) : "N/A"}</Text>
+          <Text style={styles.description}>Arrived Qty: {data?.ArrivedQty ? parseInt(data?.ArrivedQty) : "N/A"}</Text>
         </View>
       </View>
     </TouchableOpacity>

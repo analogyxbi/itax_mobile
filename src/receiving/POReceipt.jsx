@@ -31,13 +31,12 @@ import {
 } from 'react-native-paper';
 import { globalStyles } from '../style/globalStyles';
 import { BarCodeScanner } from 'expo-barcode-scanner';
+import getClientErrorObject from '../utils/getClientErrorObject';
 import { ActivityIndicator, MD2Colors } from 'react-native-paper';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import _ from 'lodash';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
-import { Barcode } from 'expo-barcode-generator';
-import PrintBarcodeScreen from './PrintBarcodesScreen';
 import { generatePDF } from '../utils/PDFGenerator';
 import CustomDatatable from '../components/CustomDatatable';
 import LinesCard from '../components/LinesCard';
@@ -67,7 +66,7 @@ const initialFormdata = {
 
 const POReceipt = () => {
   const { podata, isLoading, onSuccess, onError } = useSelector(state => state.poReceipts);
-  const [localPoData, setLocalPoData] = useState({1:podata});
+  const [localPoData, setLocalPoData] = useState({ 1: podata });
   const [hasPermission, setHasPermission] = useState(null);
   const [warehouseCodes, setWarehouseCodes] = useState([]);
   const [isNewPackSlip, setIsNewpackslip] = useState(true);
@@ -440,8 +439,8 @@ const POReceipt = () => {
       PackSlip: packSLipNUm,
       ReceiptDate: today.toISOString(),
       SaveForInvoicing: true,
-      Invoiced: true,
-      RowMod: 'A',
+      Invoiced: false,
+      RowMod: !reverse ? 'U' : 'A',
       ReceivePerson: 'analogyx1',
       RcvDtls: [
         {
@@ -451,7 +450,7 @@ const POReceipt = () => {
           PackSlip: packSLipNUm,
           // PackLine: currentLine,
           ReceiptDate: today.toISOString(),
-          Invoiced: true,
+          Invoiced: false,
           PONum: POData[0]?.PONum,
           AutoReceipt: false,
           POType: POData[0]?.POType,
@@ -459,7 +458,7 @@ const POReceipt = () => {
           ReceivedTo: 'PUR-STK',
           ReceivedComplete: false,
           ArrivedDate: today.toISOString(),
-          VendorQty: currentLine?.RelQty,
+          VendorQty: formData.input,
           PORelArrivedQty: formData?.input,
           POLine: currentLine?.POLine,
           PORelNum: currentLine?.PORelNum,
@@ -473,12 +472,12 @@ const POReceipt = () => {
           InputOurQty: formData.input,
           IUM: currentLine?.IUM,
           PUM: currentLine?.PUM,
-          RowMod: !reverse ? 'U':'A',
+          RowMod: !reverse ? 'U' : 'A',
         },
       ],
     };
 
-    console.log({postPayload})
+    console.log({ postPayload })
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
@@ -489,15 +488,25 @@ const POReceipt = () => {
         console.log(json)
         setSaved(true);
         dispatch(setOnSuccess(true));
-      }).catch(err => {
-        dispatch(setOnError(true));
-        console.log(err)
       })
+      .catch((err) => {
+        getClientErrorObject(err).then((res) => {
+          dispatch(setOnError(true));
+          dispatch(showSnackbar(res.error));
+        });
+      });
   };
 
   const onSearchPoChange = (text) => {
     setPoNum(text);
   };
+
+  function handleValidate() {
+    if (!formData.BinNum || !formData?.input) {
+      return true;
+    }
+    return false;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -812,11 +821,20 @@ const POReceipt = () => {
                     </Text>
                   </TouchableOpacity>
                 )}
-                {/* <FAB
-                  icon="plus"
-                  style={styles.fab}
-                  onPress={() => console.log('Pressed')}
-                /> */}
+
+                {/* <TouchableOpacity style={styles.reverse}><Text style={{ color: "white", textAlign: "center", fontSize: 12 }}>Upload PO</Text></TouchableOpacity> */}
+                <View style={{ width: 200, alignSelf: "flex-end", paddingHorizontal:10 }}>
+                  <Button
+                    type="text"
+                    // buttonColor={globalStyles.colors.primary}
+                    mode="outlined"
+                    // icon="camera"
+                  // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
+                  // onPress={() => handleSave(false)}
+                  >
+                    Upload Document
+                  </Button>
+                </View>
               </View>
             )}
             {tabValue == '2' && (
@@ -982,7 +1000,6 @@ const POReceipt = () => {
                       />
                     </View>
                   </View>
-                  {/* <TouchableOpacity style={styles.reverse}><Text style={{color:"white", textAlign:"center", fontSize:12}}>PO Reversal</Text></TouchableOpacity> */}
                   <View
                     style={[
                       globalStyles.dFlexR,
@@ -1002,7 +1019,8 @@ const POReceipt = () => {
                       buttonColor={globalStyles.colors.success}
                       icon="floppy"
                       mode="contained"
-                      onPress={()=>handleSave(true)}
+                      disabled={handleValidate()}
+                      onPress={() => handleSave(true)}
                     >
                       Save
                     </Button>

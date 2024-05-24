@@ -44,6 +44,8 @@ import { setIsLoading, setOnError, setOnSuccess, setPOdataResponse } from './red
 import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
 import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 import Transferbackdrop from '../components/Loaders/Transferbackdrop';
+import ExpoCamera from '../components/Camera';
+import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -73,9 +75,11 @@ const POReceipt = () => {
   const [createPackslipLoading, setCreatepackslipLoading] = useState(false);
   const navigation = useNavigation();
   const [tabValue, setTabvalue] = useState('1');
+  const [cameraState, setCameraState] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [vendorNameSearch, setVendorNameSearch] = useState('');
   const [scannerVisible, setScannerVisible] = useState(false);
+  const [cameraVisible, setCameraVisible] = useState(false);
   const [poNum, setPoNum] = useState();
   const [loading, setLoading] = useState(false);
   const [POData, setPOData] = useState([]);
@@ -500,7 +504,24 @@ const POReceipt = () => {
   const onSearchPoChange = (text) => {
     setPoNum(text);
   };
-
+  function captureDetails(details, state) {
+    if (
+      cameraState === 'current_part' &&
+      (!formData.current_whse ||
+        !formData.current_bin ||
+        formData.current_whse === '' ||
+        formData.current_bin === '')
+    ) {
+      setCameraState(null);
+      closeScanner();
+      return dispatch(
+        showSnackbar('Warehouse or bin not found for the part number')
+      );
+    }
+    setFormData((prev) => ({ ...prev, [state]: details }));
+    setCameraState(null);
+    closeScanner();
+  }
   function handleValidate() {
     if (!formData.BinNum || !formData?.input) {
       return true;
@@ -512,7 +533,10 @@ const POReceipt = () => {
     <SafeAreaView style={styles.container}>
       {scannerVisible ? (
         <View style={{ flex: 1 }}>
-          <BarCodeScanner
+          <BarcodeScannerComponent closeScanner={closeScanner}
+            captureDetails={captureDetails}
+            cameraState={cameraState} />
+          {/* <BarCodeScanner
             onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
             style={StyleSheet.absoluteFillObject}
           />
@@ -526,9 +550,9 @@ const POReceipt = () => {
             <TouchableOpacity style={styles.closeButton} onPress={closeScanner}>
               <Text style={styles.closeButtonText}>Close Scanner</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
-      ) : (
+      ) : cameraVisible ? <ExpoCamera setCameraVisible={setCameraVisible} /> : (
         <View>
           <Transferbackdrop
             loading={isLoading && !onSuccess}
@@ -592,7 +616,7 @@ const POReceipt = () => {
                 {
                   value: '2',
                   label: 'Receipt',
-                  // disabled: _.isEmpty(selectedPOdata),
+                  disabled: _.isEmpty(packSLipNUm),
                   icon: () => (
                     <FontAwesome5
                       name="receipt"
@@ -714,7 +738,11 @@ const POReceipt = () => {
                   </Pressable>
                   <TouchableOpacity
                     style={styles.closeButton}
-                    onPress={openScanner}
+                    onPress={() => {
+                      // setCameraState('PONum');
+                      openScanner()
+                    }
+                    }
                   >
                     <Text style={styles.closeButtonText}>
                       <AntDesign
@@ -727,9 +755,7 @@ const POReceipt = () => {
                 </View>
 
                 <Text style={styles.inputLabel}>Supplier Name</Text>
-                <Text
-                  style={{ color: globalStyles.colors.darkGrey, margin: 10 }}
-                >
+                <Text style={{ color: globalStyles.colors.darkGrey, margin: 10 }}>
                   {POData[0]?.VendorName || 'N/A'}
                 </Text>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
@@ -823,18 +849,18 @@ const POReceipt = () => {
                 )}
 
                 {/* <TouchableOpacity style={styles.reverse}><Text style={{ color: "white", textAlign: "center", fontSize: 12 }}>Upload PO</Text></TouchableOpacity> */}
-                <View style={{ width: 200, alignSelf: "flex-end", paddingHorizontal:10 }}>
+                {/* <View style={{ width: 200, alignSelf: "flex-end", paddingHorizontal: 10 }}>
                   <Button
                     type="text"
                     // buttonColor={globalStyles.colors.primary}
                     mode="outlined"
                     // icon="camera"
-                  // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
-                  // onPress={() => handleSave(false)}
+                    // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
+                    onPress={() => setCameraVisible(true)}
                   >
                     Upload Document
                   </Button>
-                </View>
+                </View> */}
               </View>
             )}
             {tabValue == '2' && (
@@ -1011,7 +1037,7 @@ const POReceipt = () => {
                       buttonColor={globalStyles.colors.primary}
                       mode="contained"
                       // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
-                      onPress={()=>handleSave(false)}
+                      onPress={() => handleSave(false)}
                     >
                       PO Reversal
                     </Button>

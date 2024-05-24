@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useDispatch } from 'react-redux';
+import { showSnackbar } from '../Snackbar/messageSlice';
 
 const BarcodeScannerComponent = ({
   closeScanner,
@@ -10,6 +12,7 @@ const BarcodeScannerComponent = ({
 }) => {
   const [detectedBarcodes, setDetectedBarcodes] = useState([]);
   const cameraRef = useRef(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -35,8 +38,12 @@ const BarcodeScannerComponent = ({
 
   const passDetails = () => {
     const value = detectedBarcodes[0];
-    captureDetails(value.data, cameraState);
-    setDetectedBarcodes([]);
+    if(value){
+      captureDetails(value?.data, cameraState);
+      setDetectedBarcodes([]);
+    }else{
+      dispatch(showSnackbar("Not Barcode Found!"))
+    }
   };
 
   const renderDetectedBoxes = () => {
@@ -82,7 +89,7 @@ const BarcodeScannerComponent = ({
       <View style={styles.bottomButtonsContainer}>
         <TouchableOpacity
           style={styles.iconButtonRef}
-          onPress={() => setScanned(false)}
+          // onPress={() => setScanned(false)}
         >
           <Icon name="refresh" size={30} color="#fff" />
           {/* <Text style={styles.iconText}>Scan Again</Text> */}

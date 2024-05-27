@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  FlatList,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import {
@@ -40,12 +41,20 @@ import { showSnackbar } from '../Snackbar/messageSlice';
 import { generatePDF } from '../utils/PDFGenerator';
 import CustomDatatable from '../components/CustomDatatable';
 import LinesCard from '../components/LinesCard';
-import { setIsLoading, setOnError, setOnSuccess, setPOdataResponse } from './reducer/poReceipts';
+import {
+  setIsLoading,
+  setOnError,
+  setOnSuccess,
+  setPOdataResponse,
+} from './reducer/poReceipts';
 import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
 import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 import Transferbackdrop from '../components/Loaders/Transferbackdrop';
 import ExpoCamera from '../components/Camera';
 import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
+import CameraScreen from '../components/RNCamera';
+import * as ImagePicker from 'expo-image-picker';
+import AttachedImage from '../components/AttachedImage';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -67,7 +76,9 @@ const initialFormdata = {
 };
 
 const POReceipt = () => {
-  const { podata, isLoading, onSuccess, onError } = useSelector(state => state.poReceipts);
+  const { podata, isLoading, onSuccess, onError } = useSelector(
+    (state) => state.poReceipts
+  );
   const [localPoData, setLocalPoData] = useState({ 1: podata });
   const [hasPermission, setHasPermission] = useState(null);
   const [warehouseCodes, setWarehouseCodes] = useState([]);
@@ -102,6 +113,7 @@ const POReceipt = () => {
     limit: 100,
   });
   const [whseBin, setWhseBin] = useState([]);
+  const [attachments, setAttachments] = useState([]);
 
   const dispatch = useDispatch();
 
@@ -151,7 +163,7 @@ const POReceipt = () => {
       setHasPermission(status === 'granted');
     };
     getBarCodeScannerPermissions();
-    setLocalPoData({})
+    setLocalPoData({});
   }, []);
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
@@ -275,13 +287,13 @@ const POReceipt = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          console.log(json.data.value)
+          console.log(json.data.value);
           setWarehouseCodes(() => json.data.value);
           setBins(() => json.data.value);
           // setLoading(false);
         })
         .catch((err) => {
-          console.log(err)
+          console.log(err);
           // setLoading(false);
         });
     } catch (err) {
@@ -354,7 +366,7 @@ const POReceipt = () => {
 
   const searchPoNum = (page) => {
     let pageValue = page ? page : customTableState.page;
-    console.log({ localPoData })
+    console.log({ localPoData });
     if (_.isEmpty(localPoData[pageValue])) {
       setIsPOsLoading(true);
       // if (vendorNameSearch) {
@@ -372,8 +384,11 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            dispatch(setPOdataResponse(json.data.value))
-            setLocalPoData(prev => ({ ...prev, [pageValue]: json?.data?.value }))
+            dispatch(setPOdataResponse(json.data.value));
+            setLocalPoData((prev) => ({
+              ...prev,
+              [pageValue]: json?.data?.value,
+            }));
             setFilteredPos(json.data.value);
             setCustomTableState((prev) => ({
               ...prev,
@@ -392,7 +407,7 @@ const POReceipt = () => {
     } else {
       setIsPOsLoading(true);
       setFilteredPos(localPoData[pageValue]);
-      dispatch(setPOdataResponse(localPoData[pageValue]))
+      dispatch(setPOdataResponse(localPoData[pageValue]));
       setCustomTableState((prev) => ({
         ...prev,
         page: pageValue,
@@ -417,7 +432,7 @@ const POReceipt = () => {
 
   useEffect(() => {
     // getWareHouseList()
-    if (showPOModal && _.isEmpty(localPoData) ) {
+    if (showPOModal && _.isEmpty(localPoData)) {
       searchPoNum();
     }
   }, [showPOModal]);
@@ -481,15 +496,19 @@ const POReceipt = () => {
       ],
     };
 
-    console.log({ postPayload })
+    console.log({ postPayload });
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
-      postPayload: { epicor_endpoint, request_type: 'POST', data: JSON.stringify(postPayload) },
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(postPayload),
+      },
       stringify: false,
     })
       .then(({ json }) => {
-        console.log(json)
+        console.log(json);
         setSaved(true);
         dispatch(setOnSuccess(true));
       })
@@ -529,13 +548,48 @@ const POReceipt = () => {
     return false;
   }
 
+  const getCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access camera is required!');
+    }
+  };
+
+  const captureImage = async () => {
+    await getCameraPermission();
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      allowsMultipleSelection: true,
+      quality: 1,
+      base64: true,
+    });
+
+    if (!result.cancelled) {
+      // Do something with the captured image URI
+      setAttachments((prev) => [...prev, ...result.assets]);
+      // You may want to set the captured image URI to state or handle it in any way your application requires
+    }
+  };
+  const removeImage = (indexToRemove) => {
+    setAttachments(attachments.filter((_, index) => index !== indexToRemove));
+  };
+  const renderAttachedImage = ({ item, index }) => (
+    <AttachedImage
+      key={index}
+      imageBase64={item.base64}
+      onRemove={() => removeImage(index)}
+    />
+  );
   return (
     <SafeAreaView style={styles.container}>
       {scannerVisible ? (
         <View style={{ flex: 1 }}>
-          <BarcodeScannerComponent closeScanner={closeScanner}
+          <BarcodeScannerComponent
+            closeScanner={closeScanner}
             captureDetails={captureDetails}
-            cameraState={cameraState} />
+            cameraState={cameraState}
+          />
           {/* <BarCodeScanner
             onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
             style={StyleSheet.absoluteFillObject}
@@ -552,7 +606,9 @@ const POReceipt = () => {
             </TouchableOpacity>
           </View> */}
         </View>
-      ) : cameraVisible ? <ExpoCamera setCameraVisible={setCameraVisible} /> : (
+      ) : cameraVisible ? (
+        <ExpoCamera setCameraVisible={setCameraVisible} />
+      ) : (
         <View>
           <Transferbackdrop
             loading={isLoading && !onSuccess}
@@ -740,9 +796,8 @@ const POReceipt = () => {
                     style={styles.closeButton}
                     onPress={() => {
                       // setCameraState('PONum');
-                      openScanner()
-                    }
-                    }
+                      openScanner();
+                    }}
                   >
                     <Text style={styles.closeButtonText}>
                       <AntDesign
@@ -755,7 +810,9 @@ const POReceipt = () => {
                 </View>
 
                 <Text style={styles.inputLabel}>Supplier Name</Text>
-                <Text style={{ color: globalStyles.colors.darkGrey, margin: 10 }}>
+                <Text
+                  style={{ color: globalStyles.colors.darkGrey, margin: 10 }}
+                >
                   {POData[0]?.VendorName || 'N/A'}
                 </Text>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
@@ -847,20 +904,30 @@ const POReceipt = () => {
                     </Text>
                   </TouchableOpacity>
                 )}
-
-                {/* <TouchableOpacity style={styles.reverse}><Text style={{ color: "white", textAlign: "center", fontSize: 12 }}>Upload PO</Text></TouchableOpacity> */}
-                {/* <View style={{ width: 200, alignSelf: "flex-end", paddingHorizontal: 10 }}>
+                <View
+                  style={{
+                    width: 200,
+                    alignSelf: 'flex-end',
+                    paddingHorizontal: 10,
+                  }}
+                >
                   <Button
                     type="text"
                     // buttonColor={globalStyles.colors.primary}
                     mode="outlined"
                     // icon="camera"
                     // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
-                    onPress={() => setCameraVisible(true)}
+                    onPress={captureImage}
                   >
                     Upload Document
                   </Button>
-                </View> */}
+                </View>
+                <FlatList
+                  data={attachments}
+                  renderItem={renderAttachedImage}
+                  keyExtractor={(item, index) => index.toString()}
+                  horizontal={false} // Set to true if you want horizontal scrolling
+                />
               </View>
             )}
             {tabValue == '2' && (
@@ -1166,10 +1233,10 @@ const styles = StyleSheet.create({
     backgroundColor: globalStyles.colors.primary,
     padding: 3,
     width: 80,
-    alignSelf: "flex-end",
+    alignSelf: 'flex-end',
     borderRadius: 50,
-    marginVertical: 10
-  }
+    marginVertical: 10,
+  },
 });
 
 export default POReceipt;

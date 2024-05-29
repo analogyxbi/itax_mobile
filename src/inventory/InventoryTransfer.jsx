@@ -381,6 +381,36 @@ const InventoryTransfer = () => {
     );
   }
 
+  function handleOptionsRefresh(name) {
+    switch (name) {
+      case 'current_whse':
+        getWarehouse();
+        break;
+      case 'current_bin':
+        if (formData.current_whse) {
+          getBins('from', formData.current_whse);
+        }
+        break;
+      case 'to_whse':
+        getWarehouse();
+        break;
+      case 'to_bin':
+        if (formData.to_whse) {
+          getBins('to', formData.to_whse);
+        }
+        break;
+      case 'current_part':
+        if (formData.current_whse && formData.current_bin) {
+          fetchPartDetails({
+            whseCode: formData.current_whse,
+            binNum: formData.current_bin,
+          });
+        }
+      default:
+        break;
+    }
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.header}>
@@ -401,10 +431,10 @@ const InventoryTransfer = () => {
             title={'Please wait'}
             refreshing={refreshing}
             onRefresh={() => {
-              setFormData({});
-              dispatch(setInitialState());
-              setCurrentParts([]);
-              getWarehouse();
+              // setFormData({});
+              // dispatch(setInitialState());
+              // setCurrentParts([]);
+              // getWarehouse();
             }}
           />
         }
@@ -477,6 +507,8 @@ const InventoryTransfer = () => {
                   value: data.WarehouseCode,
                 }))}
                 isLoading={refreshing}
+                label="current_whse"
+                handleRefresh={handleOptionsRefresh}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -509,6 +541,8 @@ const InventoryTransfer = () => {
                   })) || []
                 }
                 isLoading={refreshing}
+                handleRefresh={handleOptionsRefresh}
+                label="current_bin"
               />
             </View>
           </View>
@@ -545,6 +579,8 @@ const InventoryTransfer = () => {
                 value: data.PartNum,
               }))}
               isLoading={refreshing}
+              label="current_part"
+              handleRefresh={handleOptionsRefresh}
             />
           </View>
           <Text
@@ -607,6 +643,8 @@ const InventoryTransfer = () => {
                   value: data.WarehouseCode,
                 }))}
                 isLoading={refreshing}
+                label="to_whse"
+                handleRefresh={handleOptionsRefresh}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -624,6 +662,8 @@ const InventoryTransfer = () => {
                   })) || []
                 }
                 isLoading={refreshing}
+                label="to_bin"
+                handleRefresh={handleOptionsRefresh}
               />
             </View>
           </View>

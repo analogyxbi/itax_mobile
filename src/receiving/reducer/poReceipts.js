@@ -15,19 +15,9 @@ const poReceiptsSlice = createSlice({
     setPOdataResponse: (state, action) => {
       state.podata = action.payload;
     },
-    setIsLoading: (state, action) => {
-      state.isLoading = action.payload;
-    },
-    setOnSuccess: (state, action) => {
-      state.onSuccess = action.payload;
-    },
-    setOnError: (state, action) => {
-      state.onError = action.payload;
-    },
   },
 });
 
-export const { setPOdataResponse, setIsLoading, setOnSuccess, setOnError } =
-  poReceiptsSlice.actions;
+export const { setPOdataResponse } = poReceiptsSlice.actions;
 
 export default poReceiptsSlice.reducer;

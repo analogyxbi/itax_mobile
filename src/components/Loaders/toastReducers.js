@@ -34,6 +34,7 @@ const toastSlice = createSlice({
   },
 });
 
-export const { setIsLoading, setOnSuccess, setOnError } = toastSlice.actions;
+export const { setIsLoading, setOnSuccess, setOnError, clearMessage } =
+  toastSlice.actions;
 
 export default toastSlice.reducer;

@@ -9,10 +9,18 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const SelectInput = ({ label, value, options, onChange, isLoading }) => {
+const SelectInput = ({
+  label,
+  value,
+  options,
+  onChange,
+  isLoading,
+  handleRefresh,
+}) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filteredOptions, setFilteredOptions] = useState(options);
@@ -31,13 +39,7 @@ const SelectInput = ({ label, value, options, onChange, isLoading }) => {
   };
 
   const renderOptions = () => {
-    if (isLoading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#000" />
-        </View>
-      );
-    } else if (filteredOptions.length === 0) {
+    if (filteredOptions.length === 0) {
       return <Text>No options available</Text>;
     }
     return filteredOptions.map((option) => (
@@ -58,7 +60,7 @@ const SelectInput = ({ label, value, options, onChange, isLoading }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label} />
       <TouchableOpacity
         style={styles.inputContainer}
         onPress={() => setModalVisible(true)}
@@ -85,7 +87,16 @@ const SelectInput = ({ label, value, options, onChange, isLoading }) => {
               onChangeText={handleSearch}
               value={searchText}
             />
-            <ScrollView>{renderOptions()}</ScrollView>
+            <ScrollView
+              refreshControl={
+                <RefreshControl
+                  refreshing={isLoading}
+                  onRefresh={() => handleRefresh(label)}
+                />
+              }
+            >
+              {renderOptions()}
+            </ScrollView>
           </View>
         </View>
       </Modal>

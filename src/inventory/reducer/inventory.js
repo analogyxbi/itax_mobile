@@ -28,6 +28,7 @@ const initialState = {
   onSuccess: false,
   onError: false,
   binsData,
+  message: '',
 };
 
 const inventorySlice = createSlice({
@@ -37,15 +38,6 @@ const inventorySlice = createSlice({
     setWarehouses: (state, action) => {
       AsyncStorage.setItem('warehouses', JSON.stringify(action.payload));
       state.warehouses = action.payload;
-    },
-    setIsLoading: (state, action) => {
-      state.isLoading = action.payload;
-    },
-    setOnSuccess: (state, action) => {
-      state.onSuccess = action.payload;
-    },
-    setOnError: (state, action) => {
-      state.onError = action.payload;
     },
     setWhseBins: (state, action) => {
       const { warehouse, bins } = action.payload;
@@ -72,14 +64,7 @@ const inventorySlice = createSlice({
   },
 });
 
-export const {
-  setWarehouses,
-  setIsLoading,
-  setOnSuccess,
-  setOnError,
-  setWhseBins,
-  clearBinData,
-  setInitialState,
-} = inventorySlice.actions;
+export const { setWarehouses, setWhseBins, clearBinData, setInitialState } =
+  inventorySlice.actions;
 
 export default inventorySlice.reducer;

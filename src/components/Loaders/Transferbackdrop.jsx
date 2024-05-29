@@ -3,10 +3,11 @@ import { View, Modal, StyleSheet, Text, Button } from 'react-native';
 import ReusableAnimation from '../LottieFiles';
 import Transfer from '../../../assets/Lottie/transfer.json';
 import { TouchableOpacity } from 'react-native-web';
+import { useSelector } from 'react-redux';
 
 const Transferbackdrop = ({ loading, setLoading }) => {
   const animationRef = useRef(null);
-
+  const message = useSelector((state) => state.toast.message);
   const restartAnimation = () => {
     animationRef.current?.restartAnimation();
   };
@@ -20,6 +21,7 @@ const Transferbackdrop = ({ loading, setLoading }) => {
             style={{ width: 300, height: 300, backgroundColor: '#ffffff' }}
           />
         </View>
+        <Text style={styles.message}> {message}</Text>
       </View>
     </Modal>
   );
@@ -44,6 +46,14 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingTop: 20,
+  },
+  message: {
+    marginTop: 120, // Adjust as needed
+    fontSize: 32,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: 'black',
+    bottom: 1,
   },
 });
 

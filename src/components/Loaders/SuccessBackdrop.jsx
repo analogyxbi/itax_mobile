@@ -2,10 +2,11 @@ import React, { useRef, useEffect } from 'react';
 import { View, Modal, StyleSheet } from 'react-native';
 import LottieView from 'lottie-react-native';
 import SuccessAnimation from '../../../assets/Lottie/success.json';
+import { useSelector } from 'react-redux';
 
 const SuccessBackdrop = ({ visible, onDismiss }) => {
   const animationRef = useRef(null);
-
+  const message = useSelector((state) => state.toast.message);
   useEffect(() => {
     if (visible) {
       animationRef.current?.play();

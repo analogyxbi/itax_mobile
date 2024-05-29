@@ -25,9 +25,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   clearBinData,
   setInitialState,
-  setIsLoading,
-  setOnError,
-  setOnSuccess,
   setWarehouses,
   setWhseBins,
 } from './reducer/inventory';
@@ -40,6 +37,11 @@ import { generatTransferPDF, generatePDF } from '../utils/PDFGenerator';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
 import SelectInput from '../components/SelectInput';
+import {
+  setIsLoading,
+  setOnError,
+  setOnSuccess,
+} from '../components/Loaders/toastReducers';
 
 const initForm = {
   current_whse: null,
@@ -50,9 +52,8 @@ const initForm = {
 };
 
 const InventoryTransfer = () => {
-  const { warehouses, isLoading, onSuccess, onError, binsData } = useSelector(
-    (state) => state.inventory
-  );
+  const { warehouses, binsData } = useSelector((state) => state.inventory);
+  const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const dispatch = useDispatch();
   const [current, setCurrent] = useState({});
   const [target, setTarget] = useState({});
@@ -84,6 +85,7 @@ const InventoryTransfer = () => {
     setScanned(false);
   };
   const closeScanner = () => {
+    setCameraState(null);
     setScannerVisible(false);
   };
 
@@ -138,7 +140,12 @@ const InventoryTransfer = () => {
       return dispatch(showSnackbar('Error setting Quantity'));
     }
 
-    dispatch(setIsLoading(true));
+    dispatch(
+      setIsLoading({
+        value: true,
+        message: 'Stock Transfer in Progess. Please wait',
+      })
+    );
     const data = createPayload();
     const epicor_endpoint = `/Erp.BO.InvTransferSvc/CommitTransfer`;
     const postPayload = {
@@ -154,7 +161,9 @@ const InventoryTransfer = () => {
       })
         .then(({ json }) => {
           console.log({ json });
-          dispatch(setOnSuccess(true));
+          dispatch(
+            setOnSuccess({ value: true, message: 'Stock Transfer Success' })
+          );
           setSelectedPart((prev) => ({
             ...prev,
             QtyOnHand: prev.QtyOnHand - parseInt(formData.quantity),
@@ -163,14 +172,16 @@ const InventoryTransfer = () => {
           setEnablePrint(true);
         })
         .catch((err) => {
+          console.log('Stock Transfer failed');
+          console.log({ err });
+          // dispatch(showSnackbar('Error Occured'));
           err.json().then((res) => {
-            dispatch(setOnError(true));
-            const response = JSON.parse(res.error);
-            dispatch(showSnackbar(response.data.ErrorMessage));
+            dispatch(setOnError({ value: true, message: res.error }));
+            console.log({ response });
           });
         });
     } catch (err) {
-      dispatch(setOnError(true));
+      dispatch(setOnError({ value: true, message: 'An Error Occured' }));
     }
   }
 
@@ -366,6 +377,7 @@ const InventoryTransfer = () => {
         closeScanner={closeScanner}
         captureDetails={captureDetails}
         cameraState={cameraState}
+        setScanned={setScanned}
       />
     );
   }
@@ -401,14 +413,16 @@ const InventoryTransfer = () => {
         <View style={styles.container}>
           <Transferbackdrop
             loading={isLoading && !onSuccess}
-            setLoading={(value) => dispatch(setIsLoading(value))}
+            setLoading={(value) =>
+              dispatch(setIsLoading({ value, message: '' }))
+            }
           />
           <SuccessBackdrop
             visible={onSuccess}
             onDismiss={() => {
               setTimeout(() => {
-                dispatch(setOnSuccess(false));
-                dispatch(setIsLoading(false));
+                dispatch(setOnSuccess({ value: false, message: '' }));
+                dispatch(setIsLoading({ value: false, message: '' }));
               }, 500);
             }}
           />
@@ -416,8 +430,8 @@ const InventoryTransfer = () => {
             visible={onError}
             onDismiss={() => {
               setTimeout(() => {
-                dispatch(setOnError(false));
-                dispatch(setIsLoading(false));
+                dispatch(setOnError({ value: false, message: '' }));
+                dispatch(setIsLoading({ value: false, message: '' }));
               }, 500);
             }}
           />
@@ -625,7 +639,7 @@ const InventoryTransfer = () => {
           icon="transfer"
           mode="contained"
           onPress={() => setSubmitConfirm(true)}
-          disabled={handleValidate()}
+          // disabled={handleValidate()}
         >
           Transfer
         </Button>

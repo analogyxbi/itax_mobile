@@ -227,7 +227,6 @@ const POReceipt = () => {
     setExistingPackslipLoading(true);
     if (poNum) {
       setIsNewpackslip(false);
-      // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls&$filter=PONum eq ${poNum}`;
       const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls&$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
@@ -539,11 +538,11 @@ const POReceipt = () => {
       .then(({ json }) => {
         console.log(json);
         setSaved(true);
-        dispatch(setOnSuccess(true));
+        dispatch(setOnSuccess({ value: true, message: '' }));
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) => {
-          dispatch(setOnError(true));
+          dispatch(setOnError({ value: true, message: '' }));
           dispatch(showSnackbar(res.error));
         });
       });
@@ -552,22 +551,13 @@ const POReceipt = () => {
   const onSearchPoChange = (text) => {
     setPoNum(text);
   };
+  
   function captureDetails(details, state) {
-    // if (
-    //   cameraState === 'current_part' &&
-    //   (!formData.current_whse ||
-    //     !formData.current_bin ||
-    //     formData.current_whse === '' ||
-    //     formData.current_bin === '')
-    // ) {
-    //   setCameraState(null);
-    //   closeScanner();
-    //   return dispatch(
-    //     showSnackbar('Warehouse or bin not found for the part number')
-    //   );
-    // }
-    // setFormData((prev) => ({ ...prev, [state]: details }));
-    // setCameraState(null);
+    if(details){
+      setPoNum(details)
+    }else{
+      dispatch(showSnackbar('Error fetching PO number'));
+    }
     closeScanner();
   }
 
@@ -588,7 +578,7 @@ const POReceipt = () => {
       base64: true,
     });
 
-    if (!result.cancelled) {
+    if (!result.canceled) {
       // Do something with the captured image URI
       setAttachments((prev) => [...prev, ...result.assets]);
       // You may want to set the captured image URI to state or handle it in any way your application requires
@@ -611,23 +601,8 @@ const POReceipt = () => {
           <BarcodeScannerComponent
             closeScanner={closeScanner}
             captureDetails={captureDetails}
-            cameraState={cameraState}
+            // cameraState={cameraState}
           />
-          {/* <BarCodeScanner
-            onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.bottomButtonsContainer}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setScanned(false)}
-            >
-              <Text style={styles.closeButtonText}>Scan Again</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.closeButton} onPress={closeScanner}>
-              <Text style={styles.closeButtonText}>Close Scanner</Text>
-            </TouchableOpacity>
-          </View> */}
         </View>
       ) : cameraVisible ? (
         <ExpoCamera setCameraVisible={setCameraVisible} />
@@ -641,7 +616,7 @@ const POReceipt = () => {
             visible={onSuccess}
             onDismiss={() => {
               setTimeout(() => {
-                dispatch(setOnSuccess(false));
+                dispatch(setOnSuccess({ value: false, message: '' }));
                 dispatch(setIsLoading(false));
               }, 500);
             }}
@@ -650,7 +625,7 @@ const POReceipt = () => {
             visible={onError}
             onDismiss={() => {
               setTimeout(() => {
-                dispatch(setOnError(false));
+                dispatch(setOnError({ value: false, message: '' }));
                 dispatch(setIsLoading(false));
               }, 500);
             }}
@@ -818,7 +793,6 @@ const POReceipt = () => {
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => {
-                      // setCameraState('PONum');
                       openScanner();
                     }}
                   >
@@ -879,10 +853,10 @@ const POReceipt = () => {
                         <Text style={{ color: 'white' }}>Packslip</Text>
                         <Text style={{ color: 'white' }}>Available Pack Lines</Text>
                       </View>
-                      <ScrollView style={{ maxHeight: 200 }}>
+                      <ScrollView style={{ maxHeight: 200, padding:5 }}>
                         {existingPackslips?.length > 0 ? (
                           existingPackslips?.map((po, id) => (
-                            <View key={id} style={{ padding: 2 }}>
+                            <View key={id} style={{ padding: 2, backgroundColor: po.PackSlip == selectedPackSlip.PackSlip ? "#d9d9d9" : "white" }}>
                               <TouchableOpacity
                                 onPress={() => onSelectPackslip(po)}
                               >

@@ -160,7 +160,6 @@ const InventoryTransfer = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          console.log({ json });
           dispatch(
             setOnSuccess({ value: true, message: 'Stock Transfer Success' })
           );
@@ -181,7 +180,7 @@ const InventoryTransfer = () => {
           });
         });
     } catch (err) {
-      dispatch(setOnError({ value: true, message: 'An Error Occured' }));
+      dispatch(setOnError({ value: true, message: '✗ An Error Occured' }));
     }
   }
 
@@ -477,6 +476,7 @@ const InventoryTransfer = () => {
                   label: data.WarehouseCode,
                   value: data.WarehouseCode,
                 }))}
+                isLoading={refreshing}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -508,6 +508,7 @@ const InventoryTransfer = () => {
                     value: data.BinNum,
                   })) || []
                 }
+                isLoading={refreshing}
               />
             </View>
           </View>
@@ -543,6 +544,7 @@ const InventoryTransfer = () => {
                 label: data.PartNum,
                 value: data.PartNum,
               }))}
+              isLoading={refreshing}
             />
           </View>
           <Text
@@ -604,6 +606,7 @@ const InventoryTransfer = () => {
                   label: data.WarehouseCode,
                   value: data.WarehouseCode,
                 }))}
+                isLoading={refreshing}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -620,6 +623,7 @@ const InventoryTransfer = () => {
                     value: data.BinNum,
                   })) || []
                 }
+                isLoading={refreshing}
               />
             </View>
           </View>

@@ -8,10 +8,11 @@ import {
   ScrollView,
   TextInput,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const SelectInput = ({ label, value, options, onChange }) => {
+const SelectInput = ({ label, value, options, onChange, isLoading }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filteredOptions, setFilteredOptions] = useState(options);
@@ -30,7 +31,13 @@ const SelectInput = ({ label, value, options, onChange }) => {
   };
 
   const renderOptions = () => {
-    if (filteredOptions.length === 0) {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#000" />
+        </View>
+      );
+    } else if (filteredOptions.length === 0) {
       return <Text>No options available</Text>;
     }
     return filteredOptions.map((option) => (
@@ -137,6 +144,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

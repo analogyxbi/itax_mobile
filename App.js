@@ -39,6 +39,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import CycleCountPeriod from './src/inventory/inventoryCount/CycleCountPeriod';
 import InventoryCount from './src/inventory/inventoryCount';
 import CycleSchedule from './src/inventory/inventoryCount/CycleSchedule';
+import SelectCycle from './src/inventory/inventoryCount/SelectCycle';
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
@@ -159,6 +160,7 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="cycle_count_period" component={CycleCountPeriod} />
       <Stack.Screen name="inventory_count" component={InventoryCount} />
       <Stack.Screen name="inventory_cycle_schedule" component={CycleSchedule} />
+      <Stack.Screen name="select_inventory_cycle" component={SelectCycle} />
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );

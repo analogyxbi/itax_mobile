@@ -39,12 +39,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import CustomDatatable from '../components/CustomDatatable';
 import LinesCard from './components/LinesCard';
-import {
-  setIsLoading,
-  setOnError,
-  setOnSuccess,
-  setPOdataResponse,
-} from './reducer/poReceipts';
+import { setPOdataResponse } from './reducer/poReceipts';
 import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
 import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 import Transferbackdrop from '../components/Loaders/Transferbackdrop';
@@ -53,11 +48,12 @@ import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
 import * as ImagePicker from 'expo-image-picker';
 import AttachedImage from '../components/AttachedImage';
 import LineComponent from './components/LineComponent';
-// import { encode } from 'base-64';
-// import axios from 'axios';
-// const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
-// const username = 'Analogyx1';
-// const password = '3xt3rn@l1!';
+import ImagePreview from '../components/ImagePreview';
+import {
+  setIsLoading,
+  setOnError,
+  setOnSuccess,
+} from '../components/Loaders/toastReducers';
 
 const initialFormdata = {
   poNum: '',
@@ -74,9 +70,8 @@ const initialFormdata = {
 };
 
 const POReceipt = () => {
-  const { podata, isLoading, onSuccess, onError } = useSelector(
-    (state) => state.poReceipts
-  );
+  const { podata } = useSelector((state) => state.poReceipts);
+  const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [localPoData, setLocalPoData] = useState({ 1: podata });
   const [hasPermission, setHasPermission] = useState(null);
   const [warehouseCodes, setWarehouseCodes] = useState([]);
@@ -114,6 +109,15 @@ const POReceipt = () => {
   });
   const [whseBin, setWhseBin] = useState([]);
   const [attachments, setAttachments] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  const handleImagePress = (imageBase64) => {
+    setPreviewImage(imageBase64);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewImage(null);
+  };
 
   const dispatch = useDispatch();
 
@@ -205,7 +209,7 @@ const POReceipt = () => {
               dispatch(showSnackbar('PO Not Found'));
             } else {
               setPOData(() => json.data.value);
-              console.log("po data", json.data.value)
+              console.log('po data', json.data.value);
             }
             setLoading(false);
           })
@@ -222,7 +226,6 @@ const POReceipt = () => {
     }
   };
 
-
   const fetchExistingPackslips = () => {
     setExistingPackslipLoading(true);
     if (poNum) {
@@ -235,7 +238,7 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log("ExistingPackslips", json.data.value)
+            console.log('ExistingPackslips', json.data.value);
             setExistingPackSlips(() => json.data.value);
             setExistingPackslipLoading(false);
             setIsNewpackslip(false);
@@ -252,7 +255,7 @@ const POReceipt = () => {
       dispatch(showSnackbar('Enter the PO Num first'));
       setExistingPackslipLoading(false);
     }
-  }
+  };
 
   const fetchPackslips = () => {
     setPackslipLoading(true);
@@ -405,14 +408,13 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(setPOdataResponse(json.data.value));
-            console.log("Po data", json.data.value)
+            console.log('Po data', json.data.value);
             setLocalPoData((prev) => ({
               ...prev,
               [pageValue]: json?.data?.value,
             }));
             setFilteredPos(json.data.value);
-            3
-
+            3;
 
             setCustomTableState((prev) => ({
               ...prev,
@@ -475,7 +477,9 @@ const POReceipt = () => {
   };
 
   const handleSave = (reverse) => {
-    dispatch(setIsLoading(true));
+    dispatch(
+      setIsLoading({ value: true, message: 'Saving the Receipt. Please wait' })
+    );
     const today = new Date();
     let receipt = {
       ...currentLine,
@@ -505,11 +509,11 @@ const POReceipt = () => {
       IUM: currentLine?.IUM,
       PUM: currentLine?.PUM,
       RowMod: !reverse ? 'U' : 'A',
-    }
+    };
     if (currentLine.PackLine) {
-      receipt.PackLine = currentLine.PackLine
-      receipt.WareHouseCode= currentLine?.WareHouseCode
-      receipt.BinNum= currentLine?.BinNum
+      receipt.PackLine = currentLine.PackLine;
+      receipt.WareHouseCode = currentLine?.WareHouseCode;
+      receipt.BinNum = currentLine?.BinNum;
     }
     const postPayload = {
       Company: POData[0]?.Company,
@@ -551,11 +555,11 @@ const POReceipt = () => {
   const onSearchPoChange = (text) => {
     setPoNum(text);
   };
-  
+
   function captureDetails(details, state) {
-    if(details){
-      setPoNum(details)
-    }else{
+    if (details) {
+      setPoNum(details);
+    } else {
       dispatch(showSnackbar('Error fetching PO number'));
     }
     closeScanner();
@@ -587,13 +591,7 @@ const POReceipt = () => {
   const removeImage = (indexToRemove) => {
     setAttachments(attachments.filter((_, index) => index !== indexToRemove));
   };
-  const renderAttachedImage = ({ item, index }) => (
-    <AttachedImage
-      key={index}
-      imageBase64={item.base64}
-      onRemove={() => removeImage(index)}
-    />
-  );
+
   return (
     <SafeAreaView style={styles.container}>
       {scannerVisible ? (
@@ -610,14 +608,16 @@ const POReceipt = () => {
         <View>
           <Transferbackdrop
             loading={isLoading && !onSuccess}
-            setLoading={(value) => dispatch(setIsLoading(value))}
+            setLoading={(value) =>
+              dispatch(setIsLoading({ value, message: '' }))
+            }
           />
           <SuccessBackdrop
             visible={onSuccess}
             onDismiss={() => {
               setTimeout(() => {
                 dispatch(setOnSuccess({ value: false, message: '' }));
-                dispatch(setIsLoading(false));
+                dispatch(setIsLoading({ value: false, message: '' }));
               }, 500);
             }}
           />
@@ -626,7 +626,7 @@ const POReceipt = () => {
             onDismiss={() => {
               setTimeout(() => {
                 dispatch(setOnError({ value: false, message: '' }));
-                dispatch(setIsLoading(false));
+                dispatch(setIsLoading({ value: false, message: '' }));
               }, 500);
             }}
           />
@@ -814,19 +814,30 @@ const POReceipt = () => {
                 </Text>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                   <Text style={styles.inputLabel}>Packslip</Text>
-                  <TouchableOpacity onPress={() => {
-                    if (isNewPackSlip) {
-                      fetchExistingPackslips();
-                    } else {
-                      // setPackSlipData([]);
-                      setSelectedPackslip({});
-                      // setPOData([]);
-                      // setSelectedPOdata({})
-                      setPackSlipNUm("")
-                      setIsNewpackslip(true)
-                    }
-                  }} >
-                    <Text style={{ color: globalStyles.colors.primary, marginRight: 10 }}>{isNewPackSlip ? "Edit Existing Packslips" : "Enter New Packslip"}</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (isNewPackSlip) {
+                        fetchExistingPackslips();
+                      } else {
+                        // setPackSlipData([]);
+                        setSelectedPackslip({});
+                        // setPOData([]);
+                        // setSelectedPOdata({})
+                        setPackSlipNUm('');
+                        setIsNewpackslip(true);
+                      }
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: globalStyles.colors.primary,
+                        marginRight: 10,
+                      }}
+                    >
+                      {isNewPackSlip
+                        ? 'Edit Existing Packslips'
+                        : 'Enter New Packslip'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
                 {existingPackslipLoading ? (
@@ -835,7 +846,8 @@ const POReceipt = () => {
                     color={MD2Colors.red800}
                   />
                 ) : (
-                  existingPackslips.length > 0 && !isNewPackSlip && (
+                  existingPackslips.length > 0 &&
+                  !isNewPackSlip && (
                     <View
                       style={{
                         margin: 7,
@@ -851,12 +863,23 @@ const POReceipt = () => {
                         ]}
                       >
                         <Text style={{ color: 'white' }}>Packslip</Text>
-                        <Text style={{ color: 'white' }}>Available Pack Lines</Text>
+                        <Text style={{ color: 'white' }}>
+                          Available Pack Lines
+                        </Text>
                       </View>
-                      <ScrollView style={{ maxHeight: 200, padding:5 }}>
+                      <ScrollView style={{ maxHeight: 200, padding: 5 }}>
                         {existingPackslips?.length > 0 ? (
                           existingPackslips?.map((po, id) => (
-                            <View key={id} style={{ padding: 2, backgroundColor: po.PackSlip == selectedPackSlip.PackSlip ? "#d9d9d9" : "white" }}>
+                            <View
+                              key={id}
+                              style={{
+                                padding: 2,
+                                backgroundColor:
+                                  po.PackSlip == selectedPackSlip.PackSlip
+                                    ? '#d9d9d9'
+                                    : 'white',
+                              }}
+                            >
                               <TouchableOpacity
                                 onPress={() => onSelectPackslip(po)}
                               >
@@ -898,7 +921,7 @@ const POReceipt = () => {
                     onPress={() => handleCreateUpdatePackSlip()}
                   >
                     <Text style={styles.receiveButtonText}>
-                      {isNewPackSlip ? "Create Packslip" : "Edit PackSlip"}
+                      {isNewPackSlip ? 'Create Packslip' : 'Edit PackSlip'}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -920,87 +943,128 @@ const POReceipt = () => {
                     Upload Document
                   </Button>
                 </View>
-                <FlatList
-                  data={attachments}
-                  renderItem={renderAttachedImage}
-                  keyExtractor={(item, index) => index.toString()}
-                  horizontal={false} // Set to true if you want horizontal scrolling
-                />
+                <View
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'flex-start',
+                    flexDirection: 'column',
+                    width: '100%',
+                  }}
+                >
+                  <ScrollView horizontal={true} style={styles.scrollView}>
+                    {attachments.map((item, index) => (
+                      <TouchableOpacity
+                        onPress={() => handleImagePress(item.base64)}
+                      >
+                        <AttachedImage
+                          key={index}
+                          imageBase64={item.base64}
+                          onRemove={() => removeImage(index)}
+                          handleImagePress={() => {}}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                    {previewImage && (
+                      <ImagePreview
+                        imageBase64={previewImage}
+                        onClose={handleClosePreview}
+                      />
+                    )}
+                  </ScrollView>
+                </View>
               </View>
             )}
             {tabValue == '2' && (
               <View style={styles.tabView}>
-                {
-                  (!_.isEmpty(selectedPackSlip)) ?
-                    (
-                      <View style={{ height: '100%' }}>
-                        {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={() => setTabvalue("3")} >
+                {!_.isEmpty(selectedPackSlip) ? (
+                  <View style={{ height: '100%' }}>
+                    {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={() => setTabvalue("3")} >
                       <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>+ Create New Line</Text>
                     </TouchableOpacity> */}
-                        <ScrollView>
-                          {existingPackslipLoading && (
-                            <ActivityIndicator
-                              animating={true}
-                              color={MD2Colors.red800}
-                            />
-                          )}
-                          <Text
-                            style={{
-                              fontSize: 15,
-                              fontWeight: '600',
-                              marginBottom: 8,
-                            }}
-                          >
-                            Packslip: {packSLipNUm}
-                          </Text>
-                          {selectedPackSlip && selectedPackSlip?.RcvDtls?.length > 0 ? (
-                            selectedPackSlip?.RcvDtls?.map((po) => (
-                              <LinesCard data={po} onSelectLine={onSelectLine} isPackLine={true} />
-                            ))
-                          ) : (
-                            <Text style={{ textAlign: 'center' }}>
-                              {existingPackslipLoading ? 'Please wait' : 'No Lines Found'}
-                            </Text>
-                          )}
-                        </ScrollView>
-                      </View>
-                    ) : (
-                      <View style={{ height: '100%' }}>
-                        <ScrollView>
-                          {packslipLoading && (
-                            <ActivityIndicator
-                              animating={true}
-                              color={MD2Colors.red800}
-                            />
-                          )}
-                          <Text
-                            style={{
-                              fontSize: 15,
-                              fontWeight: '600',
-                              marginBottom: 8,
-                            }}
-                          >
-                            Packslip: {packSLipNUm}
-                          </Text>
-                          {packslipData && packslipData?.length > 0 ? (
-                            packslipData?.map((po) => (
-                              <LinesCard data={po} onSelectLine={onSelectLine} isPackLine={false} />
-                            ))
-                          ) : (
-                            <Text style={{ textAlign: 'center' }}>
-                              {packslipLoading ? 'Please wait' : 'No Lines Found'}
-                            </Text>
-                          )}
-                        </ScrollView>
-                      </View>
-                    )
-                }
-
+                    <ScrollView>
+                      {existingPackslipLoading && (
+                        <ActivityIndicator
+                          animating={true}
+                          color={MD2Colors.red800}
+                        />
+                      )}
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          fontWeight: '600',
+                          marginBottom: 8,
+                        }}
+                      >
+                        Packslip: {packSLipNUm}
+                      </Text>
+                      {selectedPackSlip &&
+                      selectedPackSlip?.RcvDtls?.length > 0 ? (
+                        selectedPackSlip?.RcvDtls?.map((po) => (
+                          <LinesCard
+                            data={po}
+                            onSelectLine={onSelectLine}
+                            isPackLine={true}
+                          />
+                        ))
+                      ) : (
+                        <Text style={{ textAlign: 'center' }}>
+                          {existingPackslipLoading
+                            ? 'Please wait'
+                            : 'No Lines Found'}
+                        </Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                ) : (
+                  <View style={{ height: '100%' }}>
+                    <ScrollView>
+                      {packslipLoading && (
+                        <ActivityIndicator
+                          animating={true}
+                          color={MD2Colors.red800}
+                        />
+                      )}
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          fontWeight: '600',
+                          marginBottom: 8,
+                        }}
+                      >
+                        Packslip: {packSLipNUm}
+                      </Text>
+                      {packslipData && packslipData?.length > 0 ? (
+                        packslipData?.map((po) => (
+                          <LinesCard
+                            data={po}
+                            onSelectLine={onSelectLine}
+                            isPackLine={false}
+                          />
+                        ))
+                      ) : (
+                        <Text style={{ textAlign: 'center' }}>
+                          {packslipLoading ? 'Please wait' : 'No Lines Found'}
+                        </Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
             )}
             {tabValue == '3' && (
               <View style={styles.tabView}>
-                <LineComponent {...{ styles, currentLine, formData, handleSave, bins, onChangeText, isNewPackSlip }} />
+                <LineComponent
+                  {...{
+                    styles,
+                    currentLine,
+                    formData,
+                    handleSave,
+                    bins,
+                    onChangeText,
+                    isNewPackSlip,
+                  }}
+                />
               </View>
             )}
           </View>
@@ -1027,6 +1091,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: globalStyles.colors.darkGrey,
     marginLeft: 20,
+  },
+  scrollView: {
+    flexDirection: 'row',
+    margin: 10,
+    width: '100%',
   },
   bottomButtonsContainer: {
     flexDirection: 'row',
@@ -1069,7 +1138,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 10,
     width: '100%',
-    zIndex: 10
+    zIndex: 10,
   },
   receiveButtonText: {
     color: 'white',

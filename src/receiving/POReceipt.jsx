@@ -21,7 +21,6 @@ import {
   Platform,
   FlatList,
 } from 'react-native';
-import RNPickerSelect from 'react-native-picker-select';
 import {
   Button,
   Checkbox,
@@ -38,9 +37,8 @@ import { AnalogyxBIClient } from '@analogyxbi/connection';
 import _ from 'lodash';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
-import { generatePDF } from '../utils/PDFGenerator';
 import CustomDatatable from '../components/CustomDatatable';
-import LinesCard from '../components/LinesCard';
+import LinesCard from './components/LinesCard';
 import {
   setIsLoading,
   setOnError,
@@ -52,9 +50,9 @@ import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
 import Transferbackdrop from '../components/Loaders/Transferbackdrop';
 import ExpoCamera from '../components/Camera';
 import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
-import CameraScreen from '../components/RNCamera';
 import * as ImagePicker from 'expo-image-picker';
 import AttachedImage from '../components/AttachedImage';
+import LineComponent from './components/LineComponent';
 // import { encode } from 'base-64';
 // import axios from 'axios';
 // const baseURL = 'https://192.168.1.251/E10Dev/api/v1'; // Replace with your API URL
@@ -100,6 +98,8 @@ const POReceipt = () => {
   const [packslipLoading, setPackslipLoading] = useState(false);
   const [isPosLoading, setIsPOsLoading] = useState(false);
   const [selectedPOdata, setSelectedPOdata] = useState({});
+  const [existingPackslips, setExistingPackSlips] = useState([]);
+  const [existingPackslipLoading, setExistingPackslipLoading] = useState(false);
   const [currentLine, setCurrentLine] = useState({});
   const [showPOModal, setShowPOModal] = useState(false);
   const [formData, setFormdata] = useState(initialFormdata);
@@ -142,14 +142,6 @@ const POReceipt = () => {
     return result;
   };
 
-  const renderBinOptions = (values) => {
-    const result = values.map((val) => ({
-      ...val,
-      label: val.BinNum,
-      value: val.BinNum,
-    }));
-    return result;
-  };
   // if (hasPermission === null) {
   //     return <Text>Requesting for camera permission</Text>;
   // }
@@ -213,6 +205,7 @@ const POReceipt = () => {
               dispatch(showSnackbar('PO Not Found'));
             } else {
               setPOData(() => json.data.value);
+              console.log("po data", json.data.value)
             }
             setLoading(false);
           })
@@ -229,10 +222,43 @@ const POReceipt = () => {
     }
   };
 
+
+  const fetchExistingPackslips = () => {
+    setExistingPackslipLoading(true);
+    if (poNum) {
+      setIsNewpackslip(false);
+      // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls&$filter=PONum eq ${poNum}`;
+      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls&$filter=PONum eq ${poNum}`;
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: { epicor_endpoint, request_type: 'GET' },
+          stringify: false,
+        })
+          .then(({ json }) => {
+            console.log("ExistingPackslips", json.data.value)
+            setExistingPackSlips(() => json.data.value);
+            setExistingPackslipLoading(false);
+            setIsNewpackslip(false);
+          })
+          .catch((err) => {
+            setExistingPackslipLoading(false);
+            setIsNewpackslip(true);
+          });
+      } catch (err) {
+        setExistingPackslipLoading(false);
+        setIsNewpackslip(true);
+      }
+    } else {
+      dispatch(showSnackbar('Enter the PO Num first'));
+      setExistingPackslipLoading(false);
+    }
+  }
+
   const fetchPackslips = () => {
     setPackslipLoading(true);
     if (poNum) {
-      setIsNewpackslip(false);
+      // setIsNewpackslip(false);
       const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
@@ -241,17 +267,17 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            setPackSlipData(() => json.data.value);
+            setPackSlipData(json.data.value);
             setPackslipLoading(false);
-            setIsNewpackslip(false);
+            // setIsNewpackslip(false);
           })
           .catch((err) => {
             setPackslipLoading(false);
-            setIsNewpackslip(true);
+            // setIsNewpackslip(true);
           });
       } catch (err) {
         setPackslipLoading(false);
-        setIsNewpackslip(true);
+        // setIsNewpackslip(true);
       }
     } else {
       dispatch(showSnackbar('Enter the PO Num first'));
@@ -260,13 +286,9 @@ const POReceipt = () => {
   };
 
   useEffect(() => {
-    if (tabValue === '2') {
-      // getWareHouseList()
+    if (tabValue === '2' && isNewPackSlip) {
       fetchPackslips();
     }
-    // else {
-    //   setPackSlipData([]);
-    // }
   }, [tabValue]);
 
   const getWareHouseList = (warehouseCode) => {
@@ -287,7 +309,6 @@ const POReceipt = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          console.log(json.data.value);
           setWarehouseCodes(() => json.data.value);
           setBins(() => json.data.value);
           // setLoading(false);
@@ -311,17 +332,18 @@ const POReceipt = () => {
     setSaved(false);
   };
 
-  const onSelectPoNum = (po) => {
-    setPoNum(po.PONum);
+  const handleCreateUpdatePackSlip = () => {
+    if (isNewPackSlip) {
+      createPackSlip();
+    } else {
+      setTabvalue('2');
+    }
   };
 
-  const handleCreateUpdatePackSlip = () => {
-    createPackSlip();
-  };
   const createPackSlip = () => {
     setCreatepackslipLoading(true);
     if (packSLipNUm) {
-      setIsNewpackslip(false);
+      // setIsNewpackslip(false);
       const today = new Date().toISOString();
       const formattedDate = today.substring(0, 19);
       const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
@@ -366,7 +388,6 @@ const POReceipt = () => {
 
   const searchPoNum = (page) => {
     let pageValue = page ? page : customTableState.page;
-    console.log({ localPoData });
     if (_.isEmpty(localPoData[pageValue])) {
       setIsPOsLoading(true);
       // if (vendorNameSearch) {
@@ -385,11 +406,15 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(setPOdataResponse(json.data.value));
+            console.log("Po data", json.data.value)
             setLocalPoData((prev) => ({
               ...prev,
               [pageValue]: json?.data?.value,
             }));
             setFilteredPos(json.data.value);
+            3
+
+
             setCustomTableState((prev) => ({
               ...prev,
               page: pageValue,
@@ -439,7 +464,9 @@ const POReceipt = () => {
 
   const onSelectPackslip = (po) => {
     setPackSlipNUm(po?.PackSlip);
-    setSelectedPackslip(po);
+    if (!isNewPackSlip) {
+      setSelectedPackslip(po);
+    }
   };
 
   const onSelectLine = (po) => {
@@ -451,6 +478,40 @@ const POReceipt = () => {
   const handleSave = (reverse) => {
     dispatch(setIsLoading(true));
     const today = new Date();
+    let receipt = {
+      ...currentLine,
+      Company: POData[0]?.Company,
+      VendorNum: POData[0]?.VendorNum,
+      PurPoint: '',
+      PackSlip: packSLipNUm,
+      ReceiptDate: today.toISOString(),
+      Invoiced: false,
+      PONum: POData[0]?.PONum,
+      AutoReceipt: false,
+      POType: POData[0]?.POType,
+      Received: reverse,
+      ReceivedTo: 'PUR-STK',
+      ReceivedComplete: false,
+      ArrivedDate: today.toISOString(),
+      VendorQty: formData.input,
+      PORelArrivedQty: formData?.input,
+      POLine: currentLine?.POLine,
+      PORelNum: currentLine?.PORelNum,
+      PartNum: currentLine?.POLinePartNum,
+      BinNum: formData?.BinNum,
+      EnableBin: true,
+      WareHouseCode: currentLine?.WarehouseCode,
+      OurQty: formData.input,
+      InputOurQty: formData.input,
+      IUM: currentLine?.IUM,
+      PUM: currentLine?.PUM,
+      RowMod: !reverse ? 'U' : 'A',
+    }
+    if (currentLine.PackLine) {
+      receipt.PackLine = currentLine.PackLine
+      receipt.WareHouseCode= currentLine?.WareHouseCode
+      receipt.BinNum= currentLine?.BinNum
+    }
     const postPayload = {
       Company: POData[0]?.Company,
       VendorNum: POData[0]?.VendorNum,
@@ -461,43 +522,11 @@ const POReceipt = () => {
       Invoiced: false,
       RowMod: !reverse ? 'U' : 'A',
       ReceivePerson: 'analogyx1',
-      RcvDtls: [
-        {
-          Company: POData[0]?.Company,
-          VendorNum: POData[0]?.VendorNum,
-          PurPoint: '',
-          PackSlip: packSLipNUm,
-          // PackLine: currentLine,
-          ReceiptDate: today.toISOString(),
-          Invoiced: false,
-          PONum: POData[0]?.PONum,
-          AutoReceipt: false,
-          POType: POData[0]?.POType,
-          Received: reverse,
-          ReceivedTo: 'PUR-STK',
-          ReceivedComplete: false,
-          ArrivedDate: today.toISOString(),
-          VendorQty: formData.input,
-          PORelArrivedQty: formData?.input,
-          POLine: currentLine?.POLine,
-          PORelNum: currentLine?.PORelNum,
-          PartNum: currentLine?.POLinePartNum,
-          BinNum: formData?.BinNum,
-          EnableBin: true,
-          WareHouseCode: currentLine?.WarehouseCode,
-          // JobSeqType: currentLine?.JobSeqType,
-          // JobSeq: currentLine?.JobSeq,
-          OurQty: formData.input,
-          InputOurQty: formData.input,
-          IUM: currentLine?.IUM,
-          PUM: currentLine?.PUM,
-          RowMod: !reverse ? 'U' : 'A',
-        },
-      ],
+      RcvDtls: [receipt],
     };
 
-    console.log({ postPayload });
-    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
+    console.log({ postPayload, currentLine });
+    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
@@ -524,28 +553,22 @@ const POReceipt = () => {
     setPoNum(text);
   };
   function captureDetails(details, state) {
-    if (
-      cameraState === 'current_part' &&
-      (!formData.current_whse ||
-        !formData.current_bin ||
-        formData.current_whse === '' ||
-        formData.current_bin === '')
-    ) {
-      setCameraState(null);
-      closeScanner();
-      return dispatch(
-        showSnackbar('Warehouse or bin not found for the part number')
-      );
-    }
-    setFormData((prev) => ({ ...prev, [state]: details }));
-    setCameraState(null);
+    // if (
+    //   cameraState === 'current_part' &&
+    //   (!formData.current_whse ||
+    //     !formData.current_bin ||
+    //     formData.current_whse === '' ||
+    //     formData.current_bin === '')
+    // ) {
+    //   setCameraState(null);
+    //   closeScanner();
+    //   return dispatch(
+    //     showSnackbar('Warehouse or bin not found for the part number')
+    //   );
+    // }
+    // setFormData((prev) => ({ ...prev, [state]: details }));
+    // setCameraState(null);
     closeScanner();
-  }
-  function handleValidate() {
-    if (!formData.BinNum || !formData?.input) {
-      return true;
-    }
-    return false;
   }
 
   const getCameraPermission = async () => {
@@ -817,11 +840,12 @@ const POReceipt = () => {
                 </Text>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                   <Text style={styles.inputLabel}>Packslip</Text>
-                  {/* <TouchableOpacity onPress={() => {
+                  <TouchableOpacity onPress={() => {
                     if (isNewPackSlip) {
-                      fetchPackslips();
+                      fetchExistingPackslips();
                     } else {
-                      setPackSlipData([]);
+                      // setPackSlipData([]);
+                      setSelectedPackslip({});
                       // setPOData([]);
                       // setSelectedPOdata({})
                       setPackSlipNUm("")
@@ -829,15 +853,15 @@ const POReceipt = () => {
                     }
                   }} >
                     <Text style={{ color: globalStyles.colors.primary, marginRight: 10 }}>{isNewPackSlip ? "Edit Existing Packslips" : "Enter New Packslip"}</Text>
-                  </TouchableOpacity> */}
+                  </TouchableOpacity>
                 </View>
-                {/* {packslipLoading ? (
+                {existingPackslipLoading ? (
                   <ActivityIndicator
                     animating={true}
                     color={MD2Colors.red800}
                   />
                 ) : (
-                  packslipData.length > 0 && (
+                  existingPackslips.length > 0 && !isNewPackSlip && (
                     <View
                       style={{
                         margin: 7,
@@ -853,11 +877,11 @@ const POReceipt = () => {
                         ]}
                       >
                         <Text style={{ color: 'white' }}>Packslip</Text>
-                        <Text style={{ color: 'white' }}>Vendor Name</Text>
+                        <Text style={{ color: 'white' }}>Available Pack Lines</Text>
                       </View>
-                      <ScrollView>
-                        {packslipData?.length > 0 ? (
-                          packslipData?.map((po, id) => (
+                      <ScrollView style={{ maxHeight: 200 }}>
+                        {existingPackslips?.length > 0 ? (
+                          existingPackslips?.map((po, id) => (
                             <View key={id} style={{ padding: 2 }}>
                               <TouchableOpacity
                                 onPress={() => onSelectPackslip(po)}
@@ -869,7 +893,7 @@ const POReceipt = () => {
                                   ]}
                                 >
                                   <Text>{po.PackSlip}</Text>
-                                  <Text>{po.VendorNumName}</Text>
+                                  <Text>{po?.RcvDtls?.length} PackLines</Text>
                                 </View>
                               </TouchableOpacity>
                             </View>
@@ -882,10 +906,10 @@ const POReceipt = () => {
                       </ScrollView>
                     </View>
                   )
-                )} */}
+                )}
                 <TextInput
                   style={styles.input}
-                  // editable={!loading}
+                  editable={isNewPackSlip}
                   value={packSLipNUm}
                   onChangeText={(text) => setPackSlipNUm(text)}
                   placeholder="Packslip"
@@ -897,10 +921,10 @@ const POReceipt = () => {
                   <TouchableOpacity
                     disabled={_.isEmpty(packSLipNUm)}
                     style={styles.receiveButton}
-                    onPress={handleCreateUpdatePackSlip}
+                    onPress={() => handleCreateUpdatePackSlip()}
                   >
                     <Text style={styles.receiveButtonText}>
-                      Create Packslip
+                      {isNewPackSlip ? "Create Packslip" : "Edit PackSlip"}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -932,202 +956,77 @@ const POReceipt = () => {
             )}
             {tabValue == '2' && (
               <View style={styles.tabView}>
-                {/* <View>
-                  <Text style={styles.inputLabel}>Filter</Text>
-                  <TextInput
-                    style={styles.input}
-                    // onChangeText={(text) => onChangeText(text, 'confirm_password')}
-                    // value={formData?.confirm_password}
-                    // secureTextEntry={true}
-                    placeholder="Filter"
-                  />
-                </View> */}
-                <View style={{ height: '100%' }}>
-                  {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={() => setTabvalue("3")} >
-                    <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>+ Create New Line</Text>
-                  </TouchableOpacity> */}
-                  <ScrollView>
-                    {packslipLoading && (
-                      <ActivityIndicator
-                        animating={true}
-                        color={MD2Colors.red800}
-                      />
-                    )}
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        fontWeight: '600',
-                        marginBottom: 8,
-                      }}
-                    >
-                      Packslip: {packSLipNUm}
-                    </Text>
-                    {packslipData && packslipData?.length > 0 ? (
-                      packslipData?.map((po) => (
-                        <LinesCard data={po} onSelectLine={onSelectLine} />
-                      ))
+                {
+                  (!_.isEmpty(selectedPackSlip)) ?
+                    (
+                      <View style={{ height: '100%' }}>
+                        {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={() => setTabvalue("3")} >
+                      <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>+ Create New Line</Text>
+                    </TouchableOpacity> */}
+                        <ScrollView>
+                          {existingPackslipLoading && (
+                            <ActivityIndicator
+                              animating={true}
+                              color={MD2Colors.red800}
+                            />
+                          )}
+                          <Text
+                            style={{
+                              fontSize: 15,
+                              fontWeight: '600',
+                              marginBottom: 8,
+                            }}
+                          >
+                            Packslip: {packSLipNUm}
+                          </Text>
+                          {selectedPackSlip && selectedPackSlip?.RcvDtls?.length > 0 ? (
+                            selectedPackSlip?.RcvDtls?.map((po) => (
+                              <LinesCard data={po} onSelectLine={onSelectLine} isPackLine={true} />
+                            ))
+                          ) : (
+                            <Text style={{ textAlign: 'center' }}>
+                              {existingPackslipLoading ? 'Please wait' : 'No Lines Found'}
+                            </Text>
+                          )}
+                        </ScrollView>
+                      </View>
                     ) : (
-                      <Text style={{ textAlign: 'center' }}>
-                        {packslipLoading ? 'Please wait' : 'No Lines Found'}
-                      </Text>
-                    )}
-                  </ScrollView>
-                </View>
+                      <View style={{ height: '100%' }}>
+                        <ScrollView>
+                          {packslipLoading && (
+                            <ActivityIndicator
+                              animating={true}
+                              color={MD2Colors.red800}
+                            />
+                          )}
+                          <Text
+                            style={{
+                              fontSize: 15,
+                              fontWeight: '600',
+                              marginBottom: 8,
+                            }}
+                          >
+                            Packslip: {packSLipNUm}
+                          </Text>
+                          {packslipData && packslipData?.length > 0 ? (
+                            packslipData?.map((po) => (
+                              <LinesCard data={po} onSelectLine={onSelectLine} isPackLine={false} />
+                            ))
+                          ) : (
+                            <Text style={{ textAlign: 'center' }}>
+                              {packslipLoading ? 'Please wait' : 'No Lines Found'}
+                            </Text>
+                          )}
+                        </ScrollView>
+                      </View>
+                    )
+                }
+
               </View>
             )}
             {tabValue == '3' && (
               <View style={styles.tabView}>
-                <ScrollView style={{ flex: 1, maxHeight: '99%' }}>
-                  <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                    <View>
-                      <Text style={styles.inputLabel}>PO</Text>
-                      <Text style={{ padding: 10 }}>
-                        {currentLine.PONum || 'N/A'}
-                      </Text>
-                    </View>
-                    <View>
-                      <Text style={styles.inputLabel}>Line</Text>
-                      <Text style={{ padding: 10 }}>
-                        {currentLine.POLine || 'N/A'}
-                      </Text>
-                    </View>
-                    <View>
-                      <Text style={styles.inputLabel}>Rel</Text>
-                      <Text style={{ padding: 10 }}>
-                        {currentLine.PORelNum || 'N/A'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={styles.sideHeading}>Quantities</Text>
-                  <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.inputLabel}>Order</Text>
-                      <Text style={{ padding: 10 }}>
-                        {(currentLine.XRelQty &&
-                          parseInt(currentLine.XRelQty)) ||
-                          '-'}
-                        /{currentLine.PUM || '-'}
-                      </Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.inputLabel}>Arrived</Text>
-                      <Text style={{ padding: 10 }}>
-                        {(currentLine.ArrivedQty &&
-                          parseInt(currentLine.ArrivedQty)) ||
-                          '-'}
-                        /{currentLine.IUM || '-'}
-                      </Text>
-                      {/* <TextInput
-                        style={styles.input}
-                        onChangeText={(text) => onChangeText(text, 'arrived_qty')}
-                        value={currentLine.PORelArrivedQty && Math.round(currentLine.PORelArrivedQty)?.toString()}
-                        placeholder="Arrived qty"
-                      /> */}
-                    </View>
-                  </View>
-                  <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.inputLabel}>Input</Text>
-                      <TextInput
-                        style={styles.input}
-                        onChangeText={(text) => onChangeText(text, 'input')}
-                        value={formData.input}
-                        placeholder="Input"
-                      />
-                    </View>
-                  </View>
-                  {/* <View style={[globalStyles.dFlexR, globalStyles.justifySE]}>
-                    <View>
-                      <Text style={styles.inputLabel}>Complete</Text>
-                      <Checkbox status={true ? 'checked' : 'unchecked'} />
-                    </View>
-                    <View>
-                      <Text style={styles.inputLabel}>Insp Req</Text>
-                      <Checkbox status={true ? 'checked' : 'unchecked'} />
-                    </View>
-                    <View>
-                      <Text style={styles.inputLabel}>Print Label</Text>
-                      <Checkbox status={true ? 'checked' : 'unchecked'} />
-                    </View>
-                  </View> */}
-                  <Text style={styles.sideHeading}>Location</Text>
-                  <View>
-                    <Text style={styles.inputLabel}>Note</Text>
-                    <TextInput
-                      style={styles.input}
-                      onChangeText={(text) => onChangeText(text, 'note')}
-                      value={formData?.note || currentLine?.POLineLineDesc}
-                      multiline={true}
-                      placeholder="Note"
-                    />
-                  </View>
-                  <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.inputLabel}>Warehouse Code</Text>
-                      {/* <TextInput
-                        style={styles.input}
-                        onChangeText={(text) => onChangeText(text, 'WareHouseCode')}
-                        value={formData?.WareHouseCode || currentLine?.WareHouseCode || "-"}
-                        placeholder="Warehouse Code"
-                      /> */}
-                      <Text style={{ padding: 10 }}>
-                        {currentLine?.WarehouseCode}
-                      </Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.inputLabel}>Bin Number</Text>
-                      {/* <TextInput
-                        style={styles.input}
-                        onChangeText={(text) => onChangeText(text, 'BinNum')}
-                        value={currentLine?.BinNum}
-                        placeholder="Bin Number"
-                      /> */}
-                      <RNPickerSelect
-                        onValueChange={(text) => onChangeText(text, 'BinNum')}
-                        items={renderBinOptions(bins)}
-                        placeholder={{
-                          label: 'BinNum',
-                          value: null,
-                        }}
-                        value={formData?.BinNum}
-                      />
-                    </View>
-                  </View>
-                  <View
-                    style={[
-                      globalStyles.dFlexR,
-                      globalStyles.justifySE,
-                      { padding: 5 },
-                    ]}
-                  >
-                    <Button
-                      buttonColor={globalStyles.colors.primary}
-                      mode="contained"
-                      // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
-                      onPress={() => handleSave(false)}
-                    >
-                      PO Reversal
-                    </Button>
-                    <Button
-                      buttonColor={globalStyles.colors.success}
-                      icon="floppy"
-                      mode="contained"
-                      disabled={handleValidate()}
-                      onPress={() => handleSave(true)}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      buttonColor={globalStyles.colors.success}
-                      icon="printer"
-                      mode="contained"
-                      // disabled={!saved}
-                      onPress={() => generatePDF(currentLine, formData)}
-                    >
-                      Print Tags
-                    </Button>
-                  </View>
-                </ScrollView>
+                <LineComponent {...{ styles, currentLine, formData, handleSave, bins, onChangeText, isNewPackSlip }} />
               </View>
             )}
           </View>
@@ -1196,6 +1095,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 10,
     width: '100%',
+    zIndex: 10
   },
   receiveButtonText: {
     color: 'white',

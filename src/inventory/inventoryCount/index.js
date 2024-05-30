@@ -36,6 +36,7 @@ const InventoryCount = () => {
       </View>
       <View style={{ padding: 40 }}>
         <CountOption name="Select Cycle" route="select_inventory_cycle" />
+        <CountOption name="Cycle Details" route="cycle_details" />
         {/* 
         <CountOption name="Cycle Count Period" route="cycle_count_period" />
         <CountOption

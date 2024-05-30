@@ -715,8 +715,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heading: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '600',
     color: globalStyles.colors.darkGrey,
     marginLeft: 20,
   },

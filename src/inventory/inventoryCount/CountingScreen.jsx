@@ -6,9 +6,11 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { globalStyles } from '../../style/globalStyles';
+import { useNavigation } from '@react-navigation/native';
 
 const CountingScreen = ({
   part,
@@ -21,72 +23,121 @@ const CountingScreen = ({
   setNotes,
   setScreen,
 }) => {
+  const navigation = useNavigation();
+
   return (
-    <View style={styles.countingScreenContainer}>
-      <ScrollView contentContainerStyle={styles.countingScreen}>
-        <Text style={styles.label}>Cycle No: 1 WH</Text>
-        <Text style={styles.label}>Cycle Date: 5/24/2024</Text>
-        <Text style={styles.label}>Status: Count Started</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Part (Scanning / Enter)"
-            value={part}
-            onChangeText={setPart}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()}>
+          <Ionicons
+            name="chevron-back-outline"
+            size={24}
+            color={globalStyles.colors.darkGrey}
           />
-          <TouchableOpacity style={styles.icon}>
-            <Ionicons name="scan-outline" size={24} color="#333" />
+        </Pressable>
+        <Text style={styles.heading}>Counting Process</Text>
+      </View>
+      <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
+        <View style={styles.row}>
+          <View style={styles.column}>
+            <Text style={styles.label}>Cycle No</Text>
+            <Text style={styles.value}>1</Text>
+          </View>
+          <View style={styles.column}>
+            <Text style={styles.label}>WH</Text>
+            <Text style={styles.value}>Killy</Text>
+          </View>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.column}>
+            <Text style={styles.label}>Cycle Date</Text>
+            <Text style={styles.value}>24/05/2024</Text>
+          </View>
+          <View style={styles.column}>
+            <Text style={styles.label}>Status</Text>
+            <Text style={styles.value}>Count Generated</Text>
+          </View>
+        </View>
+      </View>
+      <View style={styles.countingScreenContainer}>
+        <ScrollView contentContainerStyle={styles.countingScreen}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Part (Scanning / Enter)"
+              value={part}
+              onChangeText={setPart}
+            />
+            <TouchableOpacity style={styles.icon}>
+              <Ionicons name="scan-outline" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Bin (Scanning / Enter)"
+              value={bin}
+              onChangeText={setBin}
+            />
+            <TouchableOpacity style={styles.icon}>
+              <Ionicons name="scan-outline" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          <TextInput
+            style={styles.inputNoIcon}
+            placeholder="Counted Qty (Manual Input)"
+            value={countedQty}
+            onChangeText={setCountedQty}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.inputNoIcon}
+            placeholder="Notes (Manual Input - If any)"
+            value={notes}
+            onChangeText={setNotes}
+          />
+        </ScrollView>
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.footerButton}
+            onPress={() => setScreen('initial')}
+          >
+            <Text style={styles.buttonText}>Save</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.footerButton}
+            onPress={() => {
+              setPart('');
+              setBin('');
+              setCountedQty('');
+              setNotes('');
+            }}
+          >
+            <Text style={styles.buttonText}>Clear</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Bin (Scanning / Enter)"
-            value={bin}
-            onChangeText={setBin}
-          />
-          <TouchableOpacity style={styles.icon}>
-            <Ionicons name="scan-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-        <TextInput
-          style={styles.inputNoIcon}
-          placeholder="Counted Qty (Manual Input)"
-          value={countedQty}
-          onChangeText={setCountedQty}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={styles.inputNoIcon}
-          placeholder="Notes (Manual Input - If any)"
-          value={notes}
-          onChangeText={setNotes}
-        />
-      </ScrollView>
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.footerButton}
-          onPress={() => setScreen('initial')}
-        >
-          <Text style={styles.buttonText}>Save</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.footerButton}
-          onPress={() => {
-            setPart('');
-            setBin('');
-            setCountedQty('');
-            setNotes('');
-          }}
-        >
-          <Text style={styles.buttonText}>Clear</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: '#fff',
+  },
+  header: {
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: globalStyles.colors.darkGrey,
+    marginLeft: 20,
+  },
   countingScreenContainer: {
     flex: 1,
     width: '100%',
@@ -155,6 +206,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  detailsContainer: {
+    flexWrap: "wrap",
+    marginHorizontal: 50,
+    marginVertical: 10
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  column: {
+    flex: 1,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  value: {
+    fontSize: 16,
+    color: '#666',
   },
 });
 

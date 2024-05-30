@@ -40,6 +40,7 @@ import CycleCountPeriod from './src/inventory/inventoryCount/CycleCountPeriod';
 import InventoryCount from './src/inventory/inventoryCount';
 import CycleSchedule from './src/inventory/inventoryCount/CycleSchedule';
 import SelectCycle from './src/inventory/inventoryCount/SelectCycle';
+import CycleApp from './src/inventory/inventoryCount/CycleApp';
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
@@ -161,6 +162,7 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="inventory_count" component={InventoryCount} />
       <Stack.Screen name="inventory_cycle_schedule" component={CycleSchedule} />
       <Stack.Screen name="select_inventory_cycle" component={SelectCycle} />
+      <Stack.Screen name="cycle_details" component={CycleApp} />
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );

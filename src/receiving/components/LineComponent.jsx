@@ -182,7 +182,7 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
                         // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
                         onPress={() => handleSave(false)}
                     >
-                        PO Reversal
+                        Reverse
                     </Button>
                 }
                 <Button
@@ -194,15 +194,21 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
                 >
                     Save
                 </Button>
-                <Button
-                    buttonColor={globalStyles.colors.success}
-                    icon="printer"
-                    mode="contained"
-                    // disabled={!saved}
-                    onPress={() => generatePDF(currentLine, formData)}
-                >
-                    Print Tags
-                </Button>
+                {
+                    isNewPackSlip &&
+                    <Button
+                        buttonColor={globalStyles.colors.success}
+                        icon="printer"
+                        mode="contained"
+                        // disabled={!saved}
+                        onPress={() => {
+                            console.log({ currentLine, formData })
+                            generatePDF(currentLine, formData)
+                        }}
+                    >
+                        Print Tags
+                    </Button>
+                }
             </View>
         </ScrollView>
     )

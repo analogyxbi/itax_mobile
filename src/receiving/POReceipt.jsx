@@ -482,7 +482,7 @@ const POReceipt = () => {
     );
     const today = new Date();
     let receipt = {
-      ...currentLine,
+      // ...currentLine,
       Company: POData[0]?.Company,
       VendorNum: POData[0]?.VendorNum,
       PurPoint: '',
@@ -979,8 +979,8 @@ const POReceipt = () => {
               <View style={styles.tabView}>
                 {!_.isEmpty(selectedPackSlip) ? (
                   <View style={{ height: '100%' }}>
-                    {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={() => setTabvalue("3")} >
-                      <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>+ Create New Line</Text>
+                    {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchExistingPackslips} >
+                      <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>Refresh</Text>
                     </TouchableOpacity> */}
                     <ScrollView>
                       {existingPackslipLoading && (

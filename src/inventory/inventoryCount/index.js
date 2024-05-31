@@ -15,11 +15,13 @@ import CyclesListTable from './components/CyclesListTable';
 import { ActivityIndicator } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentCycle, setCyclesData } from '../reducer/inventory';
+import { showSnackbar } from '../../Snackbar/messageSlice';
 
 const InventoryCount = () => {
   const { currentCycle, cyclesData } = useSelector((state) => state.inventory);
   const [cyclesResponse, setCyclesResponse] = useState(cyclesData);
-  const [warehouseCode, setWarehouseCode] = useState("");
+  const [warehouse, setWarehouse] = useState("");
+  const [warehouseCodeList, setWarehouseCodeList] = useState([]);
   const [selectedCycle, setSelectedCycle] = useState(currentCycle);
   const [cyclesLoading, setCyclesLoading] = useState(false)
   const [cyclesVisible, setCyclesVisible] = useState(false);
@@ -37,45 +39,102 @@ const InventoryCount = () => {
     );
   };
 
-  const fetchCycles = () => {
-    setCyclesLoading(true);
-    const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles`;
+  const renderDate = (da) => {
+    return da?.split('T')[0];
+  }
+
+  const getWareHouseList = (warehouseCode) => {
+    const epicor_endpoint = `/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description`;
+    const postPayload = {
+      epicor_endpoint,
+      request_type: 'GET',
+    };
     try {
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
-        postPayload: { epicor_endpoint, request_type: 'GET' },
+        postPayload,
         stringify: false,
       })
         .then(({ json }) => {
-          // setCyclesResponse(json.data.value);
-          dispatch(setCyclesData(json.data.value))
-          console.log("response", json.data.value)
-          setCyclesLoading(false);
+          setWarehouseCodeList(() => json.data.value);
         })
         .catch((err) => {
-          setCyclesLoading(false);
+          console.log(err);
         });
     } catch (err) {
-      setCyclesLoading(false);
+    }
+  };
+
+  const fetchCycles = () => {
+    if (warehouse) {
+      setCyclesLoading(true);
+      const filter = encodeURI(`WarehouseCode eq '${warehouse}'`)
+      const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${filter}`;
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: { epicor_endpoint, request_type: 'GET' },
+          stringify: false,
+        })
+          .then(({ json }) => {
+            // setCyclesResponse(json.data.value);
+            dispatch(setCyclesData(json.data.value))
+            setCyclesLoading(false);
+          })
+          .catch((err) => {
+            console.log(err)
+            setCyclesLoading(false);
+          });
+      } catch (err) {
+        setCyclesLoading(false);
+      }
+    } else {
+      dispatch(showSnackbar("Select the warehouse First"))
     }
   }
 
   const onClickSelect = () => {
+    dispatch(setCurrentCycle({}))
     setCyclesVisible(true);
-    if (cyclesData.length == 0) {
-      fetchCycles();
-    }
+    fetchCycles();
+    // if (cyclesData.length == 0) {
+    // }
   }
   const onSelectCycle = (val) => {
-    console.log({ val })
     dispatch(setCurrentCycle(val));
-    // setSelectedCycle(val)
     setCyclesVisible(false);
   }
 
   useEffect(() => {
-    fetchCycles();
+    getWareHouseList();
   }, []);
+
+  const CycleDetails = () => {
+    return (
+      <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
+        <View style={styles.row}>
+          <View style={styles.column}>
+            <Text style={styles.label}>Warehouse</Text>
+            <Text style={styles.value}>{currentCycle?.WarehouseCode}</Text>
+          </View>
+          <View style={styles.column}>
+            <Text style={styles.label}>Cycle Date</Text>
+            <Text style={styles.value}>{renderDate(currentCycle?.CycleDate)}</Text>
+          </View>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.column}>
+            <Text style={styles.label}>Cycle Seq</Text>
+            <Text style={styles.value}>{currentCycle?.CycleSeq}</Text>
+          </View>
+          <View style={styles.column}>
+            <Text style={styles.label}>Status</Text>
+            <Text style={styles.value}>{currentCycle?.CycleStatusDesc}</Text>
+          </View>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -89,26 +148,45 @@ const InventoryCount = () => {
         </Pressable>
         <Text style={styles.heading}>Inventory Count</Text>
       </View>
-      <View style={{ padding: 40 }}>
+      <View style={{ padding: 30 }}>
+        <Text style={{ fontSize: 16, fontWeight: "600" }}>Warehouse Code</Text>
+        <View style={{ marginBottom: 20 }}>
+          <SelectInput
+            value={warehouse}
+            onChange={(itemValue, data) => {
+              setWarehouse(itemValue)
+              console.log(itemValue)
+            }}
+            options={warehouseCodeList?.map((data) => ({
+              ...data,
+              label: data.WarehouseCode,
+              value: data.WarehouseCode,
+            }))}
+            // isLoading={refreshing}
+            label="Select warehouse"
+          // handleRefresh={handleOptionsRefresh}
+          />
+        </View>
         <TouchableOpacity
           onPress={onClickSelect}
           style={[styles.countOption, globalStyles.dFlexR]}
         >
-          <Text style={styles.countOptionText}>Select cycle</Text>
+          <Text style={styles.countOptionText}>Search cycle</Text>
         </TouchableOpacity>
-        {/* {cyclesLoading && <ActivityIndicator />} */}
         {cyclesVisible && <CyclesListTable data={cyclesData} loading={cyclesLoading} onSelectCycle={onSelectCycle} />}
-
-        {/* <CountOption name="Select Cycle" route="select_inventory_cycle" />
-        <CountOption name="Cycle Details" route="cycle_details" /> */}
-        {/* 
-        <CountOption name="Cycle Count Period" route="cycle_count_period" />
-        <CountOption
-          name="Cycle Count Schedule"
-          route="inventory_cycle_schedule"
-        />
-        <CountOption name="Inventory Count Cycle" route="cycle_count_period" /> */}
+        {
+          currentCycle && <CycleDetails />
+        }
       </View>
+      <TouchableOpacity
+        disabled={!currentCycle}
+        style={styles.receiveButton}
+        onPress={() => navigation.navigate("cycle_details")}
+      >
+        <Text style={styles.receiveButtonText}>
+          Next
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -118,6 +196,7 @@ export default InventoryCount;
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+    flex: 1
   },
   header: {
     padding: 15,
@@ -143,5 +222,40 @@ const styles = StyleSheet.create({
     color: globalStyles.colors.success,
     fontWeight: '600',
     fontSize: 17,
+  },
+  detailsContainer: {
+    flexWrap: "wrap",
+    marginVertical: 10
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  column: {
+    flex: 1,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  value: {
+    fontSize: 16,
+    color: '#666',
+  },
+  receiveButton: {
+    backgroundColor: globalStyles.colors.success,
+    padding: 10,
+    borderRadius: 5,
+    position: 'absolute',
+    bottom: 10,
+    width: '95%',
+    zIndex: 10,
+    marginHorizontal: 10
+  },
+  receiveButtonText: {
+    color: 'white',
+    textAlign: 'center',
   },
 });

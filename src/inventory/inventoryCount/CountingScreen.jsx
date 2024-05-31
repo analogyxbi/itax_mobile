@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { globalStyles } from '../../style/globalStyles';
 import { useNavigation } from '@react-navigation/native';
+import BarcodeScannerComponent from '../../components/BarcodeScannerComponent';
 
 const CountingScreen = ({
   part,
@@ -22,8 +23,50 @@ const CountingScreen = ({
   notes,
   setNotes,
   setScreen,
+  currentCycle,
 }) => {
   const navigation = useNavigation();
+  const [scan, setScan] = useState(false);
+  const [camera, setCamera] = useState([]);
+  const [cameraState, setCameraState] = useState(null);
+  const [scannerVisible, setScannerVisible] = useState(false);
+
+  const openScanner = () => {
+    setScannerVisible(true);
+  };
+  const closeScanner = () => {
+    setCameraState(null);
+    setScannerVisible(false);
+  };
+
+  function captureDetails(details, state) {
+    if (
+      cameraState === 'current_part' &&
+      (!formData.current_whse ||
+        !formData.current_bin ||
+        formData.current_whse === '' ||
+        formData.current_bin === '')
+    ) {
+      setCameraState(null);
+      closeScanner();
+      return dispatch(
+        showSnackbar('Warehouse or bin not found for the part number')
+      );
+    }
+    setFormData((prev) => ({ ...prev, [state]: details }));
+    setCameraState(null);
+    closeScanner();
+  }
+
+  if (scannerVisible) {
+    return (
+      <BarcodeScannerComponent
+        closeScanner={closeScanner}
+        captureDetails={captureDetails}
+        cameraState={cameraState}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -41,21 +84,25 @@ const CountingScreen = ({
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle No</Text>
-            <Text style={styles.value}>1</Text>
+            <Text style={styles.value}>{currentCycle.CycleSeq} </Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>WH</Text>
-            <Text style={styles.value}>Killy</Text>
+            <Text style={styles.value}>
+              {currentCycle.CCHdrWarehseDescription}
+            </Text>
           </View>
         </View>
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Date</Text>
-            <Text style={styles.value}>24/05/2024</Text>
+            <Text style={styles.value}>
+              {new Date(currentCycle.CycleDate).toISOString().split('T')[0]}
+            </Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>Count Generated</Text>
+            <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
           </View>
         </View>
       </View>
@@ -68,7 +115,10 @@ const CountingScreen = ({
               value={part}
               onChangeText={setPart}
             />
-            <TouchableOpacity style={styles.icon}>
+            <TouchableOpacity
+              style={styles.icon}
+              onPress={() => setScannerVisible(true)}
+            >
               <Ionicons name="scan-outline" size={24} color="#333" />
             </TouchableOpacity>
           </View>
@@ -79,7 +129,10 @@ const CountingScreen = ({
               value={bin}
               onChangeText={setBin}
             />
-            <TouchableOpacity style={styles.icon}>
+            <TouchableOpacity
+              style={styles.icon}
+              onPress={() => setScannerVisible(true)}
+            >
               <Ionicons name="scan-outline" size={24} color="#333" />
             </TouchableOpacity>
           </View>
@@ -124,7 +177,7 @@ const CountingScreen = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: "100%",
+
     backgroundColor: '#fff',
   },
   header: {
@@ -140,14 +193,12 @@ const styles = StyleSheet.create({
   },
   countingScreenContainer: {
     flex: 1,
-    width: '100%',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   countingScreen: {
     padding: 20,
     alignItems: 'center',
-    width: '100%',
   },
   label: {
     fontSize: 16,
@@ -167,7 +218,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: '100%',
     paddingLeft: 10,
   },
   inputNoIcon: {
@@ -184,9 +234,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   footer: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '100%',
     position: 'absolute',
     bottom: 0,
     paddingVertical: 10,
@@ -208,9 +258,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   detailsContainer: {
-    flexWrap: "wrap",
+    flexWrap: 'wrap',
     marginHorizontal: 50,
-    marginVertical: 10
+    marginVertical: 10,
   },
   row: {
     flexDirection: 'row',

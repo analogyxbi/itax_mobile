@@ -365,7 +365,27 @@ const InventoryTransfer = () => {
         showSnackbar('Warehouse or bin not found for the part number')
       );
     }
-    setFormData((prev) => ({ ...prev, [state]: details }));
+    if (details.includes('/')) {
+      const data = details.split(' / ');
+      if (data.length > 0 && data.length <= 3) {
+        if (state.startsWith('current')) {
+          setFormData((prev) => ({
+            ...prev,
+            current_whse: data[0],
+            current_bin: data[1],
+          }));
+        } else if (state.startsWith('to')) {
+          setFormData((prev) => ({
+            ...prev,
+            to_whse: data[0],
+            to_bin: data[1],
+          }));
+        }
+      }
+      dispatch(showSnackbar('Mismatch data type'));
+    } else {
+      setFormData((prev) => ({ ...prev, [state]: details }));
+    }
     setCameraState(null);
     closeScanner();
   }
@@ -376,7 +396,6 @@ const InventoryTransfer = () => {
         closeScanner={closeScanner}
         captureDetails={captureDetails}
         cameraState={cameraState}
-        setScanned={setScanned}
       />
     );
   }
@@ -627,7 +646,22 @@ const InventoryTransfer = () => {
           </View>
           <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.inputLabel}>To Warehouse</Text>
+              <View style={globalStyles.dFlexR}>
+                <Text style={styles.inputLabel}>To Warehouse</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCameraState('to_whse');
+                    openScanner();
+                  }}
+                >
+                  <AntDesign
+                    name="scan1"
+                    size={24}
+                    color={globalStyles.colors.darkGrey}
+                  />
+                </TouchableOpacity>
+              </View>
+
               <SelectInput
                 value={formData.to_whse}
                 onChange={(itemValue) => {
@@ -648,7 +682,21 @@ const InventoryTransfer = () => {
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.inputLabel}>To Bin</Text>
+              <View style={globalStyles.dFlexR}>
+                <Text style={styles.inputLabel}>To Bin</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCameraState('to_bin');
+                    openScanner();
+                  }}
+                >
+                  <AntDesign
+                    name="scan1"
+                    size={24}
+                    color={globalStyles.colors.darkGrey}
+                  />
+                </TouchableOpacity>
+              </View>
               <SelectInput
                 value={formData.to_bin}
                 onChange={(itemValue) => {

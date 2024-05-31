@@ -39,10 +39,10 @@ const SelectInput = ({
   };
 
   const renderOptions = () => {
-    if (filteredOptions.length === 0) {
+    if (filteredOptions?.length === 0) {
       return <Text>No options available</Text>;
     }
-    return filteredOptions.map((option) => (
+    return filteredOptions?.map((option) => (
       <TouchableOpacity
         key={option.value}
         style={styles.option}

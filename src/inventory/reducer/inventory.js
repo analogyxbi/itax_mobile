@@ -29,6 +29,8 @@ const initialState = {
   onError: false,
   binsData,
   message: '',
+  currentCycle: {},
+  cyclesData: []
 };
 
 const inventorySlice = createSlice({
@@ -61,10 +63,16 @@ const inventorySlice = createSlice({
         binsData: [],
       };
     },
+    setCurrentCycle: (state, action) => {
+      state.currentCycle = action.payload;
+    },
+    setCyclesData: (state, action) => {
+      state.cyclesData = action.payload;
+    }
   },
 });
 
-export const { setWarehouses, setWhseBins, clearBinData, setInitialState } =
+export const { setWarehouses, setWhseBins, clearBinData, setInitialState, setCurrentCycle, setCyclesData } =
   inventorySlice.actions;
 
 export default inventorySlice.reducer;

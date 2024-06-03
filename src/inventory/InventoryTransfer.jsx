@@ -390,16 +390,6 @@ const InventoryTransfer = () => {
     closeScanner();
   }
 
-  if (scannerVisible) {
-    return (
-      <BarcodeScannerComponent
-        closeScanner={closeScanner}
-        captureDetails={captureDetails}
-        cameraState={cameraState}
-      />
-    );
-  }
-
   function handleOptionsRefresh(name) {
     switch (name) {
       case 'current_whse':
@@ -428,6 +418,16 @@ const InventoryTransfer = () => {
       default:
         break;
     }
+  }
+
+  if (scannerVisible) {
+    return (
+      <BarcodeScannerComponent
+        closeScanner={closeScanner}
+        captureDetails={captureDetails}
+        cameraState={cameraState}
+      />
+    );
   }
 
   return (

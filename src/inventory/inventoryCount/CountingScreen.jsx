@@ -12,6 +12,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { globalStyles } from '../../style/globalStyles';
 import { useNavigation } from '@react-navigation/native';
 import BarcodeScannerComponent from '../../components/BarcodeScannerComponent';
+import { useDispatch } from 'react-redux';
+import { showSnackbar } from '../../Snackbar/messageSlice';
 
 const CountingScreen = ({
   part,
@@ -26,11 +28,11 @@ const CountingScreen = ({
   currentCycle,
 }) => {
   const navigation = useNavigation();
-  const [scan, setScan] = useState(false);
-  const [camera, setCamera] = useState([]);
+
   const [cameraState, setCameraState] = useState(null);
   const [scannerVisible, setScannerVisible] = useState(false);
-
+  const [formData, setFormData] = useState({});
+  const dispatch = useDispatch();
   const openScanner = () => {
     setScannerVisible(true);
   };
@@ -40,20 +42,20 @@ const CountingScreen = ({
   };
 
   function captureDetails(details, state) {
-    if (
-      cameraState === 'current_part' &&
-      (!formData.current_whse ||
-        !formData.current_bin ||
-        formData.current_whse === '' ||
-        formData.current_bin === '')
-    ) {
+    if (cameraState != 'bin' && cameraState != 'part') {
       setCameraState(null);
       closeScanner();
       return dispatch(
         showSnackbar('Warehouse or bin not found for the part number')
       );
     }
-    setFormData((prev) => ({ ...prev, [state]: details }));
+    if (cameraState === 'part') {
+      setPart(details);
+    } else if (details.includes('/')) {
+      let data = details.split(' / ');
+      setBin(data[0]);
+    }
+    // setFormData((prev) => ({ ...prev, [state]: details }));
     setCameraState(null);
     closeScanner();
   }
@@ -70,106 +72,122 @@ const CountingScreen = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Ionicons
-            name="chevron-back-outline"
-            size={24}
-            color={globalStyles.colors.darkGrey}
-          />
-        </Pressable>
-        <Text style={styles.heading}>Counting Process</Text>
-      </View>
-      <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.label}>Cycle No</Text>
-            <Text style={styles.value}>{currentCycle.CycleSeq} </Text>
+      {scannerVisible ? (
+        <BarcodeScannerComponent
+          closeScanner={closeScanner}
+          captureDetails={captureDetails}
+          cameraState={cameraState}
+        />
+      ) : (
+        <>
+          <View style={styles.header}>
+            <Pressable onPress={() => navigation.goBack()}>
+              <Ionicons
+                name="chevron-back-outline"
+                size={24}
+                color={globalStyles.colors.darkGrey}
+              />
+            </Pressable>
+            <Text style={styles.heading}>Counting Process</Text>
           </View>
-          <View style={styles.column}>
-            <Text style={styles.label}>WH</Text>
-            <Text style={styles.value}>
-              {currentCycle.CCHdrWarehseDescription}
-            </Text>
+          <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
+            <View style={styles.row}>
+              <View style={styles.column}>
+                <Text style={styles.label}>Cycle No</Text>
+                <Text style={styles.value}>{currentCycle.CycleSeq} </Text>
+              </View>
+              <View style={styles.column}>
+                <Text style={styles.label}>WH</Text>
+                <Text style={styles.value}>
+                  {currentCycle.CCHdrWarehseDescription}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={styles.column}>
+                <Text style={styles.label}>Cycle Date</Text>
+                <Text style={styles.value}>
+                  {new Date(currentCycle.CycleDate).toISOString().split('T')[0]}
+                </Text>
+              </View>
+              <View style={styles.column}>
+                <Text style={styles.label}>Status</Text>
+                <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
+              </View>
+            </View>
           </View>
-        </View>
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.label}>Cycle Date</Text>
-            <Text style={styles.value}>
-              {new Date(currentCycle.CycleDate).toISOString().split('T')[0]}
-            </Text>
+          <View style={styles.countingScreenContainer}>
+            <ScrollView contentContainerStyle={styles.countingScreen}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Part (Scanning / Enter)"
+                  value={part}
+                  onChangeText={setPart}
+                />
+                <TouchableOpacity
+                  style={styles.icon}
+                  onPress={() => {
+                    setCameraState('part');
+                    setScannerVisible(true);
+                  }}
+                >
+                  <Ionicons name="scan-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Bin (Scanning / Enter)"
+                  value={bin}
+                  onChangeText={setBin}
+                />
+                <TouchableOpacity
+                  style={styles.icon}
+                  onPress={() => {
+                    setCameraState('bin');
+                    setScannerVisible(true);
+                  }}
+                >
+                  <Ionicons name="scan-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.inputNoIcon}
+                placeholder="Counted Qty (Manual Input)"
+                value={countedQty}
+                onChangeText={setCountedQty}
+                keyboardType="numeric"
+              />
+              <TextInput
+                style={styles.inputNoIcon}
+                placeholder="Notes (Manual Input - If any)"
+                value={notes}
+                onChangeText={setNotes}
+              />
+            </ScrollView>
+            <View style={styles.footer}>
+              <TouchableOpacity
+                style={styles.footerButton}
+                onPress={() => setScreen('initial')}
+              >
+                <Text style={styles.buttonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.footerButton}
+                onPress={() => {
+                  setPart('');
+                  setBin('');
+                  setCountedQty('');
+                  setNotes('');
+                }}
+              >
+                <Text style={styles.buttonText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.column}>
-            <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
-          </View>
-        </View>
-      </View>
-      <View style={styles.countingScreenContainer}>
-        <ScrollView contentContainerStyle={styles.countingScreen}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Part (Scanning / Enter)"
-              value={part}
-              onChangeText={setPart}
-            />
-            <TouchableOpacity
-              style={styles.icon}
-              onPress={() => setScannerVisible(true)}
-            >
-              <Ionicons name="scan-outline" size={24} color="#333" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Bin (Scanning / Enter)"
-              value={bin}
-              onChangeText={setBin}
-            />
-            <TouchableOpacity
-              style={styles.icon}
-              onPress={() => setScannerVisible(true)}
-            >
-              <Ionicons name="scan-outline" size={24} color="#333" />
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            style={styles.inputNoIcon}
-            placeholder="Counted Qty (Manual Input)"
-            value={countedQty}
-            onChangeText={setCountedQty}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.inputNoIcon}
-            placeholder="Notes (Manual Input - If any)"
-            value={notes}
-            onChangeText={setNotes}
-          />
-        </ScrollView>
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.footerButton}
-            onPress={() => setScreen('initial')}
-          >
-            <Text style={styles.buttonText}>Save</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.footerButton}
-            onPress={() => {
-              setPart('');
-              setBin('');
-              setCountedQty('');
-              setNotes('');
-            }}
-          >
-            <Text style={styles.buttonText}>Clear</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        </>
+      )}
     </View>
   );
 };
@@ -243,6 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     borderTopWidth: 1,
     borderColor: '#ccc',
+    width: '100%',
   },
   footerButton: {
     width: 150,

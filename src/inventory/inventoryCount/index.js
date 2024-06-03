@@ -14,16 +14,22 @@ import { AnalogyxBIClient } from '@analogyxbi/connection';
 import CyclesListTable from './components/CyclesListTable';
 import { ActivityIndicator } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCurrentCycle, setCyclesData } from '../reducer/inventory';
+import {
+  setCurrentCycle,
+  setCyclesData,
+  setWarehouses,
+} from '../reducer/inventory';
 import { showSnackbar } from '../../Snackbar/messageSlice';
 
 const InventoryCount = () => {
-  const { currentCycle, cyclesData } = useSelector((state) => state.inventory);
+  const { currentCycle, cyclesData, warehouses } = useSelector(
+    (state) => state.inventory
+  );
   const [cyclesResponse, setCyclesResponse] = useState(cyclesData);
-  const [warehouse, setWarehouse] = useState("");
-  const [warehouseCodeList, setWarehouseCodeList] = useState([]);
+  const [warehouse, setWarehouse] = useState('');
+  // const [warehouseCodeList, setWarehouseCodeList] = useState([]);
   const [selectedCycle, setSelectedCycle] = useState(currentCycle);
-  const [cyclesLoading, setCyclesLoading] = useState(false)
+  const [cyclesLoading, setCyclesLoading] = useState(false);
   const [cyclesVisible, setCyclesVisible] = useState(false);
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -41,7 +47,7 @@ const InventoryCount = () => {
 
   const renderDate = (da) => {
     return da?.split('T')[0];
-  }
+  };
 
   const getWareHouseList = (warehouseCode) => {
     const epicor_endpoint = `/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description`;
@@ -56,19 +62,19 @@ const InventoryCount = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          setWarehouseCodeList(() => json.data.value);
+          // setWarehouseCodeList(() => json.data.value);
+          dispatch(setWarehouses(json.data.value));
         })
         .catch((err) => {
           console.log(err);
         });
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   const fetchCycles = () => {
     if (warehouse) {
       setCyclesLoading(true);
-      const filter = encodeURI(`WarehouseCode eq '${warehouse}'`)
+      const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
       const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${filter}`;
       try {
         AnalogyxBIClient.post({
@@ -78,35 +84,37 @@ const InventoryCount = () => {
         })
           .then(({ json }) => {
             // setCyclesResponse(json.data.value);
-            dispatch(setCyclesData(json.data.value))
+            dispatch(setCyclesData(json.data.value));
             setCyclesLoading(false);
           })
           .catch((err) => {
-            console.log(err)
+            console.log(err);
             setCyclesLoading(false);
           });
       } catch (err) {
         setCyclesLoading(false);
       }
     } else {
-      dispatch(showSnackbar("Select the warehouse First"))
+      dispatch(showSnackbar('Select the warehouse First'));
     }
-  }
+  };
 
   const onClickSelect = () => {
-    dispatch(setCurrentCycle({}))
+    dispatch(setCurrentCycle({}));
     setCyclesVisible(true);
     fetchCycles();
     // if (cyclesData.length == 0) {
     // }
-  }
+  };
   const onSelectCycle = (val) => {
     dispatch(setCurrentCycle(val));
     setCyclesVisible(false);
-  }
+  };
 
   useEffect(() => {
-    getWareHouseList();
+    if (warehouses && warehouse.length === 0) {
+      getWareHouseList();
+    }
   }, []);
 
   const CycleDetails = () => {
@@ -119,7 +127,9 @@ const InventoryCount = () => {
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Date</Text>
-            <Text style={styles.value}>{renderDate(currentCycle?.CycleDate)}</Text>
+            <Text style={styles.value}>
+              {renderDate(currentCycle?.CycleDate)}
+            </Text>
           </View>
         </View>
         <View style={styles.row}>
@@ -133,8 +143,8 @@ const InventoryCount = () => {
           </View>
         </View>
       </View>
-    )
-  }
+    );
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -149,22 +159,22 @@ const InventoryCount = () => {
         <Text style={styles.heading}>Inventory Count</Text>
       </View>
       <View style={{ padding: 30 }}>
-        <Text style={{ fontSize: 16, fontWeight: "600" }}>Warehouse Code</Text>
+        <Text style={{ fontSize: 16, fontWeight: '600' }}>Warehouse Code</Text>
         <View style={{ marginBottom: 20 }}>
           <SelectInput
             value={warehouse}
             onChange={(itemValue, data) => {
-              setWarehouse(itemValue)
-              console.log(itemValue)
+              setWarehouse(itemValue);
+              console.log(itemValue);
             }}
-            options={warehouseCodeList?.map((data) => ({
+            options={warehouses?.map((data) => ({
               ...data,
               label: data.WarehouseCode,
               value: data.WarehouseCode,
             }))}
             // isLoading={refreshing}
             label="Select warehouse"
-          // handleRefresh={handleOptionsRefresh}
+            // handleRefresh={handleOptionsRefresh}
           />
         </View>
         <TouchableOpacity
@@ -173,19 +183,21 @@ const InventoryCount = () => {
         >
           <Text style={styles.countOptionText}>Search cycle</Text>
         </TouchableOpacity>
-        {cyclesVisible && <CyclesListTable data={cyclesData} loading={cyclesLoading} onSelectCycle={onSelectCycle} />}
-        {
-          currentCycle && <CycleDetails />
-        }
+        {cyclesVisible && (
+          <CyclesListTable
+            data={cyclesData}
+            loading={cyclesLoading}
+            onSelectCycle={onSelectCycle}
+          />
+        )}
+        {currentCycle && <CycleDetails />}
       </View>
       <TouchableOpacity
         disabled={!currentCycle}
         style={styles.receiveButton}
-        onPress={() => navigation.navigate("cycle_details")}
+        onPress={() => navigation.navigate('cycle_details')}
       >
-        <Text style={styles.receiveButtonText}>
-          Next
-        </Text>
+        <Text style={styles.receiveButtonText}>Next</Text>
       </TouchableOpacity>
     </View>
   );
@@ -196,7 +208,7 @@ export default InventoryCount;
 const styles = StyleSheet.create({
   container: {
     padding: 10,
-    flex: 1
+    flex: 1,
   },
   header: {
     padding: 15,
@@ -224,8 +236,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
   detailsContainer: {
-    flexWrap: "wrap",
-    marginVertical: 10
+    flexWrap: 'wrap',
+    marginVertical: 10,
   },
   row: {
     flexDirection: 'row',
@@ -252,7 +264,7 @@ const styles = StyleSheet.create({
     bottom: 10,
     width: '95%',
     zIndex: 10,
-    marginHorizontal: 10
+    marginHorizontal: 10,
   },
   receiveButtonText: {
     color: 'white',

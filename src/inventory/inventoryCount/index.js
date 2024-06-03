@@ -165,7 +165,6 @@ const InventoryCount = () => {
             value={warehouse}
             onChange={(itemValue, data) => {
               setWarehouse(itemValue);
-              console.log(itemValue);
             }}
             options={warehouses?.map((data) => ({
               ...data,

@@ -22,7 +22,7 @@ const InventoryCount = () => {
   const [cyclesResponse, setCyclesResponse] = useState(cyclesData);
   const [warehouse, setWarehouse] = useState("");
   const [warehouseCodeList, setWarehouseCodeList] = useState([]);
-  const [selectedCycle, setSelectedCycle] = useState(currentCycle);
+  const [warehouseLoading, setWarehouseLoading] = useState(currentCycle);
   const [cyclesLoading, setCyclesLoading] = useState(false)
   const [cyclesVisible, setCyclesVisible] = useState(false);
   const navigation = useNavigation();
@@ -44,6 +44,7 @@ const InventoryCount = () => {
   }
 
   const getWareHouseList = (warehouseCode) => {
+    setWarehouseLoading(true)
     const epicor_endpoint = `/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description`;
     const postPayload = {
       epicor_endpoint,
@@ -57,11 +58,14 @@ const InventoryCount = () => {
       })
         .then(({ json }) => {
           setWarehouseCodeList(() => json.data.value);
+          setWarehouseLoading(false)
         })
         .catch((err) => {
           console.log(err);
+          setWarehouseLoading(false)
         });
     } catch (err) {
+      setWarehouseLoading(false)
     }
   };
 
@@ -69,7 +73,7 @@ const InventoryCount = () => {
     if (warehouse) {
       setCyclesLoading(true);
       const filter = encodeURI(`WarehouseCode eq '${warehouse}'`)
-      const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${filter}`;
+      const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${filter}&$top=1000`;
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -162,7 +166,7 @@ const InventoryCount = () => {
               label: data.WarehouseCode,
               value: data.WarehouseCode,
             }))}
-            // isLoading={refreshing}
+            isLoading={warehouseLoading}
             label="Select warehouse"
           // handleRefresh={handleOptionsRefresh}
           />

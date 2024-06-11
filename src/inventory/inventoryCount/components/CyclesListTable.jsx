@@ -15,21 +15,26 @@ const CyclesListTable = ({ data, loading, onSelectCycle }) => {
                 <Text style={[{ width: 80 }, styles.heading]}>Cycle Desc</Text>
                 <Text style={[{ width: 80 }, styles.heading]}>WRH Desc</Text>
             </View>
-            <ScrollView style={{ maxHeight: 300 }}>
-                {loading && <ActivityIndicator />}
-                {
-                    data?.map(da => (
-                        <TouchableOpacity onPress={() => onSelectCycle(da)}>
-                            <View style={styles.row}>
-                                <Text style={[{ width: 70, padding: 2 }, styles.tableFont]}>{renderDate(da?.CycleDate)}</Text>
-                                <Text style={[{ width: 45 }, styles.tableFont]}>{da.WarehouseCode}</Text>
-                                <Text style={[{ width: 35 }, styles.tableFont]}>{da.CycleSeq}</Text>
-                                <Text style={[{ width: 80 }, styles.tableFont]}>{da.CycleStatusDesc}</Text>
-                                <Text style={[{ width: 80 }, styles.tableFont]}>{da.CCHdrWarehseDescription}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    ))
-                }
+            <ScrollView style={{ maxHeight: 300, minHeight: 50 }}>
+                {loading && <ActivityIndicator style={{position:"absolute", alignSelf:"center", top: 100}} />}
+                {data.length > 0 ?
+                    <View>
+                        {
+                            data?.map(da => (
+                                <TouchableOpacity  onPress={() => onSelectCycle(da)}>
+                                    <View style={styles.row}>
+                                        <Text style={[{ width: 70, padding: 2 }, styles.tableFont]}>{renderDate(da?.CycleDate)}</Text>
+                                        <Text style={[{ width: 45 }, styles.tableFont]}>{da.WarehouseCode}</Text>
+                                        <Text style={[{ width: 35 }, styles.tableFont]}>{da.CycleSeq}</Text>
+                                        <Text style={[{ width: 80 }, styles.tableFont]}>{da.CycleStatusDesc}</Text>
+                                        <Text style={[{ width: 80 }, styles.tableFont]}>{da.CCHdrWarehseDescription}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))
+                        }
+                    </View>
+                    : <Text style={{textAlign: "center", paddingTop:10}}>No data</Text>}
+
             </ScrollView>
         </View>
     )

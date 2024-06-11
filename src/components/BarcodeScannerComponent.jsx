@@ -38,11 +38,11 @@ const BarcodeScannerComponent = ({
 
   const passDetails = () => {
     const value = detectedBarcodes[0];
-    if(value){
+    if (value) {
       captureDetails(value?.data, cameraState);
       setDetectedBarcodes([]);
-    }else{
-      dispatch(showSnackbar("Not Barcode Found!"))
+    } else {
+      dispatch(showSnackbar('Not Barcode Found!'));
     }
   };
 
@@ -84,6 +84,7 @@ const BarcodeScannerComponent = ({
         ref={cameraRef}
         onBarCodeScanned={handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}
+        focusable={true}
       />
       {renderDetectedBoxes()}
       <View style={styles.bottomButtonsContainer}>

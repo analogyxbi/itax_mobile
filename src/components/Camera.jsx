@@ -41,7 +41,6 @@ export default function ExpoCamera({ setCameraVisible }) {
     // setIsCameraReady(true); // Set a state to indicate that the camera is ready
   };
   const takePicture = async () => {
-    console.log('Clicked the camera trigger');
     if (cameraRef.current) {
       console.log({ cameraRef });
       const options = { quality: 0.5, base64: true, skipProcessing: true };

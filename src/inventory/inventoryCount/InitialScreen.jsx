@@ -11,7 +11,7 @@ import { globalStyles } from '../../style/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-const InitialScreen = ({ setScreen }) => {
+const InitialScreen = ({ setScreen, currentCycle }) => {
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
@@ -29,21 +29,25 @@ const InitialScreen = ({ setScreen }) => {
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle No</Text>
-            <Text style={styles.value}>1</Text>
+            <Text style={styles.value}>{currentCycle.CycleSeq} </Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>WH</Text>
-            <Text style={styles.value}>Killy</Text>
+            <Text style={styles.value}>
+              {currentCycle.CCHdrWarehseDescription}
+            </Text>
           </View>
         </View>
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Date</Text>
-            <Text style={styles.value}>24/05/2024</Text>
+            <Text style={styles.value}>
+              {new Date(currentCycle.CycleDate).toISOString().split('T')[0]}
+            </Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>Tags Generated</Text>
+            <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
           </View>
         </View>
       </View>
@@ -54,7 +58,10 @@ const InitialScreen = ({ setScreen }) => {
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Initiate Counting Process</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => setScreen('counting')}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setScreen('counting')}
+        >
           <Text style={styles.buttonText}>Count</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
@@ -65,14 +72,13 @@ const InitialScreen = ({ setScreen }) => {
         </TouchableOpacity>
       </ScrollView>
     </View>
-
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: "100%",
+    width: '100%',
     backgroundColor: '#fff',
   },
   header: {

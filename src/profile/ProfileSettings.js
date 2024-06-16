@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 import { logout } from '../loginscreen/authSlice';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 // import { logoutUser } from '../loginscreen/actions/actions';
 // import { clearAllTabs } from '../welcome/actions/actions';
 
@@ -49,23 +50,17 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
 
   const onLogoutPressed = () => {
     setLoading(true);
-    axios({
-      method: 'GET',
-      url: `https://${url}/logout/`,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Referer: `https://${url}/logout/`,
-      },
+    AnalogyxBIClient.get({endpoint:`https://${url}/logout/`}).then((res)=>{
+      dispatch(logout(null));
+      setIsAuthenticated(false);
+      removeItemValue('csrf');
+      removeItemValue('url');
+      setLoading(false);
+    }).catch((err)=>{
+      alert(JSON.stringify(err))
+      setLoading(false)
+      setIndicator(false)
     })
-      .then((res) => {
-        //  dispatch(clearAllTabs());
-        dispatch(logout(null));
-        setIsAuthenticated(false);
-        removeItemValue('csrf');
-        removeItemValue('url');
-        setLoading(false);
-      })
-      .catch((err) => console.log(err), setIndicator(false));
   };
 
   return (

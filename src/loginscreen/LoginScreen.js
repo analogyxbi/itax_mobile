@@ -28,7 +28,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
   const [passwordHidden, setPasswordHidden] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [url, setUrl] = useState('192.168.12.72:8088'); //gets overwritten when value is edited
+  const [url, setUrl] = useState('192.168.1.252:8088'); //gets overwritten when value is edited
   const dispatch = useDispatch();
   const [csrf, setCsrf] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,6 +42,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
     setLoading(true);
     var myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    myHeaders.append('X-XSRF-TOKEN',"")
 
     var data = {
       password: password,
@@ -53,16 +54,18 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
     var config = {
       method: 'post',
       maxBodyLength: Infinity,
-      url: `http://${url}/api/v1/security/login`,
+      url: `http://${url}/api/v1/security/login/`,
       data: data,
+      Headers:myHeaders
     };
 
     axios(config)
       .then(function (response) {
+        alert("First login success")
         onLoginhandler();
       })
       .catch(function (error) {
-        alert('Wrong Credentials');
+        console.log( "First Error" + JSON.stringify(error));
         // const csrf =
         //   'IjU5NDdlOTdiNWQ4MjU0YjJjMWE3ZTI0Zjk2N2Y5NGVlY2U2OGRkODQi.ZiebCQ.jhphhb5RUKzz3_OynmaaGkz1mYM';
         // setupClient(csrf, url);
@@ -73,12 +76,11 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
         // ]);
         // setLoading(false);
         // setIsAuthenticated(true);
-        console.log(error);
         setLoading(false);
       });
   };
 
-  const onLoginhandler = async () => {
+  const onLoginhandler = async (csrf) => {
     let payload = [];
     const csrf_token = csrf;
     payload = new FormData();
@@ -86,7 +88,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
     payload.append('password', password);
     payload.append('csrf_token', csrf_token);
     axios({
-      method: 'post',
+      method: 'POST',
       url: `http://${url}/login/`,
       data: payload,
       headers: {
@@ -112,22 +114,48 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       })
       .catch((err) => {
         // Alert.alert('Error', JSON.stringify(err));
-        console.log('Please check the entered credentials.', err);
-        Alert.alert('Error', 'Please check the entered credentials.');
+        alert("Second Error" + JSON.stringify(err));
         setLoading(false);
       });
   };
 
-  useEffect(() => {
+  function fetchCSRF(){
+    var myHeaders = new Headers();
+    myHeaders.append('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
+    myHeaders.append('X-XSRF-TOKEN',"")
     axios
-      .get(`http://${url}/login/`)
+      .get(`http://${url}/login`, {
+        headers:myHeaders
+      })
       .then((res) => {
         let soup = new JSSoup(res.data);
         let csrf = soup.find('input', { id: 'csrf_token' }).attrs.value;
         setCsrf(csrf);
+       onLoginhandler(csrf)
       })
-      .catch((err) => console.log('csrf set err', err));
-  }, [url]);
+      .catch((err) => {
+        alert(JSON.stringify(err))
+      });
+  }
+
+  // useEffect(() => {
+  //   var myHeaders = new Headers();
+  //   myHeaders.append('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
+  //   myHeaders.append('X-XSRF-TOKEN',"")
+  //   axios
+  //     .get(`http://${url}/login/`, {
+  //       headers:myHeaders
+  //     })
+  //     .then((res) => {
+  //       let soup = new JSSoup(res.data);
+  //       let csrf = soup.find('input', { id: 'csrf_token' }).attrs.value;
+  //       setCsrf(csrf);
+  //      alert("FETCHED CSRF")
+  //     })
+  //     .catch((err) => {
+  //       console.log("CSRF Error", JSON.stringify(err))
+  //     });
+  // }, [url]);
 
   const passwordVisibilityHandler = () => {
     if (passwordHidden == true) {
@@ -165,7 +193,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
             <Text style={styles.welcomeText}>Login to your account</Text>
 
             <TextInput
-              defaultValue="192.168.12.72:8088" //gets overwritten
+              defaultValue="192.168.1.252:8088" //gets overwritten
               onChangeText={setUrl}
               keyboardType={'url'}
               spellCheck={false}
@@ -174,6 +202,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
               textAlign={'center'}
               placeholder={'Your organization URL'}
               clearButtonMode={'while-editing'}
+              value={url}
             />
 
             <TextInput
@@ -198,8 +227,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
               <Pressable
                 style={styles.eye}
                 onPress={() => (
-                  setPasswordHidden(!passwordHidden),
-                  console.log(passwordHidden)
+                  setPasswordHidden(!passwordHidden)
                 )}
               >
                 <MaterialCommunityIcons
@@ -211,7 +239,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
             </View>
 
             <TouchableOpacity
-              onPress={() => UNPWCheck()}
+              onPress={() => fetchCSRF()}
               style={styles.loginButton}
             >
               <Text style={styles.loginText}>

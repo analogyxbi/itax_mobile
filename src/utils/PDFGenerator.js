@@ -1,8 +1,6 @@
-import { PDFDocument, PDFPage } from 'react-native-pdf-lib';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
-import { Barcode } from 'expo-barcode-generator';
 
 export const savePDF = async (pdfBytes) => {
   const path = FileSystem.documentDirectory + 'example.pdf';
@@ -17,7 +15,6 @@ export const savePDF = async (pdfBytes) => {
 };
 
 export const generatePDF = async (currentLine, formData) => {
-  console.log({ currentLine, formData });
   const { uri } = await Print.printToFileAsync({
     html: `<html lang="en">
     <head>

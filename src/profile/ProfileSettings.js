@@ -51,10 +51,10 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
     setLoading(true);
     axios({
       method: 'GET',
-      url: `http://${url}/logout/`,
+      url: `https://${url}/logout/`,
       headers: {
         'Content-Type': 'multipart/form-data',
-        Referer: `http://${url}/logout/`,
+        Referer: `https://${url}/logout/`,
       },
     })
       .then((res) => {

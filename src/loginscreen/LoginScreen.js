@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import { BlurView } from 'expo-blur';
@@ -120,6 +121,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
   };
 
   function fetchCSRF(){
+    setLoading(true)
     var myHeaders = new Headers();
     myHeaders.append('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
     myHeaders.append('X-XSRF-TOKEN',"")
@@ -135,6 +137,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       })
       .catch((err) => {
         alert(JSON.stringify(err))
+        setLoading(false)
       });
   }
 
@@ -243,7 +246,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
               style={styles.loginButton}
             >
               <Text style={styles.loginText}>
-                {loading === true ? `Signing In...` : `Sign In`}
+                {loading === true ? `Signing In... ` + <ActivityIndicator /> : `Sign In`}
               </Text>
             </TouchableOpacity>
           </BlurView>

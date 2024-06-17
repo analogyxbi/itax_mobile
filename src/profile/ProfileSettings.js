@@ -50,7 +50,7 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
 
   const onLogoutPressed = () => {
     setLoading(true);
-    AnalogyxBIClient.get({endpoint:`https://${url}/logout/`}).then((res)=>{
+    AnalogyxBIClient.get({endpoint:`http://${url}/logout/`}).then((res)=>{
       dispatch(logout(null));
       setIsAuthenticated(false);
       removeItemValue('csrf');

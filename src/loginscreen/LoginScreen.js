@@ -245,9 +245,14 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
               onPress={() => fetchCSRF()}
               style={styles.loginButton}
             >
-              <Text style={styles.loginText}>
-                {loading === true ? `Signing In... ` + <ActivityIndicator /> : `Sign In`}
-              </Text>
+              
+                {loading === true ? <>
+                  <Text style={styles.loginText}>
+                    Signing In... 
+                  </Text>
+                  <ActivityIndicator /> 
+                </>:  <Text style={styles.loginText}> Sign In </Text> }
+            
             </TouchableOpacity>
           </BlurView>
           <Text

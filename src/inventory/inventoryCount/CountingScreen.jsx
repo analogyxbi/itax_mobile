@@ -81,7 +81,7 @@ const CountingScreen = ({
       ) : (
         <>
           <View style={styles.header}>
-            <Pressable onPress={() => navigation.goBack()}>
+            <Pressable onPress={() => setScreen('initial')}>
               <Ionicons
                 name="chevron-back-outline"
                 size={24}
@@ -97,7 +97,7 @@ const CountingScreen = ({
                 <Text style={styles.value}>{currentCycle.CycleSeq} </Text>
               </View>
               <View style={styles.column}>
-                <Text style={styles.label}>WH</Text>
+                <Text style={styles.label}>Warehouse</Text>
                 <Text style={styles.value}>
                   {currentCycle.CCHdrWarehseDescription}
                 </Text>

@@ -16,7 +16,7 @@ const InitialScreen = ({ setScreen, currentCycle }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => {navigation.goBack()}}>
           <Ionicons
             name="chevron-back-outline"
             size={24}

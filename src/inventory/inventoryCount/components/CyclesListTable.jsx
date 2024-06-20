@@ -16,7 +16,7 @@ const CyclesListTable = ({ data, loading, onSelectCycle }) => {
                 <Text style={[{ width: 80 }, styles.heading]}>WRH Desc</Text>
             </View>
             <ScrollView style={{ maxHeight: 300, minHeight: 50 }}>
-                {loading && <ActivityIndicator style={{position:"absolute", alignSelf:"center", top: 100}} />}
+                {loading && <ActivityIndicator style={{position:"absolute", alignSelf:"center", top: 10}} />}
                 {data.length > 0 ?
                     <View>
                         {

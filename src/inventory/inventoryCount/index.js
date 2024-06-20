@@ -50,7 +50,7 @@ const InventoryCount = () => {
   };
 
   const getWareHouseList = (warehouseCode) => {
-    setWarehouseLoading(true)
+    setWarehouseLoading(true);
     const epicor_endpoint = `/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description`;
     const postPayload = {
       epicor_endpoint,
@@ -65,21 +65,22 @@ const InventoryCount = () => {
         .then(({ json }) => {
           // setWarehouseCodeList(() => json.data.value);
           dispatch(setWarehouses(json.data.value));
-          setWarehouseLoading(false)
+          console.log({ json });
+          setWarehouseLoading(false);
         })
         .catch((err) => {
-          console.log(err);
-          setWarehouseLoading(false)
+          // console.log(err);
+          setWarehouseLoading(false);
         });
     } catch (err) {
-      setWarehouseLoading(false)
+      setWarehouseLoading(false);
     }
   };
 
   const fetchCycles = () => {
     if (warehouse) {
       setCyclesLoading(true);
-      const filter = encodeURI(`WarehouseCode eq '${warehouse}'`)
+      const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
       const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${filter}&$top=1000`;
       try {
         AnalogyxBIClient.post({
@@ -117,7 +118,7 @@ const InventoryCount = () => {
   };
 
   useEffect(() => {
-    if (warehouses && warehouse.length === 0) {
+    if (warehouses && warehouse.length <= 0) {
       getWareHouseList();
     }
   }, []);
@@ -178,7 +179,7 @@ const InventoryCount = () => {
             }))}
             isLoading={warehouseLoading}
             label="Select warehouse"
-            // handleRefresh={handleOptionsRefresh}
+            handleRefresh={getWareHouseList}
           />
         </View>
         <TouchableOpacity

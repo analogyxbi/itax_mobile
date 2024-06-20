@@ -1,33 +1,71 @@
 {
   "expo": {
-    "name": "woodland_app",
-    "displayName": "Woodland App",
+    "name": "woodland-app",
     "slug": "warehouse_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "jsEngine": "hermes",
     "userInterfaceStyle": "light",
+    "web": {
+      "proxy": "http://192.168.1.252:8088"
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": false
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
+      },
+      "bundleIdentifier": "com.analogyx.woodland"
     },
     "android": {
-      "package": "woodland_app.package",
+      "config": {
+        "network": {
+          "cleartext": {
+            "config": {
+              "penetrated": [
+                "192.168.1.252:8088"
+              ]
+            }
+          }
+        }
+      },
+      "package": "com.woodland.app",
+      "artifactType": "apk",
+      "usesCleartextTraffic": true,
+      "release": {
+        "workflow": "managed",
+        "distribution": "internal",
+        "artifactType": "APK"
+      },
       "adaptiveIcon": {
         "foregroundImage": "./images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       [
         "expo-camera",
         {
@@ -36,6 +74,12 @@
           "recordAudioAndroid": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "40f394f6-fd1c-470f-a26f-549f1365a232"
+      }
+    },
+    "owner": "prabal_analogyx"
   }
 }

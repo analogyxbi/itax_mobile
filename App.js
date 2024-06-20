@@ -177,8 +177,8 @@ const RootNavigation = () => {
 
   const Init = async () => {
     let csrf = await AsyncStorage.getItem('csrf');
-    if (csrf !== null) {
-      const url = '192.168.12.86:8088';
+    let url = await AsyncStorage.getItem('url');
+    if (csrf !== null && url != null) {
       setupClient(csrf, url);
       dispatch(login({ csrf, url }));
       await AsyncStorage.multiSet([

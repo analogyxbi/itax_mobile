@@ -15,9 +15,10 @@ export const authSlice = createSlice({
     login: (state, action) => {
       const { csrf, url } = action.payload;
       state.csrf = csrf;
+      state.url = url;
       setupClient(csrf, url);
       AsyncStorage.setItem('csrf', csrf);
-      state.url = url;
+      AsyncStorage.setItem('url', url);
     },
     logout: (state) => {
       state.csrf = null;

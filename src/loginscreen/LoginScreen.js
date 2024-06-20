@@ -103,12 +103,8 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
           Alert.alert('Timeout. Please try again.');
           setLoading(false);
         } else {
-          setupClient(csrf_token, url);
+          // setupClient(csrf_token, url);
           dispatch(login({ csrf: csrf_token, url }));
-          AsyncStorage.multiSet([
-            ['csrf', csrf],
-            ['url', url],
-          ]);
           setLoading(false);
           setIsAuthenticated(true);
         }
@@ -199,7 +195,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
             <Text style={styles.welcomeText}>Login to your account</Text>
 
             <TextInput
-              defaultValue="192.168.1.252:8088" //gets overwritten
               onChangeText={setUrl}
               keyboardType={'url'}
               spellCheck={false}

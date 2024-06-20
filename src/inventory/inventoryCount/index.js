@@ -25,10 +25,9 @@ const InventoryCount = () => {
   const { currentCycle, cyclesData, warehouses } = useSelector(
     (state) => state.inventory
   );
-  const [cyclesResponse, setCyclesResponse] = useState(cyclesData);
   const [warehouse, setWarehouse] = useState('');
   // const [warehouseCodeList, setWarehouseCodeList] = useState([]);
-  const [warehouseLoading, setWarehouseLoading] = useState(currentCycle);
+  const [warehouseLoading, setWarehouseLoading] = useState(false);
   const [cyclesLoading, setCyclesLoading] = useState(false);
   const [cyclesVisible, setCyclesVisible] = useState(false);
   const navigation = useNavigation();
@@ -56,25 +55,22 @@ const InventoryCount = () => {
       epicor_endpoint,
       request_type: 'GET',
     };
-    try {
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload,
-        stringify: false,
+
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload,
+      stringify: false,
+    })
+      .then(({ json }) => {
+        // setWarehouseCodeList(() => json.data.value);
+        dispatch(setWarehouses(json.data.value));
+        console.log({ json });
+        setWarehouseLoading(false);
       })
-        .then(({ json }) => {
-          // setWarehouseCodeList(() => json.data.value);
-          dispatch(setWarehouses(json.data.value));
-          console.log({ json });
-          setWarehouseLoading(false);
-        })
-        .catch((err) => {
-          // console.log(err);
-          setWarehouseLoading(false);
-        });
-    } catch (err) {
-      setWarehouseLoading(false);
-    }
+      .catch((err) => {
+        // console.log(err);
+        setWarehouseLoading(false);
+      });
   };
 
   const fetchCycles = () => {
@@ -118,7 +114,7 @@ const InventoryCount = () => {
   };
 
   useEffect(() => {
-    if (warehouses && warehouse.length <= 0) {
+    if (warehouses && warehouses.length <= 0) {
       getWareHouseList();
     }
   }, []);

@@ -13,6 +13,7 @@ import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
 import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
 import { setCurrentCycle } from '../reducer/inventory';
+import { showSnackbar } from '../../Snackbar/messageSlice';
 
 export default function CycleApp() {
   const [screen, setScreen] = useState('initial'); // Initial screen state
@@ -30,46 +31,61 @@ export default function CycleApp() {
         message: 'Generating Tags and Starting the Cycle',
       })
     );
-    let values = {
-      ...currentCycle,
-      CycleStatus: 2,
-      EnablePrintTags: true,
-      EnableReprintTags: true,
-      EnableStartCountSeq: true,
-      EnableVoidBlankTags: false,
-      EnableVoidTagsByPart: false,
-      BlankTagsOnly: true,
-      NumOfBlankTags: 100,
-      RowMod: 'U',
-    };
-    const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/CCCountCycles';
-    AnalogyxBIClient.post({
-      endpoint: `/erp_woodland/resolve_api`,
-      postPayload: {
-        epicor_endpoint,
-        request_type: 'POST',
-        data: JSON.stringify(values),
-      },
-      stringify: false,
-    })
-      .then(({ json }) => {
-        dispatch(setCurrentCycle(json.data));
-        dispatch(
-          setOnSuccess({ value: true, message: 'Count Started Successfully.' })
-        );
-      })
-      .catch((err) => {
-        dispatch(
-          setOnError({
-            value: true,
-            message: 'Failed to Start the Count process',
-          })
-        );
+    try {
+      const tags = parseInt(currentCycle.TotalParts);
 
-        err.json().then((res) => {
-          // dispatch(setOnError({ value: true, message: res.error }));
+      let values = {
+        ...currentCycle,
+        CycleStatus: 2,
+        EnablePrintTags: true,
+        EnableReprintTags: true,
+        EnableStartCountSeq: true,
+        EnableVoidBlankTags: false,
+        EnableVoidTagsByPart: false,
+        BlankTagsOnly: true,
+        NumOfBlankTags: tags + 30,
+        RowMod: 'U',
+      };
+      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/CCCountCycles';
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: {
+          epicor_endpoint,
+          request_type: 'POST',
+          data: JSON.stringify(values),
+        },
+        stringify: false,
+      })
+        .then(({ json }) => {
+          dispatch(setCurrentCycle(json.data));
+          dispatch(
+            setOnSuccess({
+              value: true,
+              message: 'Count Started Successfully.',
+            })
+          );
+        })
+        .catch((err) => {
+          dispatch(
+            setOnError({
+              value: true,
+              message: 'Failed to Start the Count process',
+            })
+          );
+
+          err.json().then((res) => {
+            // dispatch(setOnError({ value: true, message: res.error }));
+          });
         });
-      });
+    } catch (err) {
+      dispatch(showSnackbar('Error Occured while generating tags'));
+      dispatch(
+        setOnError({
+          value: true,
+          message: 'Failed to Start the Count process',
+        })
+      );
+    }
   }
 
   return (

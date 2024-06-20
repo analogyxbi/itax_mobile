@@ -32,21 +32,26 @@ export default function CycleApp() {
       })
     );
     try {
-      const tags = parseInt(currentCycle.TotalParts);
+      const tags = parseInt(currentCycle.TotalParts) + 30;
 
       let values = {
-        ...currentCycle,
-        CycleStatus: 2,
-        EnablePrintTags: true,
-        EnableReprintTags: true,
-        EnableStartCountSeq: true,
-        EnableVoidBlankTags: false,
-        EnableVoidTagsByPart: false,
-        BlankTagsOnly: true,
-        NumOfBlankTags: tags + 30,
-        RowMod: 'U',
+        ds: {
+          CCHdr: {
+            ...currentCycle,
+            CycleStatus: 1,
+            EnablePrintTags: true,
+            EnableReprintTags: true,
+            EnableStartCountSeq: true,
+            EnableVoidBlankTags: false,
+            EnableVoidTagsByPart: false,
+            BlankTagsOnly: true,
+            NumOfBlankTags: tags + 20,
+            RowMod: 'U',
+          },
+        },
       };
-      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/CCCountCycles';
+      console.log({ values });
+      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
         postPayload: {
@@ -57,13 +62,10 @@ export default function CycleApp() {
         stringify: false,
       })
         .then(({ json }) => {
-          dispatch(setCurrentCycle(json.data));
-          dispatch(
-            setOnSuccess({
-              value: true,
-              message: 'Count Started Successfully.',
-            })
-          );
+          let data = json.data;
+          console.log({ data });
+          // delete data.odata
+          startCountProcess(json.data);
         })
         .catch((err) => {
           dispatch(
@@ -86,6 +88,44 @@ export default function CycleApp() {
         })
       );
     }
+  }
+
+  function startCountProcess() {
+    let data = {
+      ...currentCycle,
+      CycleStatus: 2,
+    };
+    const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/CCCountCycles';
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(data),
+      },
+      stringify: false,
+    })
+      .then(({ json }) => {
+        dispatch(setCurrentCycle(json.data));
+        dispatch(
+          setOnSuccess({
+            value: true,
+            message: 'Count Started Successfully.',
+          })
+        );
+      })
+      .catch((err) => {
+        dispatch(
+          setOnError({
+            value: true,
+            message: 'Failed to Start the Count process',
+          })
+        );
+
+        err.json().then((res) => {
+          // dispatch(setOnError({ value: true, message: res.error }));
+        });
+      });
   }
 
   return (

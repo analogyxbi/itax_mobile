@@ -11,7 +11,7 @@ import { globalStyles } from '../../style/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-const InitialScreen = ({ setScreen, currentCycle }) => {
+const InitialScreen = ({ setScreen, currentCycle, generateTagsAndStartCount }) => {
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
@@ -55,7 +55,7 @@ const InitialScreen = ({ setScreen, currentCycle }) => {
         {/* <Text style={styles.label}>Cycle No: 1 WH</Text>
         <Text style={styles.label}>Cycle Date: 5/24/2024</Text>
         <Text style={styles.label}>Status: Tags Generated</Text> */}
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={generateTagsAndStartCount} >
           <Text style={styles.buttonText}>Initiate Counting Process</Text>
         </TouchableOpacity>
         <TouchableOpacity

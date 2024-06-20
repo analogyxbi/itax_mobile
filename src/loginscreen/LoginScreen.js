@@ -29,7 +29,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
   const [passwordHidden, setPasswordHidden] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [url, setUrl] = useState('192.168.1.252:8088'); //gets overwritten when value is edited
+  const [url, setUrl] = useState(''); //gets overwritten when value is edited
   const dispatch = useDispatch();
   const [csrf, setCsrf] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
     setLoading(true);
     var myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
-    myHeaders.append('X-XSRF-TOKEN',"")
+    myHeaders.append('X-XSRF-TOKEN', '');
 
     var data = {
       password: password,
@@ -57,16 +57,16 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       maxBodyLength: Infinity,
       url: `http://${url}/api/v1/security/login/`,
       data: data,
-      Headers:myHeaders
+      Headers: myHeaders,
     };
 
     axios(config)
       .then(function (response) {
-        alert("First login success")
+        alert('First login success');
         onLoginhandler();
       })
       .catch(function (error) {
-        console.log( "First Error" + JSON.stringify(error));
+        console.log('First Error' + JSON.stringify(error));
         // const csrf =
         //   'IjU5NDdlOTdiNWQ4MjU0YjJjMWE3ZTI0Zjk2N2Y5NGVlY2U2OGRkODQi.ZiebCQ.jhphhb5RUKzz3_OynmaaGkz1mYM';
         // setupClient(csrf, url);
@@ -115,29 +115,32 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       })
       .catch((err) => {
         // Alert.alert('Error', JSON.stringify(err));
-        alert("Second Error" + JSON.stringify(err));
+        alert('Second Error' + JSON.stringify(err));
         setLoading(false);
       });
   };
 
-  function fetchCSRF(){
-    setLoading(true)
-    var myHeaders = new Headers();
-    myHeaders.append('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
-    myHeaders.append('X-XSRF-TOKEN',"")
+  function fetchCSRF() {
+    setLoading(true);
+    let myHeaders = new Headers();
+    myHeaders.append(
+      'Accept',
+      'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'
+    );
+    myHeaders.append('X-XSRF-TOKEN', '');
     axios
       .get(`http://${url}/login`, {
-        headers:myHeaders
+        headers: myHeaders,
       })
       .then((res) => {
         let soup = new JSSoup(res.data);
         let csrf = soup.find('input', { id: 'csrf_token' }).attrs.value;
         setCsrf(csrf);
-       onLoginhandler(csrf)
+        onLoginhandler(csrf);
       })
       .catch((err) => {
-        alert(JSON.stringify(err))
-        setLoading(false)
+        alert(JSON.stringify(err));
+        setLoading(false);
       });
   }
 
@@ -229,9 +232,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
               />
               <Pressable
                 style={styles.eye}
-                onPress={() => (
-                  setPasswordHidden(!passwordHidden)
-                )}
+                onPress={() => setPasswordHidden(!passwordHidden)}
               >
                 <MaterialCommunityIcons
                   name={eyeVisible()}
@@ -245,14 +246,21 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
               onPress={() => fetchCSRF()}
               style={styles.loginButton}
             >
-              
-                {loading === true ? <>
-                  <Text style={styles.loginText}>
-                    Signing In... 
-                  </Text>
-                  <ActivityIndicator /> 
-                </>:  <Text style={styles.loginText}> Sign In </Text> }
-            
+              {loading === true ? (
+                <View
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={styles.loginText}>Please Wait... </Text>
+                  <ActivityIndicator color={'white'} />
+                </View>
+              ) : (
+                <Text style={styles.loginText}> Sign In </Text>
+              )}
             </TouchableOpacity>
           </BlurView>
           <Text

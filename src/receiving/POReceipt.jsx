@@ -190,6 +190,11 @@ const POReceipt = () => {
 
   const getPoReciept = async () => {
     setLoading(true);
+    setPOData([]);
+    setPackSlipData([]);
+    setPackSlipNUm('');
+    setExistingPackSlips([]);
+    setIsNewpackslip(true);
     // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls`;
     if (poNum) {
@@ -209,7 +214,6 @@ const POReceipt = () => {
               dispatch(showSnackbar('PO Not Found'));
             } else {
               setPOData(() => json.data.value);
-              console.log('po data', json.data.value);
             }
             setLoading(false);
           })
@@ -238,7 +242,6 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log('ExistingPackslips', json.data.value);
             setExistingPackSlips(() => json.data.value);
             setExistingPackslipLoading(false);
             setIsNewpackslip(false);
@@ -408,7 +411,6 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(setPOdataResponse(json.data.value));
-            console.log('Po data', json.data.value);
             setLocalPoData((prev) => ({
               ...prev,
               [pageValue]: json?.data?.value,
@@ -528,7 +530,6 @@ const POReceipt = () => {
       RcvDtls: [receipt],
     };
 
-    console.log({ postPayload, currentLine });
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
@@ -540,9 +541,16 @@ const POReceipt = () => {
       stringify: false,
     })
       .then(({ json }) => {
-        console.log(json);
         setSaved(true);
         dispatch(setOnSuccess({ value: true, message: '' }));
+        setTabvalue('1');
+        setTimeout(() => {
+          setCurrentLine({});
+          // fetchExistingPackslips();
+          setIsNewpackslip(true);
+          setExistingPackSlips([]);
+          setPackSlipNUm('')
+        })
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) => {
@@ -599,7 +607,7 @@ const POReceipt = () => {
           <BarcodeScannerComponent
             closeScanner={closeScanner}
             captureDetails={captureDetails}
-            // cameraState={cameraState}
+          // cameraState={cameraState}
           />
         </View>
       ) : cameraVisible ? (
@@ -670,7 +678,7 @@ const POReceipt = () => {
                 {
                   value: '2',
                   label: 'Receipt',
-                  disabled: _.isEmpty(packSLipNUm),
+                  disabled: _.isEmpty(packSLipNUm) || _.isEmpty(POData),
                   icon: () => (
                     <FontAwesome5
                       name="receipt"
@@ -814,7 +822,7 @@ const POReceipt = () => {
                 </Text>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                   <Text style={styles.inputLabel}>Packslip</Text>
-                  <TouchableOpacity
+                  <TouchableOpacity disabled={_.isEmpty(POData)}
                     onPress={() => {
                       if (isNewPackSlip) {
                         fetchExistingPackslips();
@@ -906,7 +914,7 @@ const POReceipt = () => {
                 )}
                 <TextInput
                   style={styles.input}
-                  editable={isNewPackSlip}
+                  editable={isNewPackSlip && !_.isEmpty(POData)}
                   value={packSLipNUm}
                   onChangeText={(text) => setPackSlipNUm(text)}
                   placeholder="Packslip"
@@ -916,7 +924,7 @@ const POReceipt = () => {
                   <ActivityIndicator />
                 ) : (
                   <TouchableOpacity
-                    disabled={_.isEmpty(packSLipNUm)}
+                    disabled={_.isEmpty(packSLipNUm) || _.isEmpty(POData)}
                     style={styles.receiveButton}
                     onPress={() => handleCreateUpdatePackSlip()}
                   >

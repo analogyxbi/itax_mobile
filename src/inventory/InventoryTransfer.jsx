@@ -567,7 +567,7 @@ const InventoryTransfer = () => {
           </View>
           <View>
             <View style={globalStyles.dFlexR}>
-              <Text style={styles.inputLabel}>Select Product </Text>
+              <Text style={styles.inputLabel}>Select Part </Text>
               <TouchableOpacity
                 onPress={() => {
                   setCameraState('current_part');

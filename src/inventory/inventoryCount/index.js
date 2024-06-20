@@ -169,23 +169,23 @@ const InventoryCount = () => {
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Warehouse</Text>
-            <Text style={styles.value}>{currentCycle?.WarehouseCode}</Text>
+            <Text style={styles.value}>{currentCycle?.WarehouseCode || "N/A"}</Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Date</Text>
             <Text style={styles.value}>
-              {renderDate(currentCycle?.CycleDate)}
+              {renderDate(currentCycle?.CycleDate) || "N/A"}
             </Text>
           </View>
         </View>
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Seq</Text>
-            <Text style={styles.value}>{currentCycle?.CycleSeq}</Text>
+            <Text style={styles.value}>{currentCycle?.CycleSeq || "N/A"}</Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>{currentCycle?.CycleStatusDesc}</Text>
+            <Text style={styles.value}>{currentCycle?.CycleStatusDesc || "N/A"}</Text>
           </View>
         </View>
       </View>

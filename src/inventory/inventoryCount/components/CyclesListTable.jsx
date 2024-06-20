@@ -54,9 +54,27 @@ const CyclesListTable = ({ data, loading, onSelectCycle }) => {
             ))}
           </View>
         ) : (
-          <Text style={{ textAlign: 'center', paddingTop: 10 }}>
-            {loading ? 'Please wait' : 'No data'}
-          </Text>
+          <>
+            {true ? (
+              <View
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                }}
+              >
+                <Text style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                  Please wait...
+                </Text>
+                <ActivityIndicator color={'lime'} />
+              </View>
+            ) : (
+              <Text style={{ textAlign: 'center', paddingTop: 10 }}>
+                No data
+              </Text>
+            )}
+          </>
         )}
       </ScrollView>
     </View>

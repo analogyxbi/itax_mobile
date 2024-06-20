@@ -17,14 +17,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   setCurrentCycle,
   setCyclesData,
+  setSelectedCycleDetails,
   setWarehouses,
 } from '../reducer/inventory';
 import { showSnackbar } from '../../Snackbar/messageSlice';
+import { validateVariable } from '../Utils/InventoryUtils';
+import LoadingBackdrop from '../../components/Loaders/LoadingBackdrop';
+import { setIsLoading } from '../../components/Loaders/toastReducers';
 
 const InventoryCount = () => {
   const { currentCycle, cyclesData, warehouses } = useSelector(
     (state) => state.inventory
   );
+  const { isLoading } = useSelector((state) => state.toast);
   const [warehouse, setWarehouse] = useState('');
   // const [warehouseCodeList, setWarehouseCodeList] = useState([]);
   const [warehouseLoading, setWarehouseLoading] = useState(false);
@@ -90,7 +95,6 @@ const InventoryCount = () => {
             setCyclesLoading(false);
           })
           .catch((err) => {
-            console.log(err);
             setCyclesLoading(false);
           });
       } catch (err) {
@@ -119,9 +123,49 @@ const InventoryCount = () => {
     }
   }, []);
 
+  // setSelectedCycleDetails
+  function getSelectedCycleDetails() {
+    if (warehouse) {
+      // setCyclesLoading(true);
+      dispatch(setIsLoading({ value: true, message: 'Please wait...' }));
+      const filterString = encodeURI(
+        `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCMonth eq ${currentCycle.CCMonth} and CCYear eq ${currentCycle.CCYear} and Company eq '${currentCycle.Company}' and Plant eq '${currentCycle.Plant}')`
+      );
+      const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$expand=CCDtls&$filter=${filterString}`;
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: { epicor_endpoint, request_type: 'GET' },
+          stringify: false,
+        })
+          .then(({ json }) => {
+            // setCyclesResponse(json.data.value);
+            dispatch(setSelectedCycleDetails(json.data.value));
+            // setCyclesLoading(false);
+            dispatch(setIsLoading({ value: false, message: '' }));
+            navigation.navigate('cycle_details');
+          })
+          .catch((err) => {
+            console.log(err);
+            dispatch(setIsLoading({ value: false, message: '' }));
+            dispatch(
+              showSnackbar('Error Occured While fetching cycle Details')
+            );
+          });
+      } catch (err) {
+        dispatch(setIsLoading({ value: false, message: '' }));
+        dispatch(showSnackbar('Error Occured While fetching cycle Details'));
+      }
+    } else {
+      dispatch(setIsLoading({ value: false, message: '' }));
+      dispatch(showSnackbar('Select the warehouse First'));
+    }
+  }
+
   const CycleDetails = () => {
     return (
       <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
+        <Text style={styles.label}> Selected Cycle </Text>
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Warehouse</Text>
@@ -150,6 +194,14 @@ const InventoryCount = () => {
 
   return (
     <View style={{ flex: 1 }}>
+      <LoadingBackdrop
+        visible={isLoading}
+        onDismiss={() => {
+          setTimeout(() => {
+            dispatch(setIsLoading({ value: false, message: '' }));
+          }, 500);
+        }}
+      />
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons
@@ -176,6 +228,7 @@ const InventoryCount = () => {
             isLoading={warehouseLoading}
             label="Select warehouse"
             handleRefresh={getWareHouseList}
+            placeholder={'Select Warehouse Code.'}
           />
         </View>
         <TouchableOpacity
@@ -194,9 +247,9 @@ const InventoryCount = () => {
         {currentCycle && <CycleDetails />}
       </View>
       <TouchableOpacity
-        disabled={!currentCycle?.WarehouseCode}
+        disabled={validateVariable(currentCycle)}
         style={styles.receiveButton}
-        onPress={() => navigation.navigate('cycle_details')}
+        onPress={() => getSelectedCycleDetails()}
       >
         <Text style={styles.receiveButtonText}>Next</Text>
       </TouchableOpacity>

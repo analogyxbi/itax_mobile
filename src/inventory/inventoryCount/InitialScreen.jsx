@@ -10,9 +10,16 @@ import {
 import { globalStyles } from '../../style/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 
-const InitialScreen = ({ setScreen, currentCycle, generateTagsAndStartCount }) => {
+const InitialScreen = ({
+  setScreen,
+  currentCycle,
+  generateTagsAndStartCount,
+}) => {
   const navigation = useNavigation();
+  const { selectedCycleDetails } = useSelector((state) => state.inventory);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -55,7 +62,17 @@ const InitialScreen = ({ setScreen, currentCycle, generateTagsAndStartCount }) =
         {/* <Text style={styles.label}>Cycle No: 1 WH</Text>
         <Text style={styles.label}>Cycle Date: 5/24/2024</Text>
         <Text style={styles.label}>Status: Tags Generated</Text> */}
-        <TouchableOpacity style={styles.button} onPress={generateTagsAndStartCount} >
+        <TouchableOpacity
+          style={{
+            ...styles.button,
+            backgroundColor:
+              currentCycle.CycleStatus > 1
+                ? 'grey'
+                : globalStyles.colors.success,
+          }}
+          onPress={generateTagsAndStartCount}
+          disabled={currentCycle.CycleStatus > 1}
+        >
           <Text style={styles.buttonText}>Initiate Counting Process</Text>
         </TouchableOpacity>
         <TouchableOpacity

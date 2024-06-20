@@ -57,3 +57,18 @@ export const generateTags = {
     ],
   },
 };
+
+export function validateVariable(variable) {
+  // Check if variable is null or undefined
+  if (variable === null || variable === undefined) {
+    return true; // Variable is null or undefined, return true
+  }
+
+  // Check if variable is an object and has at least one key
+  if (typeof variable === 'object' && Object.keys(variable).length > 0) {
+    return false; // Object with at least one key, return false
+  }
+
+  // In all other cases, return true
+  return true;
+}

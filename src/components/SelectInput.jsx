@@ -7,9 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
-  TouchableWithoutFeedback,
-  ActivityIndicator,
-  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,6 +17,7 @@ const SelectInput = ({
   onChange,
   isLoading,
   handleRefresh,
+  placeholder, // New prop for placeholder text
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -60,12 +58,13 @@ const SelectInput = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label} />
       <TouchableOpacity
         style={styles.inputContainer}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={styles.input}>{value}</Text>
+        <Text style={[styles.input, !value && styles.placeholder]}>
+          {value || placeholder}
+        </Text>
         <Ionicons
           name="chevron-down"
           size={20}
@@ -87,16 +86,7 @@ const SelectInput = ({
               onChangeText={handleSearch}
               value={searchText}
             />
-            <ScrollView
-              refreshControl={
-                <RefreshControl
-                  refreshing={isLoading}
-                  onRefresh={() => handleRefresh(label)}
-                />
-              }
-            >
-              {renderOptions()}
-            </ScrollView>
+            <ScrollView>{renderOptions()}</ScrollView>
           </View>
         </View>
       </Modal>
@@ -106,7 +96,7 @@ const SelectInput = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: -10,
+    marginVertical: 10,
   },
   label: {
     fontSize: 16,
@@ -125,6 +115,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
   },
+  placeholder: {
+    color: '#aaa', // Placeholder text color
+  },
   dropdownIcon: {
     marginLeft: 10,
   },
@@ -139,7 +132,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     width: '80%',
-    maxHeight: 400, // Set a max height to limit the modal size
+    maxHeight: 400,
   },
   searchInput: {
     borderWidth: 1,
@@ -148,18 +141,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 15,
     marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   option: {
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
 

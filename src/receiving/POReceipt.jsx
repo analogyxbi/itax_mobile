@@ -214,7 +214,6 @@ const POReceipt = () => {
               dispatch(showSnackbar('PO Not Found'));
             } else {
               setPOData(() => json.data.value);
-              console.log('po data', json.data.value);
             }
             setLoading(false);
           })
@@ -243,7 +242,6 @@ const POReceipt = () => {
           stringify: false,
         })
           .then(({ json }) => {
-            console.log('ExistingPackslips', json.data.value);
             setExistingPackSlips(() => json.data.value);
             setExistingPackslipLoading(false);
             setIsNewpackslip(false);
@@ -548,7 +546,9 @@ const POReceipt = () => {
         setTabvalue('1');
         setTimeout(() => {
           setCurrentLine({});
-          fetchExistingPackslips();
+          // fetchExistingPackslips();
+          setIsNewpackslip(true);
+          setExistingPackSlips([]);
           setPackSlipNUm('')
         })
       })

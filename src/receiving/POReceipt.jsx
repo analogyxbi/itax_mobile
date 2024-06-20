@@ -543,14 +543,7 @@ const POReceipt = () => {
       .then(({ json }) => {
         setSaved(true);
         dispatch(setOnSuccess({ value: true, message: '' }));
-        setTabvalue('1');
-        setTimeout(() => {
-          setCurrentLine({});
-          // fetchExistingPackslips();
-          setIsNewpackslip(true);
-          setExistingPackSlips([]);
-          setPackSlipNUm('')
-        })
+        setFormdata(prev => ({...prev, BinNum:'', input: ''}))
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) => {

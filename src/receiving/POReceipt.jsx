@@ -470,7 +470,13 @@ const POReceipt = () => {
 
   const onSelectLine = (po) => {
     getWareHouseList(po?.WarehouseCode);
-    setCurrentLine(po);
+    const poDetails = POData && POData[0]?.PODetails || [];
+    const selectedPo = poDetails.find(da => da.POLine === po.POLine);
+    if (isNewPackSlip && selectedPo) {
+      setCurrentLine({ ...po, DocUnitCost: selectedPo?.DocUnitCost, UnitCost: selectedPo?.UnitCost });
+    } else {
+      setCurrentLine(po);
+    }
     setTabvalue('3');
   };
 
@@ -499,7 +505,10 @@ const POReceipt = () => {
       POLine: currentLine?.POLine,
       PORelNum: currentLine?.PORelNum,
       PartNum: currentLine?.POLinePartNum,
+      DocVendorUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       DocUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
+      VendorUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
+      OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
       WareHouseCode: currentLine?.WarehouseCode,

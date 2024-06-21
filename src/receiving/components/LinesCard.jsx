@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { globalStyles } from '../../style/globalStyles';
 
 const LinesCard = ({ data, onSelectLine, isPackLine }) => {
-  console.log({ data })
   return (
     <TouchableOpacity onPress={() => onSelectLine(data)}>
       <View style={styles.card}>

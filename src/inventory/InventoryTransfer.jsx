@@ -365,8 +365,8 @@ const InventoryTransfer = () => {
         showSnackbar('Warehouse or bin not found for the part number')
       );
     }
-    if (details.includes('/')) {
-      const data = details.split(' / ');
+    if (details.includes('\\')) {
+      const data = details.split(' \\ ');
       if (data.length > 0 && data.length <= 3) {
         if (state.startsWith('current')) {
           setFormData((prev) => ({

@@ -24,7 +24,8 @@ export default function CycleApp() {
   const [countedQty, setCountedQty] = useState('');
   const [notes, setNotes] = useState('');
   const dispatch = useDispatch();
-  function generateTagsAndStartCount() {
+
+  function generateTagsAndStartCount(startCount = true, tagNum) {
     dispatch(
       setIsLoading({
         value: true,
@@ -32,25 +33,27 @@ export default function CycleApp() {
       })
     );
     try {
-      const tags = parseInt(currentCycle.TotalParts) + 30;
+      const tags = !startCount
+        ? parseInt(currentCycle.TotalParts) + tagNum
+        : parseInt(currentCycle.TotalParts) + 30;
 
       let values = {
         ds: {
-          CCHdr: {
-            ...currentCycle,
-            CycleStatus: 1,
-            EnablePrintTags: true,
-            EnableReprintTags: true,
-            EnableStartCountSeq: true,
-            EnableVoidBlankTags: false,
-            EnableVoidTagsByPart: false,
-            BlankTagsOnly: true,
-            NumOfBlankTags: tags + 20,
-            RowMod: 'U',
-          },
+          CCHdr: [
+            {
+              ...currentCycle,
+              EnablePrintTags: true,
+              EnableReprintTags: true,
+              EnableStartCountSeq: true,
+              EnableVoidBlankTags: false,
+              EnableVoidTagsByPart: false,
+              BlankTagsOnly: true,
+              NumOfBlankTags: tags,
+              RowMod: 'U',
+            },
+          ],
         },
       };
-      console.log({ values });
       const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -62,21 +65,44 @@ export default function CycleApp() {
         stringify: false,
       })
         .then(({ json }) => {
-          let data = json.data;
-          console.log({ data });
           // delete data.odata
-          startCountProcess(json.data);
-        })
-        .catch((err) => {
+          const newData = {
+            ...currentCycle,
+            CycleStatus: 1,
+            EnablePrintTags: true,
+            EnableReprintTags: true,
+            EnableStartCountSeq: true,
+            EnableVoidBlankTags: false,
+            EnableVoidTagsByPart: false,
+            BlankTagsOnly: true,
+            NumOfBlankTags: tags,
+            RowMod: 'U',
+          };
           dispatch(
-            setOnError({
-              value: true,
-              message: 'Failed to Start the Count process',
+            setCurrentCycle({
+              ...newData,
             })
           );
-
-          err.json().then((res) => {
+          if (startCount) {
+            startCountProcess(newData);
+          } else {
+            dispatch(
+              setOnSuccess({
+                value: true,
+                message: 'Tags Generated Successfully.',
+              })
+            );
+          }
+        })
+        .catch((err) => {
+          err.json().then(({ error }) => {
             // dispatch(setOnError({ value: true, message: res.error }));
+            dispatch(
+              setOnError({
+                value: true,
+                message: error.ErrorMessage,
+              })
+            );
           });
         });
     } catch (err) {
@@ -84,29 +110,34 @@ export default function CycleApp() {
       dispatch(
         setOnError({
           value: true,
-          message: 'Failed to Start the Count process',
+          message: 'Error Occured while generating tags',
         })
       );
     }
   }
 
-  function startCountProcess() {
-    let data = {
-      ...currentCycle,
-      CycleStatus: 2,
+  function startCountProcess(newData) {
+    let values = {
+      ds: {
+        CCHdr: [
+          {
+            ...newData,
+          },
+        ],
+      },
     };
-    const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/CCCountCycles';
+    const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/StartCountSequence';
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
         epicor_endpoint,
         request_type: 'POST',
-        data: JSON.stringify(data),
+        data: JSON.stringify(values),
       },
       stringify: false,
     })
       .then(({ json }) => {
-        dispatch(setCurrentCycle(json.data));
+        dispatch(setCurrentCycle({ ...newData, CycleStatus: 2 }));
         dispatch(
           setOnSuccess({
             value: true,
@@ -115,14 +146,13 @@ export default function CycleApp() {
         );
       })
       .catch((err) => {
-        dispatch(
-          setOnError({
-            value: true,
-            message: 'Failed to Start the Count process',
-          })
-        );
-
-        err.json().then((res) => {
+        err.json().then(({ error }) => {
+          dispatch(
+            setOnError({
+              value: true,
+              message: error.ErrorMessage,
+            })
+          );
           // dispatch(setOnError({ value: true, message: res.error }));
         });
       });

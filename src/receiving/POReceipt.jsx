@@ -133,10 +133,6 @@ const POReceipt = () => {
     setScannerVisible(false);
   };
 
-  // useEffect(() => {
-  //   setPoNum(parseInt(selectedPOdata?.PONum))
-  // }, [selectedPOdata])
-
   const renderWarehouseOptions = (values) => {
     const result = values.map((val) => ({
       ...val,
@@ -234,7 +230,7 @@ const POReceipt = () => {
     setExistingPackslipLoading(true);
     if (poNum) {
       setIsNewpackslip(false);
-      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls&$filter=PONum eq ${poNum}`;
+      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum}&$expand=RcvDtls&$select=PONum,PackSlip,RcvDtls`;
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -503,6 +499,7 @@ const POReceipt = () => {
       POLine: currentLine?.POLine,
       PORelNum: currentLine?.PORelNum,
       PartNum: currentLine?.POLinePartNum,
+      DocUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
       WareHouseCode: currentLine?.WarehouseCode,
@@ -600,7 +597,7 @@ const POReceipt = () => {
           <BarcodeScannerComponent
             closeScanner={closeScanner}
             captureDetails={captureDetails}
-          // cameraState={cameraState}
+            // cameraState={cameraState}
           />
         </View>
       ) : cameraVisible ? (
@@ -815,7 +812,8 @@ const POReceipt = () => {
                 </Text>
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                   <Text style={styles.inputLabel}>Packslip</Text>
-                  <TouchableOpacity disabled={_.isEmpty(POData)}
+                  <TouchableOpacity
+                    disabled={_.isEmpty(POData)}
                     onPress={() => {
                       if (isNewPackSlip) {
                         fetchExistingPackslips();

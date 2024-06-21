@@ -470,7 +470,13 @@ const POReceipt = () => {
 
   const onSelectLine = (po) => {
     getWareHouseList(po?.WarehouseCode);
-    setCurrentLine(po);
+    const poDetails = POData && POData[0]?.PODetails || [];
+    const selectedPo = poDetails.find(da => da.POLine === po.POLine);
+    if (isNewPackSlip && selectedPo) {
+      setCurrentLine({ ...po, DocUnitCost: selectedPo?.DocUnitCost });
+    } else {
+      setCurrentLine(po);
+    }
     setTabvalue('3');
   };
 

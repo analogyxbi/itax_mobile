@@ -52,8 +52,8 @@ const CountingScreen = ({
     }
     if (cameraState === 'part') {
       setPart(details);
-    } else if (details.includes('/')) {
-      let data = details.split(' / ');
+    } else if (details.includes('\\')) {
+      let data = details.split(' \\ ');
       setBin(data[0]);
     }
     // setFormData((prev) => ({ ...prev, [state]: details }));

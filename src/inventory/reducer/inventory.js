@@ -32,6 +32,7 @@ const initialState = {
   currentCycle: {},
   cyclesData: [],
   selectedCycleDetails: [],
+  tagsData: [],
 };
 
 const inventorySlice = createSlice({
@@ -73,6 +74,13 @@ const inventorySlice = createSlice({
     setSelectedCycleDetails: (state, action) => {
       state.selectedCycleDetails = action.payload;
     },
+    setTagsData: (state, action) => {
+      state.tagsData = action.payload;
+    },
+    removeTag: (state, action) => {
+      let tags = state.tagsData.filter((tag) => tag.TagNum != action.payload);
+      state.tagsData = tags;
+    },
   },
 });
 
@@ -84,6 +92,8 @@ export const {
   setCurrentCycle,
   setCyclesData,
   setSelectedCycleDetails,
+  setTagsData,
+  removeTag,
 } = inventorySlice.actions;
 
 export default inventorySlice.reducer;

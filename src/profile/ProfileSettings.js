@@ -50,17 +50,23 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
 
   const onLogoutPressed = () => {
     setLoading(true);
-    AnalogyxBIClient.get({endpoint:`http://${url}/logout/`}).then((res)=>{
-      dispatch(logout(null));
-      setIsAuthenticated(false);
-      removeItemValue('csrf');
-      removeItemValue('url');
-      setLoading(false);
-    }).catch((err)=>{
-      alert(JSON.stringify(err))
-      setLoading(false)
-      setIndicator(false)
-    })
+    AnalogyxBIClient.get({ endpoint: `http://${url}/logout/` })
+      .then((res) => {
+        dispatch(logout(null));
+        setIsAuthenticated(false);
+        removeItemValue('csrf');
+        removeItemValue('url');
+        setLoading(false);
+      })
+      .catch((err) => {
+        // alert(JSON.stringify(err));
+        dispatch(logout(null));
+        setIsAuthenticated(false);
+        removeItemValue('csrf');
+        removeItemValue('url');
+        setLoading(false);
+        setIndicator(false);
+      });
   };
 
   return (

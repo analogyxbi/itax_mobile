@@ -69,11 +69,10 @@ const InventoryCount = () => {
       .then(({ json }) => {
         // setWarehouseCodeList(() => json.data.value);
         dispatch(setWarehouses(json.data.value));
-        console.log({ json });
+
         setWarehouseLoading(false);
       })
       .catch((err) => {
-        // console.log(err);
         setWarehouseLoading(false);
       });
   };
@@ -146,7 +145,6 @@ const InventoryCount = () => {
             navigation.navigate('cycle_details');
           })
           .catch((err) => {
-            console.log(err);
             dispatch(setIsLoading({ value: false, message: '' }));
             dispatch(
               showSnackbar('Error Occured While fetching cycle Details')
@@ -169,23 +167,27 @@ const InventoryCount = () => {
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Warehouse</Text>
-            <Text style={styles.value}>{currentCycle?.WarehouseCode || "N/A"}</Text>
+            <Text style={styles.value}>
+              {currentCycle?.WarehouseCode || 'N/A'}
+            </Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Date</Text>
             <Text style={styles.value}>
-              {renderDate(currentCycle?.CycleDate) || "N/A"}
+              {renderDate(currentCycle?.CycleDate) || 'N/A'}
             </Text>
           </View>
         </View>
         <View style={styles.row}>
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Seq</Text>
-            <Text style={styles.value}>{currentCycle?.CycleSeq || "N/A"}</Text>
+            <Text style={styles.value}>{currentCycle?.CycleSeq || 'N/A'}</Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>{currentCycle?.CycleStatusDesc || "N/A"}</Text>
+            <Text style={styles.value}>
+              {currentCycle?.CycleStatusDesc || 'N/A'}
+            </Text>
           </View>
         </View>
       </View>

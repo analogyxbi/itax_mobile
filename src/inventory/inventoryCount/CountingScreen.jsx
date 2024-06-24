@@ -12,8 +12,18 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { globalStyles } from '../../style/globalStyles';
 import { useNavigation } from '@react-navigation/native';
 import BarcodeScannerComponent from '../../components/BarcodeScannerComponent';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../../Snackbar/messageSlice';
+import {
+  setIsLoading,
+  setOnError,
+  setOnSuccess,
+} from '../../components/Loaders/toastReducers';
+import PopUpDialog from '../../components/PopUpDialog';
+import { removeTag } from '../reducer/inventory';
+import { Button, Menu, Divider } from 'react-native-paper';
+import Entypo from '@expo/vector-icons/Entypo';
+import TagsPopUp from './components/TagsPopUp';
 
 const CountingScreen = ({
   part,
@@ -26,12 +36,22 @@ const CountingScreen = ({
   setNotes,
   setScreen,
   currentCycle,
+  tagsData,
+  generateNewTags,
 }) => {
   const navigation = useNavigation();
 
   const [cameraState, setCameraState] = useState(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
+  const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
+  const [submitConfirm, setSubmitConfirm] = useState(false);
+  const [visible, setVisible] = React.useState(false);
+  const [genNewTag, setGenNewTag] = useState(false);
+
+  const openMenu = () => setVisible(true);
+
+  const closeMenu = () => setVisible(false);
 
   const dispatch = useDispatch();
   const openScanner = () => {
@@ -59,6 +79,65 @@ const CountingScreen = ({
     // setFormData((prev) => ({ ...prev, [state]: details }));
     setCameraState(null);
     closeScanner();
+  }
+
+  function postTag() {
+    dispatch(
+      setIsLoading({
+        value: true,
+        message: 'Saving Count Cycle',
+      })
+    );
+    try {
+      const tag = tagsData[0];
+      let values = {
+        ...tag,
+        BinNum: bin,
+        PartNum: part,
+        TagNote: notes,
+        CountedBy: 'App User',
+        CountedQty: countedQty,
+      };
+      const epicor_endpoint = '/Erp.BO.CountTagSvc/CountTags';
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: {
+          epicor_endpoint,
+          request_type: 'POST',
+          data: JSON.stringify(values),
+        },
+        stringify: false,
+      })
+        .then(({ json }) => {
+          // delete data.odata
+          dispatch(
+            setOnSuccess({
+              value: true,
+              message: `Data added on Tag ${tag.TagNum}`,
+            })
+          );
+          dispatch(removeTag(tag.TagNum));
+        })
+        .catch((err) => {
+          err.json().then(({ error }) => {
+            // dispatch(setOnError({ value: true, message: res.error }));
+            dispatch(
+              setOnError({
+                value: true,
+                message: error.ErrorMessage,
+              })
+            );
+          });
+        });
+    } catch (err) {
+      dispatch(showSnackbar('Error Occured while generating tags'));
+      dispatch(
+        setOnError({
+          value: true,
+          message: 'Tags Not Found, Please create a new tag',
+        })
+      );
+    }
   }
 
   useEffect(() => {
@@ -90,6 +169,32 @@ const CountingScreen = ({
           />
         </Pressable>
         <Text style={styles.heading}>Counting Process</Text>
+
+        <View style={styles.menu}>
+          <Menu
+            visible={visible}
+            onDismiss={closeMenu}
+            anchor={
+              <Entypo
+                name="dots-three-vertical"
+                onPress={openMenu}
+                size={18}
+                color="black"
+              />
+            }
+          >
+            <Menu.Item
+              onPress={() => {
+                setVisible(false);
+                setGenNewTag(true);
+              }}
+              title="Generate New Tags"
+            />
+            {/* <Menu.Item onPress={() => {}} title="Item 2" />
+            <Divider />
+            <Menu.Item onPress={() => {}} title="Item 3" /> */}
+          </Menu>
+        </View>
       </View>
       <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
         <View style={styles.row}>
@@ -187,6 +292,25 @@ const CountingScreen = ({
           </TouchableOpacity>
         </View>
       </View>
+      <PopUpDialog
+        visible={submitConfirm}
+        setVisible={setSubmitConfirm}
+        handleCancel={() => setSubmitConfirm(false)}
+        handleOk={postTag}
+        title="Save Changes"
+        message={'Are you sure you want Save details on tag?'}
+      />
+      <TagsPopUp
+        visible={genNewTag}
+        setVisible={setGenNewTag}
+        handleCancel={() => setGenNewTag(false)}
+        handleOk={(value) => {
+          setGenNewTag(false);
+          generateNewTags(value);
+        }}
+        title="Generate New"
+        message={'Please enter the number of tags to be generated'}
+      />
     </View>
   );
 };
@@ -201,6 +325,7 @@ const styles = StyleSheet.create({
     padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
+    position: 'relative',
   },
   heading: {
     fontSize: 22,
@@ -236,6 +361,10 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingLeft: 10,
+  },
+  menu: {
+    position: 'absolute',
+    right: 18,
   },
   inputNoIcon: {
     width: 300,

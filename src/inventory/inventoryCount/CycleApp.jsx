@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import InitialScreen from './InitialScreen';
 import CountingScreen from './CountingScreen';
@@ -12,18 +12,65 @@ import {
 import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
 import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
-import { setCurrentCycle } from '../reducer/inventory';
+import { setCurrentCycle, setTagsData } from '../reducer/inventory';
 import { showSnackbar } from '../../Snackbar/messageSlice';
 
 export default function CycleApp() {
   const [screen, setScreen] = useState('initial'); // Initial screen state
-  const { currentCycle } = useSelector((state) => state.inventory);
+  const { currentCycle, tagsData } = useSelector((state) => state.inventory);
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [part, setPart] = useState('');
   const [bin, setBin] = useState('');
   const [countedQty, setCountedQty] = useState('');
   const [notes, setNotes] = useState('');
   const dispatch = useDispatch();
+
+  function fetchAllTags(isCount = true, showLoading = false) {
+    if (showLoading) {
+      dispatch(
+        setIsLoading({
+          value: true,
+          message: 'Fetcing Tags, Please Wait',
+        })
+      );
+    }
+    const filters = encodeURI(
+      `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCYear eq ${currentCycle.CCYear} and CCMonth eq ${currentCycle.CCMonth})`
+    );
+    let endpoint = `/Erp.BO.CountTagSvc/CountTags?$filter=${filters}&top=500`;
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint: endpoint,
+        request_type: 'GET',
+      },
+      stringify: false,
+    })
+      .then(({ json }) => {
+        dispatch(setTagsData(json.data.value));
+
+        if (isCount || showLoading) {
+          dispatch(
+            setOnSuccess({
+              value: true,
+              message: isCount
+                ? 'Count Started Successfully.'
+                : 'Cycle Started Successfully',
+            })
+          );
+        }
+      })
+      .catch((err) => {
+        err.json().then(({ error }) => {
+          dispatch(
+            setOnError({
+              value: true,
+              message: error.ErrorMessage,
+            })
+          );
+        });
+      });
+  }
 
   function generateTagsAndStartCount(startCount = true, tagNum) {
     dispatch(
@@ -85,13 +132,9 @@ export default function CycleApp() {
           );
           if (startCount) {
             startCountProcess(newData);
+            fetchAllTags(false);
           } else {
-            dispatch(
-              setOnSuccess({
-                value: true,
-                message: 'Tags Generated Successfully.',
-              })
-            );
+            fetchAllTags(true);
           }
         })
         .catch((err) => {
@@ -111,6 +154,78 @@ export default function CycleApp() {
         setOnError({
           value: true,
           message: 'Error Occured while generating tags',
+        })
+      );
+    }
+  }
+
+  function generateNewTags(tagNum) {
+    dispatch(
+      setIsLoading({
+        value: true,
+        message: 'Generating Tags and Starting the Cycle',
+      })
+    );
+    try {
+      const num = tagNum ? tagNum : 10;
+      const tags = parseInt(currentCycle.TotalParts) + num;
+      let values = {
+        ds: {
+          CCHdr: [
+            {
+              ...currentCycle,
+              BlankTagsOnly: true,
+              NumOfBlankTags: tags,
+              RowMod: 'U',
+            },
+          ],
+        },
+      };
+      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: {
+          epicor_endpoint,
+          request_type: 'POST',
+          data: JSON.stringify(values),
+        },
+        stringify: false,
+      })
+        .then(({ json }) => {
+          // delete data.odata
+          const newData = {
+            ...currentCycle,
+            NumOfBlankTags: tags,
+          };
+          dispatch(
+            setCurrentCycle({
+              ...newData,
+            })
+          );
+          dispatch(
+            setOnSuccess({
+              value: true,
+              message: 'Tags generated Successfully.',
+            })
+          );
+        })
+        .catch((err) => {
+          err.json().then(({ error }) => {
+            // dispatch(setOnError({ value: true, message: res.error }));
+            dispatch(
+              setOnError({
+                value: true,
+                message: error.ErrorMessage,
+              })
+            );
+          });
+        });
+    } catch (err) {
+      dispatch(showSnackbar('Error Occured while generating new tags'));
+      dispatch(
+        setOnError({
+          value: true,
+          message: 'Error Occured while generating new tags',
         })
       );
     }
@@ -138,12 +253,7 @@ export default function CycleApp() {
     })
       .then(({ json }) => {
         dispatch(setCurrentCycle({ ...newData, CycleStatus: 2 }));
-        dispatch(
-          setOnSuccess({
-            value: true,
-            message: 'Count Started Successfully.',
-          })
-        );
+        fetchAllTags(false);
       })
       .catch((err) => {
         err.json().then(({ error }) => {
@@ -157,6 +267,12 @@ export default function CycleApp() {
         });
       });
   }
+
+  useEffect(() => {
+    if (currentCycle && currentCycle.CycleStatus >= 2 && tagsData.length <= 0) {
+      fetchAllTags(false, true);
+    }
+  }, [currentCycle]);
 
   return (
     <View style={styles.container}>
@@ -202,6 +318,8 @@ export default function CycleApp() {
           setScreen={setScreen}
           currentCycle={currentCycle}
           loading={isLoading}
+          tagsData={tagsData}
+          generateNewTags={generateNewTags}
         />
       )}
     </View>

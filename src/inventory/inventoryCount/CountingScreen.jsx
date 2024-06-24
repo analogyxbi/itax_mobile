@@ -48,6 +48,7 @@ const CountingScreen = ({
   const [submitConfirm, setSubmitConfirm] = useState(false);
   const [visible, setVisible] = React.useState(false);
   const [genNewTag, setGenNewTag] = useState(false);
+  const { selectedCycleDetails } = useSelector((state) => state.inventory);
 
   const openMenu = () => setVisible(true);
 
@@ -89,46 +90,59 @@ const CountingScreen = ({
       })
     );
     try {
-      const tag = tagsData[0];
-      let values = {
-        ...tag,
-        BinNum: bin,
-        PartNum: part,
-        TagNote: notes,
-        CountedBy: 'App User',
-        CountedQty: countedQty,
-      };
-      const epicor_endpoint = '/Erp.BO.CountTagSvc/CountTags';
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload: {
-          epicor_endpoint,
-          request_type: 'POST',
-          data: JSON.stringify(values),
-        },
-        stringify: false,
-      })
-        .then(({ json }) => {
-          // delete data.odata
-          dispatch(
-            setOnSuccess({
-              value: true,
-              message: `Data added on Tag ${tag.TagNum}`,
-            })
-          );
-          dispatch(removeTag(tag.TagNum));
+      const details = selectedCycleDetails.CCDtls;
+      const cycleData = details.find((data) => data.PartNum == part);
+      if (cycleData) {
+        const tag = tagsData[0];
+        let values = {
+          ...tag,
+          BinNum: bin,
+          PartNum: part,
+          TagNote: notes,
+          CountedBy: 'App User',
+          CountedQty: countedQty,
+          UOM: cycleData.BaseUOM,
+        };
+        const epicor_endpoint = '/Erp.BO.CountTagSvc/CountTags';
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: {
+            epicor_endpoint,
+            request_type: 'POST',
+            data: JSON.stringify(values),
+          },
+          stringify: false,
         })
-        .catch((err) => {
-          err.json().then(({ error }) => {
-            // dispatch(setOnError({ value: true, message: res.error }));
+          .then(({ json }) => {
+            // delete data.odata
             dispatch(
-              setOnError({
+              setOnSuccess({
                 value: true,
-                message: error.ErrorMessage,
+                message: `Data added on Tag ${tag.TagNum}`,
               })
             );
+            dispatch(removeTag(tag.TagNum));
+          })
+          .catch((err) => {
+            err.json().then(({ error }) => {
+              // dispatch(setOnError({ value: true, message: res.error }));
+              dispatch(
+                setOnError({
+                  value: true,
+                  message: error.ErrorMessage,
+                })
+              );
+            });
           });
-        });
+      } else {
+        dispatch(
+          setOnError({
+            value: true,
+            message:
+              'Part Not Found in the current Cycle, Please add the part part to the current cycle.',
+          })
+        );
+      }
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating tags'));
       dispatch(

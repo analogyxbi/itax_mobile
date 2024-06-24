@@ -132,7 +132,7 @@ export default function CycleApp() {
           );
           if (startCount) {
             startCountProcess(newData);
-            fetchAllTags(false);
+            // fetchAllTags(false);
           } else {
             fetchAllTags(true);
           }

@@ -244,12 +244,20 @@ const CountingScreen = ({
         // await updateCCDtls(value, part);
       })
       .catch((err) => {
-        err.json().then(({ error }) => {
-          // dispatch(setOnError({ value: true, message: res.error }));
+        // err.json().then(({ error }) => {
+        //   // dispatch(setOnError({ value: true, message: res.error }));
+        //   dispatch(
+        //     setOnError({
+        //       value: true,
+        //       message: error.ErrorMessage,
+        //     })
+        //   );
+        // });
+        getClientErrorMessage(err).then(({ message }) => {
           dispatch(
             setOnError({
               value: true,
-              message: error.ErrorMessage,
+              message: message,
             })
           );
         });
@@ -273,12 +281,20 @@ const CountingScreen = ({
         await updateCCDtls(value, part, details);
       })
       .catch((err) => {
-        err.json().then(({ error }) => {
-          // dispatch(setOnError({ value: true, message: res.error }));
+        // err.json().then(({ error }) => {
+        //   // dispatch(setOnError({ value: true, message: res.error }));
+        //   dispatch(
+        //     setOnError({
+        //       value: true,
+        //       message: error.ErrorMessage,
+        //     })
+        //   );
+        // });
+        getClientErrorMessage(err).then(({ message }) => {
           dispatch(
             setOnError({
               value: true,
-              message: error.ErrorMessage,
+              message: message,
             })
           );
         });
@@ -314,12 +330,20 @@ const CountingScreen = ({
             await postGetNewCCDtl(value, part, details);
           })
           .catch((err) => {
-            err.json().then(({ error }) => {
-              // dispatch(setOnError({ value: true, message: res.error }));
+            // err.json().then(({ error }) => {
+            //   // dispatch(setOnError({ value: true, message: res.error }));
+            //   dispatch(
+            //     setOnError({
+            //       value: true,
+            //       message: error.ErrorMessage,
+            //     })
+            //   );
+            // });
+            getClientErrorMessage(err).then(({ message }) => {
               dispatch(
                 setOnError({
                   value: true,
-                  message: error.ErrorMessage,
+                  message: message,
                 })
               );
             });
@@ -384,30 +408,46 @@ const CountingScreen = ({
             );
           })
           .catch((err) => {
-            dispatch(
-              setOnError({
-                value: true,
-                message: 'error',
-              })
-            );
-            err.json().then(({ error }) => {
-              // dispatch(setOnError({ value: true, message: res.error }));
+            // dispatch(
+            //   setOnError({
+            //     value: true,
+            //     message: 'error',
+            //   })
+            // );
+            // err.json().then(({ error }) => {
+            //   // dispatch(setOnError({ value: true, message: res.error }));
+            //   dispatch(
+            //     setOnError({
+            //       value: true,
+            //       message: error.ErrorMessage,
+            //     })
+            //   );
+            // });
+            getClientErrorMessage(err).then(({ message }) => {
               dispatch(
                 setOnError({
                   value: true,
-                  message: error.ErrorMessage,
+                  message: message,
                 })
               );
             });
           });
       })
       .catch((err) => {
-        err.json().then(({ error }) => {
-          // dispatch(setOnError({ value: true, message: res.error }));
+        // err.json().then(({ error }) => {
+        //   // dispatch(setOnError({ value: true, message: res.error }));
+        //   dispatch(
+        //     setOnError({
+        //       value: true,
+        //       message: error.ErrorMessage,
+        //     })
+        //   );
+        // });
+        getClientErrorMessage(err).then(({ message }) => {
           dispatch(
             setOnError({
               value: true,
-              message: error.ErrorMessage,
+              message: message,
             })
           );
         });

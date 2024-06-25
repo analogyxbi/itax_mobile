@@ -42,6 +42,7 @@ import {
   setOnError,
   setOnSuccess,
 } from '../components/Loaders/toastReducers';
+import getClientErrorMessage from '../utils/getClientErrorMessage';
 
 const initForm = {
   current_whse: null,
@@ -171,12 +172,20 @@ const InventoryTransfer = () => {
           setEnablePrint(true);
         })
         .catch((err) => {
-          console.log('Stock Transfer failed');
-          console.log({ err });
-          // dispatch(showSnackbar('Error Occured'));
-          err.json().then((res) => {
-            dispatch(setOnError({ value: true, message: res.error }));
-            console.log({ response });
+          // console.log('Stock Transfer failed');
+          // console.log({ err });
+          // // dispatch(showSnackbar('Error Occured'));
+          // err.json().then((res) => {
+          //   dispatch(setOnError({ value: true, message: res.error }));
+          //   console.log({ response });
+          // });
+          getClientErrorMessage(err).then(({ message }) => {
+            dispatch(
+              setOnError({
+                value: true,
+                message: message,
+              })
+            );
           });
         });
     } catch (err) {

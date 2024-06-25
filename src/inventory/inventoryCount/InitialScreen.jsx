@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,19 +11,26 @@ import { globalStyles } from '../../style/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
+import PopUpDialog from '../../components/PopUpDialog';
 
 const InitialScreen = ({
   setScreen,
   currentCycle,
   generateTagsAndStartCount,
+  postCount,
 }) => {
   const navigation = useNavigation();
   const { selectedCycleDetails } = useSelector((state) => state.inventory);
+  const [postCountData, setPostCountData] = useState(false);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => {navigation.goBack()}}>
+        <Pressable
+          onPress={() => {
+            navigation.goBack();
+          }}
+        >
           <Ionicons
             name="chevron-back-outline"
             size={24}
@@ -84,10 +91,24 @@ const InitialScreen = ({
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Print Report</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity
+          onPress={() => setPostCountData(true)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>Post</Text>
         </TouchableOpacity>
       </ScrollView>
+      <PopUpDialog
+        visible={postCountData}
+        setVisible={setPostCountData}
+        handleCancel={() => setPostCountData(false)}
+        handleOk={() => {
+          postCount();
+          setPostCountData(false);
+        }}
+        title="Post Count Data"
+        message={'Are you sure you want to Post Count?'}
+      />
     </View>
   );
 };

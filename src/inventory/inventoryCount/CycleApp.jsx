@@ -17,7 +17,9 @@ import { showSnackbar } from '../../Snackbar/messageSlice';
 
 export default function CycleApp() {
   const [screen, setScreen] = useState('initial'); // Initial screen state
-  const { currentCycle, tagsData } = useSelector((state) => state.inventory);
+  const { currentCycle, tagsData, selectedCycleDetails } = useSelector(
+    (state) => state.inventory
+  );
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [part, setPart] = useState('');
   const [bin, setBin] = useState('');
@@ -53,7 +55,9 @@ export default function CycleApp() {
           dispatch(
             setOnSuccess({
               value: true,
-              message: isCount
+              message: showLoading
+                ? 'Tags fetched successfully'
+                : isCount
                 ? 'Count Started Successfully.'
                 : 'Cycle Started Successfully',
             })
@@ -268,8 +272,147 @@ export default function CycleApp() {
       });
   }
 
+  function generateNewCCDtls() {
+    dispatch(
+      setIsLoading({
+        value: true,
+        message: 'Generating Tags and Starting the Cycle',
+      })
+    );
+    try {
+      const details = selectedCycleDetails[0].CCDtls;
+      let values = {
+        ds: {
+          CCHdr: [
+            {
+              ...currentCycle,
+              RowMod: 'U',
+            },
+          ],
+          CCDtl: [...details],
+        },
+      };
+      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: {
+          epicor_endpoint,
+          request_type: 'POST',
+          data: JSON.stringify(values),
+        },
+        stringify: false,
+      })
+        .then(({ json }) => {
+          // delete data.odata
+          const newData = {
+            ...currentCycle,
+            CycleStatus: 1,
+            EnablePrintTags: true,
+            EnableReprintTags: true,
+            EnableStartCountSeq: true,
+            EnableVoidBlankTags: false,
+            EnableVoidTagsByPart: false,
+            BlankTagsOnly: true,
+            NumOfBlankTags: tags,
+            RowMod: 'U',
+          };
+          dispatch(
+            setCurrentCycle({
+              ...newData,
+            })
+          );
+          if (startCount) {
+            startCountProcess(newData);
+            // fetchAllTags(false);
+          } else {
+            fetchAllTags(true);
+          }
+        })
+        .catch((err) => {
+          err.json().then(({ error }) => {
+            // dispatch(setOnError({ value: true, message: res.error }));
+            dispatch(
+              setOnError({
+                value: true,
+                message: error.ErrorMessage,
+              })
+            );
+          });
+        });
+    } catch (err) {
+      dispatch(showSnackbar('Error Occured while generating tags'));
+      dispatch(
+        setOnError({
+          value: true,
+          message: 'Error Occured while generating tags',
+        })
+      );
+    }
+  }
+
+  function postCount() {
+    dispatch(
+      setIsLoading({
+        value: true,
+        message: 'Posting count, Please wait',
+      })
+    );
+    try {
+      let values = {
+        ds: {
+          CCHdr: [
+            {
+              ...currentCycle,
+              BlankTagsOnly: true,
+              NumOfBlankTags: tags,
+              RowMod: 'U',
+            },
+          ],
+        },
+      };
+      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: {
+          epicor_endpoint,
+          request_type: 'POST',
+          data: JSON.stringify(values),
+        },
+        stringify: false,
+      })
+        .then(({ json }) => {
+          // delete data.odata
+          dispatch(
+            setOnSuccess({
+              value: true,
+              message: 'Count Posted Successfully.',
+            })
+          );
+        })
+        .catch((err) => {
+          err.json().then(({ error }) => {
+            // dispatch(setOnError({ value: true, message: res.error }));
+            dispatch(
+              setOnError({
+                value: true,
+                message: error.ErrorMessage,
+              })
+            );
+          });
+        });
+    } catch (err) {
+      dispatch(showSnackbar('Error Occured while posting count'));
+      dispatch(
+        setOnError({
+          value: true,
+          message: 'Error Occured while posting count',
+        })
+      );
+    }
+  }
+
   useEffect(() => {
-    if (currentCycle && currentCycle.CycleStatus >= 2 && tagsData.length <= 0) {
+    if (currentCycle && currentCycle.CycleStatus >= 2) {
       fetchAllTags(false, true);
     }
   }, [currentCycle]);
@@ -304,6 +447,7 @@ export default function CycleApp() {
           currentCycle={currentCycle}
           generateTagsAndStartCount={generateTagsAndStartCount}
           loading={isLoading}
+          postCount={postCount}
         />
       ) : (
         <CountingScreen
@@ -320,6 +464,7 @@ export default function CycleApp() {
           loading={isLoading}
           tagsData={tagsData}
           generateNewTags={generateNewTags}
+          generateNewCCDtls={generateNewCCDtls}
         />
       )}
     </View>

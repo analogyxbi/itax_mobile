@@ -24,6 +24,7 @@ import { removeTag } from '../reducer/inventory';
 import { Button, Menu, Divider } from 'react-native-paper';
 import Entypo from '@expo/vector-icons/Entypo';
 import TagsPopUp from './components/TagsPopUp';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 
 const CountingScreen = ({
   part,
@@ -38,6 +39,7 @@ const CountingScreen = ({
   currentCycle,
   tagsData,
   generateNewTags,
+  generateNewCCDtls,
 }) => {
   const navigation = useNavigation();
 
@@ -83,6 +85,7 @@ const CountingScreen = ({
   }
 
   function postTag() {
+    setSubmitConfirm(false);
     dispatch(
       setIsLoading({
         value: true,
@@ -90,7 +93,7 @@ const CountingScreen = ({
       })
     );
     try {
-      const details = selectedCycleDetails.CCDtls;
+      const details = selectedCycleDetails[0].CCDtls;
       const cycleData = details.find((data) => data.PartNum == part);
       if (cycleData) {
         const tag = tagsData[0];
@@ -102,7 +105,10 @@ const CountingScreen = ({
           CountedBy: 'App User',
           CountedQty: countedQty,
           UOM: cycleData.BaseUOM,
+          TagReturned: true,
+          BlankTag: false,
         };
+
         const epicor_endpoint = '/Erp.BO.CountTagSvc/CountTags';
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -122,6 +128,10 @@ const CountingScreen = ({
               })
             );
             dispatch(removeTag(tag.TagNum));
+            setPart('');
+            setBin('');
+            setNotes('');
+            setCountedQty('0');
           })
           .catch((err) => {
             err.json().then(({ error }) => {
@@ -139,11 +149,12 @@ const CountingScreen = ({
           setOnError({
             value: true,
             message:
-              'Part Not Found in the current Cycle, Please add the part part to the current cycle.',
+              'Part Not Found in the current Cycle, Please add the part to the current cycle first.',
           })
         );
       }
     } catch (err) {
+      console.error(err);
       dispatch(showSnackbar('Error Occured while generating tags'));
       dispatch(
         setOnError({
@@ -289,7 +300,7 @@ const CountingScreen = ({
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.footerButton}
-            onPress={() => setScreen('initial')}
+            onPress={() => setSubmitConfirm(true)}
           >
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>

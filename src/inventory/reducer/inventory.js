@@ -75,7 +75,13 @@ const inventorySlice = createSlice({
       state.selectedCycleDetails = action.payload;
     },
     setTagsData: (state, action) => {
-      state.tagsData = action.payload;
+      if (action.payload && Array.isArray(action.payload)) {
+        const remainingTags = action.payload.filter(
+          (tag) =>
+            tag.PartNum === '' && tag.BinNum === '' && tag.CountedQty === ''
+        );
+        state.tagsData = remainingTags;
+      }
     },
     removeTag: (state, action) => {
       let tags = state.tagsData.filter((tag) => tag.TagNum != action.payload);

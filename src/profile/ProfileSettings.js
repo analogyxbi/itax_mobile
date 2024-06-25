@@ -50,7 +50,7 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
 
   const onLogoutPressed = () => {
     setLoading(true);
-    AnalogyxBIClient.get({ endpoint: `http://${url}/logout/` })
+    AnalogyxBIClient.get({ endpoint: `/logout/` })
       .then((res) => {
         dispatch(logout(null));
         setIsAuthenticated(false);

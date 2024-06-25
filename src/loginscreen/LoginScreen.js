@@ -90,17 +90,17 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
     payload.append('csrf_token', csrf_token);
     axios({
       method: 'POST',
-      url: `http://${url}/login/`,
+      url: `http://${url}/login_app/`,
       data: payload,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Content-Type': 'multipart/form-data',
-        Referer: `http://${url}/login/`,
+        Referer: `http://${url}/login_app/`,
       },
     })
       .then((res) => {
-        if (res.data.includes('Invalid login. Please try again')) {
-          Alert.alert('Timeout. Please try again.');
+        if (!res.data.login) {
+          Alert.alert('Invalid Credentials, Please try again.');
           setLoading(false);
         } else {
           // setupClient(csrf_token, url);
@@ -109,9 +109,25 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
           setIsAuthenticated(true);
         }
       })
-      .catch((err) => {
-        // Alert.alert('Error', JSON.stringify(err));
-        alert('Second Error' + JSON.stringify(err));
+      .catch((error) => {
+        console.log(error.response);
+        if (error.response.data) {
+          if (error.response?.data?.message) {
+            console.log('Error message:');
+            alert(error.response.data.message);
+            // setLoading(false);
+          } else {
+            alert('An error occurred. Please try again later.');
+          }
+        } else if (error.request) {
+          alert(
+            'Network error. Please check your org url or internet connection.'
+          );
+        } else {
+          // Something happened in setting up the request that triggered the error
+          console.log('Error Message:', error.message);
+          alert('An unexpected error occurred.');
+        }
         setLoading(false);
       });
   };
@@ -134,8 +150,31 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
         setCsrf(csrf);
         onLoginhandler(csrf);
       })
-      .catch((err) => {
-        alert(JSON.stringify(err));
+      .catch((error) => {
+        if (error.response) {
+          console.log(error.response);
+          console.log({ error });
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          // console.log('Error Response Data:', error.response.data);
+          // console.log('Error Response Status:', error.response.status);
+          // Example: Show a generic message based on the status code
+          if (error.response.status === 404) {
+            alert('Resource not found.');
+          } else {
+            alert('An error occurred. Please try again later.');
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          // console.log('Error Request:', error.request);
+          alert(
+            'Network error. Please check your org url or internet connection.'
+          );
+        } else {
+          // Something happened in setting up the request that triggered the error
+          // console.log('Error Message:', error.message);
+          alert('An unexpected error occurred.');
+        }
         setLoading(false);
       });
   }

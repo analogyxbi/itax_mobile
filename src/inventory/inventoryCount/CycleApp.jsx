@@ -14,6 +14,7 @@ import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
 import { setCurrentCycle, setTagsData } from '../reducer/inventory';
 import { showSnackbar } from '../../Snackbar/messageSlice';
+import getClientErrorMessage from '../../utils/getClientErrorMessage';
 
 export default function CycleApp() {
   const [screen, setScreen] = useState('initial'); // Initial screen state
@@ -65,14 +66,22 @@ export default function CycleApp() {
         }
       })
       .catch((err) => {
-        err.json().then(({ error }) => {
+        getClientErrorMessage(err).then(({ message }) => {
           dispatch(
             setOnError({
               value: true,
-              message: error.ErrorMessage,
+              message: message,
             })
           );
         });
+        // err.json().then(({ error }) => {
+        //   dispatch(
+        //     setOnError({
+        //       value: true,
+        //       message: error.ErrorMessage,
+        //     })
+        //   );
+        // });
       });
   }
 
@@ -142,15 +151,23 @@ export default function CycleApp() {
           }
         })
         .catch((err) => {
-          err.json().then(({ error }) => {
-            // dispatch(setOnError({ value: true, message: res.error }));
+          getClientErrorMessage(err).then(({ message }) => {
             dispatch(
               setOnError({
                 value: true,
-                message: error.ErrorMessage,
+                message: message,
               })
             );
           });
+          // err.json().then(({ error }) => {
+          //   // dispatch(setOnError({ value: true, message: res.error }));
+          //   dispatch(
+          //     setOnError({
+          //       value: true,
+          //       message: error.ErrorMessage,
+          //     })
+          //   );
+          // });
         });
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating tags'));
@@ -206,23 +223,32 @@ export default function CycleApp() {
               ...newData,
             })
           );
-          dispatch(
-            setOnSuccess({
-              value: true,
-              message: 'Tags generated Successfully.',
-            })
-          );
+          // dispatch(
+          //   setOnSuccess({
+          //     value: true,
+          //     message: 'Tags generated Successfully.',
+          //   })
+          // );
+          fetchAllTags(false, true);
         })
         .catch((err) => {
-          err.json().then(({ error }) => {
-            // dispatch(setOnError({ value: true, message: res.error }));
+          getClientErrorMessage(err).then(({ message }) => {
             dispatch(
               setOnError({
                 value: true,
-                message: error.ErrorMessage,
+                message: message,
               })
             );
           });
+          // err.json().then(({ error }) => {
+          //   // dispatch(setOnError({ value: true, message: res.error }));
+          //   dispatch(
+          //     setOnError({
+          //       value: true,
+          //       message: error.ErrorMessage,
+          //     })
+          //   );
+          // });
         });
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating new tags'));
@@ -260,15 +286,23 @@ export default function CycleApp() {
         fetchAllTags(false);
       })
       .catch((err) => {
-        err.json().then(({ error }) => {
+        getClientErrorMessage(err).then(({ message }) => {
           dispatch(
             setOnError({
               value: true,
-              message: error.ErrorMessage,
+              message: message,
             })
           );
-          // dispatch(setOnError({ value: true, message: res.error }));
         });
+        // err.json().then(({ error }) => {
+        //   dispatch(
+        //     setOnError({
+        //       value: true,
+        //       message: error.ErrorMessage,
+        //     })
+        //   );
+        //   // dispatch(setOnError({ value: true, message: res.error }));
+        // });
       });
   }
 
@@ -292,7 +326,7 @@ export default function CycleApp() {
           CCDtl: [...details],
         },
       };
-      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
+      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
         postPayload: {
@@ -329,12 +363,20 @@ export default function CycleApp() {
           }
         })
         .catch((err) => {
-          err.json().then(({ error }) => {
-            // dispatch(setOnError({ value: true, message: res.error }));
+          // err.json().then(({ error }) => {
+          //   // dispatch(setOnError({ value: true, message: res.error }));
+          //   dispatch(
+          //     setOnError({
+          //       value: true,
+          //       message: error.ErrorMessage,
+          //     })
+          //   );
+          // });
+          getClientErrorMessage(err).then(({ message }) => {
             dispatch(
               setOnError({
                 value: true,
-                message: error.ErrorMessage,
+                message: message,
               })
             );
           });
@@ -363,14 +405,13 @@ export default function CycleApp() {
           CCHdr: [
             {
               ...currentCycle,
-              BlankTagsOnly: true,
-              NumOfBlankTags: tags,
+              BlankTagsOnly: false,
               RowMod: 'U',
             },
           ],
         },
       };
-      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
+      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
         postPayload: {
@@ -390,17 +431,26 @@ export default function CycleApp() {
           );
         })
         .catch((err) => {
-          err.json().then(({ error }) => {
-            // dispatch(setOnError({ value: true, message: res.error }));
+          // err.json().then(({ error }) => {
+          //   // dispatch(setOnError({ value: true, message: res.error }));
+          //   dispatch(
+          //     setOnError({
+          //       value: true,
+          //       message: error.ErrorMessage,
+          //     })
+          //   );
+          // });
+          getClientErrorMessage(err).then(({ message }) => {
             dispatch(
               setOnError({
                 value: true,
-                message: error.ErrorMessage,
+                message: message,
               })
             );
           });
         });
     } catch (err) {
+      console.log({ err });
       dispatch(showSnackbar('Error Occured while posting count'));
       dispatch(
         setOnError({

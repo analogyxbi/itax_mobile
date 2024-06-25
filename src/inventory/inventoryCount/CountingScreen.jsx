@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  BackHandler,
+  Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { globalStyles } from '../../style/globalStyles';
@@ -20,11 +22,17 @@ import {
   setOnSuccess,
 } from '../../components/Loaders/toastReducers';
 import PopUpDialog from '../../components/PopUpDialog';
-import { removeTag } from '../reducer/inventory';
+import {
+  removeTag,
+  setCurrentCycle,
+  setSelectedCycleDetails,
+} from '../reducer/inventory';
 import { Button, Menu, Divider } from 'react-native-paper';
 import Entypo from '@expo/vector-icons/Entypo';
 import TagsPopUp from './components/TagsPopUp';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
+import { createDsPayload, updatePartToDataset } from '../Utils/InventoryUtils';
+import getClientErrorMessage from '../../utils/getClientErrorMessage';
 
 const CountingScreen = ({
   part,
@@ -51,6 +59,7 @@ const CountingScreen = ({
   const [visible, setVisible] = React.useState(false);
   const [genNewTag, setGenNewTag] = useState(false);
   const { selectedCycleDetails } = useSelector((state) => state.inventory);
+  const [addPart, setAddPart] = useState(false);
 
   const openMenu = () => setVisible(true);
 
@@ -64,6 +73,39 @@ const CountingScreen = ({
     setCameraState(null);
     setScannerVisible(false);
   };
+
+  // useEffect(() => {
+  //   const backAction = () => {
+  //     Alert.alert('Cancel Operation', 'Are you sure you want to cancel?', [
+  //       {
+  //         text: 'Cancel',
+  //         onPress: () => null,
+  //         style: 'cancel',
+  //       },
+  //       {
+  //         text: 'Yes',
+  //         onPress: () => {
+  //           // Handle cancellation logic here
+  //           dispatch(
+  //             setOnError({
+  //               value: true,
+  //               message: 'Operation cancelled',
+  //             })
+  //           );
+  //           // For example, navigate back or reset form state
+  //         },
+  //       },
+  //     ]);
+  //     return true; // Prevent default behavior (exit app)
+  //   };
+
+  //   const backHandler = BackHandler.addEventListener(
+  //     'hardwareBackPress',
+  //     backAction
+  //   );
+
+  //   return () => backHandler.remove(); // Clean up the event listener
+  // }, []); // Empty dependency array ensures this effect runs only once
 
   function captureDetails(details, state) {
     if (cameraState != 'bin' && cameraState != 'part') {
@@ -134,6 +176,144 @@ const CountingScreen = ({
             setCountedQty('0');
           })
           .catch((err) => {
+            getClientErrorMessage(err).then(({ message }) => {
+              dispatch(
+                setOnError({
+                  value: true,
+                  message: message,
+                })
+              );
+            });
+          });
+      } else {
+        dispatch(
+          setOnError({
+            value: true,
+            message:
+              'Part Not Found in the current Cycle, Please add the part to the current cycle first.',
+          })
+        );
+        setAddPart(true);
+      }
+    } catch (err) {
+      dispatch(showSnackbar('Error Occured while generating tags'));
+      dispatch(
+        setOnError({
+          value: true,
+          message: 'Tags Not Found, Please create a new tag',
+        })
+      );
+    }
+  }
+
+  // dispatch(setOnError({ message: '', value: true }));
+
+  useEffect(() => {
+    const getBarCodeScannerPermissions = async () => {
+      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      setHasPermission(status === 'granted');
+    };
+    getBarCodeScannerPermissions();
+  }, []);
+
+  if (scannerVisible) {
+    return (
+      <BarcodeScannerComponent
+        closeScanner={closeScanner}
+        captureDetails={captureDetails}
+        cameraState={cameraState}
+      />
+    );
+  }
+
+  async function updateCCDtls(dataset, part, details) {
+    const data = updatePartToDataset(dataset, part);
+    const epicor_endpoint = '/Erp.BO.CCPartSelectUpdSvc/Update';
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(data),
+      },
+      stringify: false,
+    })
+      .then(async ({ json }) => {
+        // let value = json.data.parameters;
+        await revertCycle(details);
+        // await updateCCDtls(value, part);
+      })
+      .catch((err) => {
+        err.json().then(({ error }) => {
+          // dispatch(setOnError({ value: true, message: res.error }));
+          dispatch(
+            setOnError({
+              value: true,
+              message: error.ErrorMessage,
+            })
+          );
+        });
+      });
+  }
+
+  async function postGetNewCCDtl(load, part, details) {
+    const payload = createDsPayload(load);
+    const epicor_endpoint = '/Erp.BO.CCPartSelectUpdSvc/GetNewCCDtl';
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(payload),
+      },
+      stringify: false,
+    })
+      .then(async ({ json }) => {
+        let value = json.data.parameters;
+        await updateCCDtls(value, part, details);
+      })
+      .catch((err) => {
+        err.json().then(({ error }) => {
+          // dispatch(setOnError({ value: true, message: res.error }));
+          dispatch(
+            setOnError({
+              value: true,
+              message: error.ErrorMessage,
+            })
+          );
+        });
+      });
+  }
+
+  async function addNewPart() {
+    setAddPart(false);
+    dispatch(
+      setIsLoading({
+        value: true,
+        message: 'Adding new Part.',
+      })
+    );
+    try {
+      let details = { ...currentCycle, RowMod: 'U', CycleStatus: 0 };
+      if (details) {
+        const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/CCCountCycles';
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: {
+            epicor_endpoint,
+            request_type: 'POST',
+            data: JSON.stringify(details),
+          },
+          stringify: false,
+        })
+          .then(async ({ json }) => {
+            let value = json.data;
+            delete value['odata.metadata'];
+            details = value;
+            dispatch(setCurrentCycle(details));
+            await postGetNewCCDtl(value, part, details);
+          })
+          .catch((err) => {
             err.json().then(({ error }) => {
               // dispatch(setOnError({ value: true, message: res.error }));
               dispatch(
@@ -152,9 +332,9 @@ const CountingScreen = ({
               'Part Not Found in the current Cycle, Please add the part to the current cycle first.',
           })
         );
+        setAddPart(true);
       }
     } catch (err) {
-      console.error(err);
       dispatch(showSnackbar('Error Occured while generating tags'));
       dispatch(
         setOnError({
@@ -165,22 +345,73 @@ const CountingScreen = ({
     }
   }
 
-  useEffect(() => {
-    const getBarCodeScannerPermissions = async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-    };
-    getBarCodeScannerPermissions();
-  }, []);
-
-  if (scannerVisible) {
-    return (
-      <BarcodeScannerComponent
-        closeScanner={closeScanner}
-        captureDetails={captureDetails}
-        cameraState={cameraState}
-      />
-    );
+  async function revertCycle(details) {
+    const values = { ...details, CycleStatus: 3 };
+    const filters = `(WarehouseCode eq '${details.WarehouseCode}' and CycleSeq eq ${details.CycleSeq} and CCYear eq ${details.CCYear} and CCMonth eq ${details.CCMonth})`;
+    const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${encodeURI(
+      filters
+    )}`;
+    const post_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$expand=CCDtls`;
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'GET',
+        data: JSON.stringify(values),
+      },
+      stringify: false,
+    })
+      .then(async ({ json }) => {
+        let data = json.data.value[0];
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: {
+            epicor_endpoint: post_endpoint,
+            request_type: 'POST',
+            data: JSON.stringify({ ...data, RowMod: 'U', CycleStatus: 3 }),
+          },
+          stringify: false,
+        })
+          .then(({ json }) => {
+            let value = json.data;
+            dispatch(setCurrentCycle(value));
+            dispatch(setSelectedCycleDetails([value]));
+            dispatch(
+              setOnSuccess({
+                value: true,
+                message: 'Part Added Successfully.',
+              })
+            );
+          })
+          .catch((err) => {
+            dispatch(
+              setOnError({
+                value: true,
+                message: 'error',
+              })
+            );
+            err.json().then(({ error }) => {
+              // dispatch(setOnError({ value: true, message: res.error }));
+              dispatch(
+                setOnError({
+                  value: true,
+                  message: error.ErrorMessage,
+                })
+              );
+            });
+          });
+      })
+      .catch((err) => {
+        err.json().then(({ error }) => {
+          // dispatch(setOnError({ value: true, message: res.error }));
+          dispatch(
+            setOnError({
+              value: true,
+              message: error.ErrorMessage,
+            })
+          );
+        });
+      });
   }
 
   return (
@@ -335,6 +566,14 @@ const CountingScreen = ({
         }}
         title="Generate New"
         message={'Please enter the number of tags to be generated'}
+      />
+      <PopUpDialog
+        visible={addPart}
+        setVisible={setAddPart}
+        handleCancel={() => setAddPart(false)}
+        handleOk={addNewPart}
+        title="Add New Part"
+        message={'Do you wish to add new part to the cycle?'}
       />
     </View>
   );

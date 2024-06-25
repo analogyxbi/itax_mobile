@@ -72,3 +72,49 @@ export function validateVariable(variable) {
   // In all other cases, return true
   return true;
 }
+
+export function createDsPayload(cycle, part) {
+  let data = {
+    ds: {
+      CCHdr: [
+        {
+          ...cycle,
+        },
+      ],
+      CCDtl: [
+        {
+          Company: cycle.Company,
+          WarehouseCode: cycle.WarehouseCode,
+          Plant: cycle.Plant,
+          CCYear: cycle.CCYear,
+          CCMonth: cycle.CCMonth,
+          FullPhysical: cycle.FullPhysical,
+          CycleSeq: cycle.CycleSeq,
+          PartNum: part,
+          RowMod: 'A',
+        },
+      ],
+    },
+    plant: cycle.Plant,
+    warehouseCode: cycle.WarehouseCode,
+    ccYear: cycle.CCYear,
+    ccMonth: cycle.CCMonth,
+    fullPhysical: cycle.FullPhysical,
+    cycleSeq: cycle.CycleSeq,
+  };
+  return data;
+}
+
+export function updatePartToDataset(dataset, part) {
+  let data = dataset.ds;
+  let ccdetails = data.CCDtl;
+  let dtl = [];
+  ccdetails.forEach((dtls) => {
+    let newDtls = dtls;
+    if (dtls.PartNum === '' && dtl.length == 0) {
+      dtl.push({ ...newDtls, PartNum: part, BaseUOM: newDtls.PartNumIUM });
+    }
+  });
+  data.CCDtl = dtl;
+  return { ds: data };
+}

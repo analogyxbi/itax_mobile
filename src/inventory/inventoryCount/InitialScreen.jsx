@@ -20,8 +20,8 @@ const InitialScreen = ({
   postCount,
 }) => {
   const navigation = useNavigation();
-  const { selectedCycleDetails } = useSelector((state) => state.inventory);
   const [postCountData, setPostCountData] = useState(false);
+  const [genTags, setGenTags] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -66,9 +66,6 @@ const InitialScreen = ({
         </View>
       </View>
       <ScrollView contentContainerStyle={styles.initialScreen}>
-        {/* <Text style={styles.label}>Cycle No: 1 WH</Text>
-        <Text style={styles.label}>Cycle Date: 5/24/2024</Text>
-        <Text style={styles.label}>Status: Tags Generated</Text> */}
         <TouchableOpacity
           style={{
             ...styles.button,
@@ -77,7 +74,7 @@ const InitialScreen = ({
                 ? 'grey'
                 : globalStyles.colors.success,
           }}
-          onPress={generateTagsAndStartCount}
+          onPress={() => setGenTags(true)}
           disabled={currentCycle.CycleStatus > 1}
         >
           <Text style={styles.buttonText}>Initiate Counting Process</Text>
@@ -88,6 +85,7 @@ const InitialScreen = ({
         >
           <Text style={styles.buttonText}>Count</Text>
         </TouchableOpacity>
+
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Print Report</Text>
         </TouchableOpacity>
@@ -109,9 +107,21 @@ const InitialScreen = ({
         title="Post Count Data"
         message={'Are you sure you want to Post Count?'}
       />
+      <PopUpDialog
+        visible={genTags}
+        setVisible={setGenTags}
+        handleCancel={() => setGenTags(false)}
+        handleOk={() => {
+          generateTagsAndStartCount();
+        }}
+        title="Initiate Count Process"
+        message={'Are you sure you want to generate tags and start count?'}
+      />
     </View>
   );
 };
+
+// generateTagsAndStartCount
 
 const styles = StyleSheet.create({
   container: {

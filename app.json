@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "woodland-app",
+    "name": "Warehouse App",
     "slug": "warehouse_app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,9 +15,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "infoPlist": {
         "NSAppTransportSecurity": {
@@ -33,9 +31,7 @@
         "network": {
           "cleartext": {
             "config": {
-              "penetrated": [
-                "192.168.1.252:8088"
-              ]
+              "penetrated": ["192.168.1.252:8088"]
             }
           }
         }

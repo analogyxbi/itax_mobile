@@ -74,39 +74,6 @@ const CountingScreen = ({
     setScannerVisible(false);
   };
 
-  // useEffect(() => {
-  //   const backAction = () => {
-  //     Alert.alert('Cancel Operation', 'Are you sure you want to cancel?', [
-  //       {
-  //         text: 'Cancel',
-  //         onPress: () => null,
-  //         style: 'cancel',
-  //       },
-  //       {
-  //         text: 'Yes',
-  //         onPress: () => {
-  //           // Handle cancellation logic here
-  //           dispatch(
-  //             setOnError({
-  //               value: true,
-  //               message: 'Operation cancelled',
-  //             })
-  //           );
-  //           // For example, navigate back or reset form state
-  //         },
-  //       },
-  //     ]);
-  //     return true; // Prevent default behavior (exit app)
-  //   };
-
-  //   const backHandler = BackHandler.addEventListener(
-  //     'hardwareBackPress',
-  //     backAction
-  //   );
-
-  //   return () => backHandler.remove(); // Clean up the event listener
-  // }, []); // Empty dependency array ensures this effect runs only once
-
   function captureDetails(details, state) {
     if (cameraState != 'bin' && cameraState != 'part') {
       setCameraState(null);
@@ -119,7 +86,7 @@ const CountingScreen = ({
       setPart(details);
     } else if (details.includes('\\')) {
       let data = details.split(' \\ ');
-      setBin(data[0]);
+      setBin(data[1]);
     }
     // setFormData((prev) => ({ ...prev, [state]: details }));
     setCameraState(null);

@@ -54,6 +54,7 @@ import {
   setOnError,
   setOnSuccess,
 } from '../components/Loaders/toastReducers';
+import getClientErrorMessage from '../utils/getClientErrorMessage';
 
 const initialFormdata = {
   poNum: '',
@@ -210,12 +211,15 @@ const POReceipt = () => {
               dispatch(showSnackbar('PO Not Found'));
             } else {
               setPOData(() => json.data.value);
+              console.log({ json });
             }
             setLoading(false);
           })
           .catch((err) => {
             setLoading(false);
-            console.log({ err });
+            getClientErrorMessage(err).then(({ message }) => {
+              dispatch(showSnackbar(message));
+            });
           });
       } catch (err) {
         setLoading(false);
@@ -245,6 +249,9 @@ const POReceipt = () => {
           .catch((err) => {
             setExistingPackslipLoading(false);
             setIsNewpackslip(true);
+            getClientErrorMessage(err).then(({ message }) => {
+              dispatch(showSnackbar(message));
+            });
           });
       } catch (err) {
         setExistingPackslipLoading(false);
@@ -274,6 +281,9 @@ const POReceipt = () => {
           })
           .catch((err) => {
             setPackslipLoading(false);
+            getClientErrorMessage(err).then(({ message }) => {
+              dispatch(showSnackbar(message));
+            });
             // setIsNewpackslip(true);
           });
       } catch (err) {
@@ -316,6 +326,9 @@ const POReceipt = () => {
         })
         .catch((err) => {
           console.log(err);
+          getClientErrorMessage(err).then(({ message }) => {
+            dispatch(showSnackbar(message));
+          });
           // setLoading(false);
         });
     } catch (err) {
@@ -334,6 +347,9 @@ const POReceipt = () => {
   };
 
   const handleCreateUpdatePackSlip = () => {
+    if (!POData[0].Approve) {
+      return dispatch(showSnackbar('PO is not Approved.'));
+    }
     if (isNewPackSlip) {
       createPackSlip();
     } else {
@@ -343,6 +359,7 @@ const POReceipt = () => {
 
   const createPackSlip = () => {
     setCreatepackslipLoading(true);
+
     if (packSLipNUm) {
       // setIsNewpackslip(false);
       const today = new Date().toISOString();
@@ -373,12 +390,13 @@ const POReceipt = () => {
             setTabvalue('2');
           })
           .catch((err) => {
-            console.log({ err });
             dispatch(showSnackbar('Error adding the Packslip'));
             setCreatepackslipLoading(false);
+            getClientErrorMessage(err).then(({ message }) => {
+              dispatch(showSnackbar(message));
+            });
           });
       } catch (err) {
-        console.log({ err });
         setCreatepackslipLoading(false);
       }
     } else {
@@ -421,11 +439,12 @@ const POReceipt = () => {
             setIsPOsLoading(false);
           })
           .catch((err) => {
-            console.log({ err });
             setIsPOsLoading(false);
+            getClientErrorMessage(err).then(({ message }) => {
+              dispatch(showSnackbar(message));
+            });
           });
       } catch (err) {
-        console.log({ err });
         setIsPOsLoading(false);
       }
     } else {
@@ -470,10 +489,14 @@ const POReceipt = () => {
 
   const onSelectLine = (po) => {
     getWareHouseList(po?.WarehouseCode);
-    const poDetails = POData && POData[0]?.PODetails || [];
-    const selectedPo = poDetails.find(da => da.POLine === po.POLine);
+    const poDetails = (POData && POData[0]?.PODetails) || [];
+    const selectedPo = poDetails.find((da) => da.POLine === po.POLine);
     if (isNewPackSlip && selectedPo) {
-      setCurrentLine({ ...po, DocUnitCost: selectedPo?.DocUnitCost, UnitCost: selectedPo?.UnitCost });
+      setCurrentLine({
+        ...po,
+        DocUnitCost: selectedPo?.DocUnitCost,
+        UnitCost: selectedPo?.UnitCost,
+      });
     } else {
       setCurrentLine(po);
     }
@@ -505,7 +528,9 @@ const POReceipt = () => {
       POLine: currentLine?.POLine,
       PORelNum: currentLine?.PORelNum,
       PartNum: currentLine?.POLinePartNum,
-      DocVendorUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
+      DocVendorUnitCost: currentLine.DocUnitCost
+        ? currentLine.DocUnitCost
+        : '0',
       DocUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       VendorUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
@@ -549,11 +574,10 @@ const POReceipt = () => {
       .then(({ json }) => {
         setSaved(true);
         dispatch(setOnSuccess({ value: true, message: '' }));
-        setFormdata(prev => ({...prev, BinNum:'', input: ''}))
+        setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) => {
-          dispatch(setOnError({ value: true, message: '' }));
           dispatch(showSnackbar(res.error));
         });
       });

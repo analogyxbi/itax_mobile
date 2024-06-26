@@ -4,14 +4,14 @@
     "slug": "warehouse_app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/wicon.png",
     "jsEngine": "hermes",
     "userInterfaceStyle": "light",
     "web": {
       "proxy": "http://192.168.1.252:8088"
     },
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/Wsplash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

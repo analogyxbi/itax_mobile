@@ -111,8 +111,8 @@ export function updatePartToDataset(dataset, part) {
   let dtl = [];
   ccdetails.forEach((dtls) => {
     let newDtls = dtls;
-    if (dtls.PartNum === '' && dtl.length == 0) {
-      dtl.push({ ...newDtls, PartNum: part, BaseUOM: newDtls.PartNumIUM });
+    if (dtls.PartNum === part) {
+      dtl.push({ ...newDtls, BaseUOM: newDtls.PartNumIUM });
     }
   });
   data.CCDtl = dtl;

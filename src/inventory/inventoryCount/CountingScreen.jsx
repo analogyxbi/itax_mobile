@@ -265,7 +265,7 @@ const CountingScreen = ({
   }
 
   async function postGetNewCCDtl(load, part, details) {
-    const payload = createDsPayload(load);
+    const payload = createDsPayload(load, part);
     const epicor_endpoint = '/Erp.BO.CCPartSelectUpdSvc/GetNewCCDtl';
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,

@@ -45,7 +45,7 @@
         "artifactType": "APK"
       },
       "adaptiveIcon": {
-        "foregroundImage": "./images/adaptive-icon.png",
+        "foregroundImage": "./assets/wicon.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [

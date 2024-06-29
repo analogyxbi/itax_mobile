@@ -12,6 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import PopUpDialog from '../../components/PopUpDialog';
+// import PDFComponent from '../../components/PDFComponent';r
+import VarianceReport from '../../components/VarianceReport';
 
 const InitialScreen = ({
   setScreen,
@@ -86,9 +88,10 @@ const InitialScreen = ({
           <Text style={styles.buttonText}>Count</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
+        {/* <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Print Report</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+        <VarianceReport />
         <TouchableOpacity
           onPress={() => setPostCountData(true)}
           style={styles.button}

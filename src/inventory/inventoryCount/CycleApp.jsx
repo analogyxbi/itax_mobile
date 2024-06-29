@@ -12,7 +12,11 @@ import {
 import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
 import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
-import { setCurrentCycle, setTagsData } from '../reducer/inventory';
+import {
+  setCurrentCycle,
+  setCycleTags,
+  setTagsData,
+} from '../reducer/inventory';
 import { showSnackbar } from '../../Snackbar/messageSlice';
 import getClientErrorMessage from '../../utils/getClientErrorMessage';
 
@@ -51,7 +55,7 @@ export default function CycleApp() {
     })
       .then(({ json }) => {
         dispatch(setTagsData(json.data.value));
-
+        dispatch(setCycleTags(json.data.value));
         if (isCount || showLoading) {
           dispatch(
             setOnSuccess({
@@ -60,7 +64,7 @@ export default function CycleApp() {
                 ? 'Tags fetched successfully'
                 : isCount
                 ? 'Count Started Successfully.'
-                : 'Cycle Started Successfully',
+                : 'Cycle Started Successfully.',
             })
           );
         }

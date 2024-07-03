@@ -361,6 +361,8 @@ const InventoryTransfer = () => {
   }
 
   function captureDetails(details, state) {
+    let validDetail = details?.trim(); // Trim any leading/trailing whitespace
+    validDetail = validDetail.replace(/^JTC_/, '').replace(/\.bpp$/, '');
     if (
       cameraState === 'current_part' &&
       (!formData.current_whse ||
@@ -374,8 +376,8 @@ const InventoryTransfer = () => {
         showSnackbar('Warehouse or bin not found for the part number')
       );
     }
-    if (details.includes('\\')) {
-      const data = details.split(' \\ ');
+    if (validDetail.includes('\\')) {
+      const data = validDetail.split(' \\ ');
       if (data.length > 0 && data.length <= 3) {
         if (state.startsWith('current')) {
           setFormData((prev) => ({
@@ -393,7 +395,7 @@ const InventoryTransfer = () => {
       }
       dispatch(showSnackbar('Mismatch data type'));
     } else {
-      setFormData((prev) => ({ ...prev, [state]: details }));
+      setFormData((prev) => ({ ...prev, [state]: validDetail }));
     }
     setCameraState(null);
     closeScanner();

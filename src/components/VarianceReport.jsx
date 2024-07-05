@@ -49,7 +49,7 @@ export default function VarianceReport() {
   const dispatch = useDispatch();
 
   const fetchReportData = () => {
-    if(currentCycle !={}){
+    if (currentCycle != {}) {
       dispatch(setIsLoading({ value: true, message: 'Fetching Tags...' }));
       const filters = encodeURI(
         `(CCTag_WarehouseCode eq '${currentCycle.WarehouseCode}' and CCTag_CycleSeq eq ${currentCycle.CycleSeq} and CCTag_CCYear eq ${currentCycle.CCYear} and CCTag_CCMonth eq ${currentCycle.CCMonth})`
@@ -75,9 +75,9 @@ export default function VarianceReport() {
     }
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchReportData();
-  },[])
+  }, [])
 
   const printToFile = async () => {
     const htmlContent = createDynamicTable();
@@ -108,6 +108,7 @@ export default function VarianceReport() {
         <td>${item.CCTag_BinNum}</td>
         <td>${item.CCTag_UOM}</td>
         <td class="align-right">${parseAndFormatFloat(item.CCTag_CountedQty, 2)}</td>
+        <td class="align-right">${parseAndFormatFloat(item.Calculated_Onhand, 2)}</td>
         <td class="align-right">${parseAndFormatFloat(item.Calculated_ADJQTY, 2)}</td>
         <td class="align-right">${parseAndFormatFloat(item.Calculated_ADJCOST, 2)}</td>
       </tr>`
@@ -125,19 +126,26 @@ export default function VarianceReport() {
       countTotal: reportData
         .filter((data) => data.CCTag_PartNum.length > 0)
         .reduce((acc, item) => acc + parseInt(item.CCTag_CountedQty), 0),
+      inhandTotal: reportData
+        .filter((data) => data.CCTag_PartNum.length > 0)
+        .reduce((acc, item) => acc + parseInt(item.Calculated_Onhand), 0),
+      adjQtyTotal: reportData
+        .filter((data) => data.CCTag_PartNum.length > 0)
+        .reduce((acc, item) => acc + parseInt(item.Calculated_ADJQTY), 0),
+      adjValTotal: reportData
+        .filter((data) => data.CCTag_PartNum.length > 0)
+        .reduce((acc, item) => acc + parseFloat(item.Calculated_ADJCOST), 0),
 
       // marTotal: cycleTags.reduce((acc, item) => acc + item.mar, 0),
     };
 
     const footer = `
-    <tr>
-      <td >Totals:</td>
-      <td class="align-right"></td>
-      <td class="align-right"></td>
-      <td class="align-right"></td>
-      <td class="align-right">${totals.countTotal} </td>
-      <td class="align-right"></td>
-      <td class="align-right"></td>
+    <tr class="bold-row">
+      <td colspan="4">Totals:</td>
+      <td class="align-right">${parseAndFormatFloat(totals.countTotal, 2)} </td>
+      <td class="align-right">${parseAndFormatFloat(totals.inhandTotal, 2)} </td>
+      <td class="align-right">${parseAndFormatFloat(totals.adjQtyTotal, 2)}</td>
+      <td class="align-right">${parseAndFormatFloat(totals.adjValTotal, 2)}</td>
     </tr>
   `;
     // console.log('BEfore HTML');
@@ -161,7 +169,6 @@ export default function VarianceReport() {
           width: 100%;
           position: fixed;
           text-align: center;
-          font-weight: 600;
         }
           .header{
           width: 100%;
@@ -176,6 +183,9 @@ export default function VarianceReport() {
         }
         .header-center {
           text-align: center;
+        }
+        .bold-row {
+          font-weight: bold;
         }
         .report-title {
           text-align: center;
@@ -264,6 +274,7 @@ export default function VarianceReport() {
           <th>Bin</th>
           <th>UOM</th>
           <th>Counted</th>
+          <th>Inhand Qty</th>
           <th>Adj Qty</th>
           <th>Adj Value</th>
         </tr>

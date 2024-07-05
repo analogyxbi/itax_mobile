@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,6 +12,8 @@ import { shareAsync } from 'expo-sharing';
 import { globalStyles } from '../style/globalStyles';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
+import { setIsLoading } from './Loaders/toastReducers';
 
 function parseAndFormatFloat(floatString, decimalPlaces) {
   // Parse the float from the string
@@ -42,8 +44,41 @@ function formatTime(date) {
 }
 
 export default function VarianceReport() {
-  const { cycleTags, currentCycle } = useSelector((state) => state.inventory);
+  const [reportData, setReportData] = useState({});
+  const { cycleTags, currentCycle, selectedCycleDetails } = useSelector((state) => state.inventory);
   const dispatch = useDispatch();
+
+  const fetchReportData = () => {
+    if(currentCycle !={}){
+      dispatch(setIsLoading({ value: true, message: 'Fetching Tags...' }));
+      const filters = encodeURI(
+        `(CCTag_WarehouseCode eq '${currentCycle.WarehouseCode}' and CCTag_CycleSeq eq ${currentCycle.CycleSeq} and CCTag_CCYear eq ${currentCycle.CCYear} and CCTag_CCMonth eq ${currentCycle.CCMonth})`
+      );
+      let endpoint = `/BaqSvc/CCReport?$filter=${filters}&top=500`;
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: {
+          epicor_endpoint: endpoint,
+          request_type: 'GET',
+        },
+        stringify: false,
+      })
+        .then(({ json }) => {
+          setReportData(json.data.value)
+          dispatch(setIsLoading({ value: false, message: '' }));
+        }).catch((err) => {
+          dispatch(setIsLoading({ value: false, message: '' }));
+          dispatch(
+            showSnackbar('Error Occured While fetching cycle Details')
+          );
+        });
+    }
+  }
+
+  useEffect(()=>{
+    fetchReportData();
+  },[])
+
   const printToFile = async () => {
     const htmlContent = createDynamicTable();
     try {
@@ -63,21 +98,18 @@ export default function VarianceReport() {
     // Generating table rows dynamically
     let now = new Date();
     // console.log('NOW');
-    const tableRows = cycleTags
-      .filter((data) => data.PartNum.length > 0)
+    const tableRows = reportData
+      .filter((data) => data?.CCTag_PartNum?.length > 0)
       .map(
         (item, index) =>
           `<tr key=${index}>
-        <td>${item.PartNum}</td>
-        <td>${item.TagNum}</td>
-        <td>${item.BinNum}</td>
-        <td>${item.UOM}</td>
-        <td class="align-right">${parseAndFormatFloat(item.FrozenQOH, 2)}</td>
-        <td class="align-right">${parseAndFormatFloat(item.CountedQty, 2)}</td>
-        <td class="align-right"></td>
-        <td class="align-right"></td>
-        <td class="align-right"></td>
-        <td class="align-center">${item.TagReturned ? 'Yes' : 'No'}</td>
+        <td>${item.CCTag_PartNum}</td>
+        <td>${item.CCTag_TagNum}</td>
+        <td>${item.CCTag_BinNum}</td>
+        <td>${item.CCTag_UOM}</td>
+        <td class="align-right">${parseAndFormatFloat(item.CCTag_CountedQty, 2)}</td>
+        <td class="align-right">${parseAndFormatFloat(item.Calculated_ADJQTY, 2)}</td>
+        <td class="align-right">${parseAndFormatFloat(item.Calculated_ADJCOST, 2)}</td>
       </tr>`
       )
       .join('');
@@ -87,27 +119,27 @@ export default function VarianceReport() {
     }
     // Calculate totals
     const totals = {
-      snapTotal: cycleTags
-        .filter((data) => data.PartNum.length > 0)
+      snapTotal: reportData
+        .filter((data) => data.CCTag_PartNum.length > 0)
         .reduce((acc, item) => acc + parseFloat(item.FrozenQOH), 0),
-      countTotal: cycleTags
-        .filter((data) => data.PartNum.length > 0)
-        .reduce((acc, item) => acc + parseInt(item.CountedQty), 0),
+      countTotal: reportData
+        .filter((data) => data.CCTag_PartNum.length > 0)
+        .reduce((acc, item) => acc + parseInt(item.CCTag_CountedQty), 0),
 
       // marTotal: cycleTags.reduce((acc, item) => acc + item.mar, 0),
     };
 
-    const footer = `<tfoot>
+    const footer = `
     <tr>
-      <td colspan="4">Totals:</td>
-      <td class="align-right">${totals.snapTotal} </td>
+      <td >Totals:</td>
+      <td class="align-right"></td>
+      <td class="align-right"></td>
+      <td class="align-right"></td>
       <td class="align-right">${totals.countTotal} </td>
       <td class="align-right"></td>
       <td class="align-right"></td>
-      <td class="align-right"></td>
-      <td class="align-right"></td>
     </tr>
-  </tfoot>`;
+  `;
     // console.log('BEfore HTML');
     // HTML template for the entire document
 
@@ -129,6 +161,7 @@ export default function VarianceReport() {
           width: 100%;
           position: fixed;
           text-align: center;
+          font-weight: 600;
         }
           .header{
           width: 100%;
@@ -215,11 +248,9 @@ export default function VarianceReport() {
               </div>
               <div class="header-center">
                 <h2 class="report-title">Woodland Kitchens NI Ltd<br>Detail Count Variance Report</h2>
-                <p>Whs: ${currentCycle.WarehouseCode} ;&nbsp;&nbsp;&nbsp;Per: ${
-      currentCycle.CCHdrWarehseDescription
-    } &nbsp;&nbsp;&nbsp;&nbsp;Yr:${
-      currentCycle.CCYear
-    } &nbsp;&nbsp;&nbsp;&nbsp;Cycle:${currentCycle.CycleSeq} </p>
+                <p>Whs: ${currentCycle.WarehouseCode} ;&nbsp;&nbsp;&nbsp;Per: ${currentCycle.CCHdrWarehseDescription
+      } &nbsp;&nbsp;&nbsp;&nbsp;Yr:${currentCycle.CCYear
+      } &nbsp;&nbsp;&nbsp;&nbsp;Cycle:${currentCycle.CycleSeq} </p>
               </div>
               <div class="header-right">
                 <p>Time: ${formatTime(now)} <br>Date: ${formatDate(now)}</p>
@@ -232,19 +263,16 @@ export default function VarianceReport() {
           <th>Tag</th>
           <th>Bin</th>
           <th>UOM</th>
-          <th>Inventory Snapshot</th>
           <th>Counted</th>
           <th>Adj Qty</th>
-          <th>Adj %</th>
           <th>Adj Value</th>
-          <th>Returned</th>
         </tr>
       </thead>
       <tbody>
         ${tableRows}
+        ${footer}
       </tbody>
-      ${footer}
-    </table>
+      </table>
     
     </body>
     </html>

@@ -37,7 +37,7 @@ export default function CycleApp() {
       dispatch(
         setIsLoading({
           value: true,
-          message: 'Fetcing Tags, Please Wait',
+          message: 'Fetching Tags, Please Wait',
         })
       );
     }
@@ -465,11 +465,11 @@ export default function CycleApp() {
     }
   }
 
-  useEffect(() => {
-    if (currentCycle && currentCycle.CycleStatus >= 2) {
-      fetchAllTags(false, true);
-    }
-  }, [currentCycle]);
+  // useEffect(() => {
+  //   if (currentCycle && currentCycle.CycleStatus >= 2) {
+  //     fetchAllTags(false, true);
+  //   }
+  // }, [currentCycle]);
 
   return (
     <View style={styles.container}>

@@ -44,7 +44,7 @@ export default function CycleApp() {
     const filters = encodeURI(
       `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCYear eq ${currentCycle.CCYear} and CCMonth eq ${currentCycle.CCMonth})`
     );
-    let endpoint = `/Erp.BO.CountTagSvc/CountTags?$filter=${filters}&top=500`;
+    let endpoint = `/Erp.BO.CountTagSvc/CountTags?$filter=${filters}&top=10000`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {

@@ -54,7 +54,7 @@ export default function VarianceReport() {
       const filters = encodeURI(
         `(CCTag_WarehouseCode eq '${currentCycle.WarehouseCode}' and CCTag_CycleSeq eq ${currentCycle.CycleSeq} and CCTag_CCYear eq ${currentCycle.CCYear} and CCTag_CCMonth eq ${currentCycle.CCMonth})`
       );
-      let endpoint = `/BaqSvc/CCReport?$filter=${filters}&top=500`;
+      let endpoint = `/BaqSvc/CCReport?$filter=${filters}&top=10000`;
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
         postPayload: {

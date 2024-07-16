@@ -163,7 +163,7 @@ export const generatTransferPDF = async (data, parts) => {
   //                 <div><i>PO/Line/Rel :</i> <b>${currentLine?.PONum} / ${currentLine?.POLine} / ${currentLine?.PORelNum}</b></div>
 
   const part = parts.find((o) => o.PartNum === data.current_part);
-  console.log({ part, parts, data });
+
   const { uri } = await Print.printToFileAsync({
     html: `<html lang="en">
     <head>
@@ -302,4 +302,112 @@ export const generatTransferPDF = async (data, parts) => {
   });
   console.log('File has been saved to:', uri);
   await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+};
+
+
+export async function generateReceiptPDF(svgXmlString, currentLine, formData){
+  const currentDate = new Date().toLocaleDateString('en-GB');
+
+  try {
+    // Define HTML content for the PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th, td {
+              border: 1px solid black;
+              text-align: left;
+              padding: 8px;
+              font-size:22px;
+              font-weight:800;
+              height: 50px; /* Adjust this value to increase row height */
+            }
+            th {
+              background-color: #f2f2f2;
+              text-align: center;
+            }
+            td:nth-child(2) {
+              text-align: center;
+            }
+            .title-row {
+              color: white;
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr  class="title-row">
+              <td rowspan="2" bgcolor="black"  style="color:white">PALLET RECEIPT</td>
+              <td rowspan="1" colspan="2" style="color:black">Hardware Line</td>
+            </tr>
+            <tr>
+              <td bgcolor="black" style="color:white">SUPPLIER</td>
+              <td> ${currentLine?.VendorID} / ${currentLine?.VendorName}</td>
+            </tr>
+            <tr>
+              <td>PO Number</td>
+              <td colspan="2">${currentLine?.PONum} / ${currentLine?.POLine} / ${currentLine?.PORelNum}</td>
+            </tr>
+            <tr>
+              <td>Delivery Note</td>
+              <td colspan="2"> ${formData?.note || currentLine?.POLineLineDesc}</td>
+            </tr>
+            <tr>
+              <td>Part Code</td>
+              <td colspan="2">${currentLine?.POLinePartNum ? currentLine?.POLinePartNum : "N/A"}</td>
+            </tr>
+            <tr>
+              <td>Description</td>
+              <td colspan="2">${currentLine?.POLineLineDesc}</td>
+            </tr>
+            <tr>
+              <td>Quantity</td>
+              <td colspan="2">${currentLine?.ArrivedQty} ${currentLine?.IUM}</td>
+            </tr>
+            <tr>
+              <td>Date</td>
+              <td colspan="2">${currentDate}</td>
+            </tr>
+            <tr>
+              <td>Bin</td>
+              <td colspan="2"> ${formData?.BinNum}</td>
+            </tr>
+          </table>
+          <div style="text-align:center; margin-top:20px;">
+            <img src="data:image/png;base64,${svgXmlString}" alt="QR Code" />
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Generate PDF file
+    const { uri } = await Print.printToFileAsync({
+      html: htmlContent,
+    });
+
+    // Share or perform any action with the generated PDF file
+    await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+
+    // Set the generated PDF URI (if needed for displaying or further operation
+
+  } catch (error) {
+    alert(JSON.stringify(error))
+    console.error('Error generating PDF:', error);
+  }
+}
+
+export const generateQRCodeAndPrintPDF = async (currentLine, formData) => {
+  AnalogyxBIClient.post({endpoint:`/erp_woodland/resolve_api`, postPayload:{
+    text_qr:`${formData?.WareHouseCode} / ${formData?.BinNum} / ${currentLine?.POLinePartNum}`
+  }}).then(({json})=>{
+    generateReceiptPDF(json.image, currentLine, formData)
+  }).catch((err)=>{
+    alert(JSON.stringify(err))
+  })
 };

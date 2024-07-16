@@ -6,8 +6,7 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  Pressable,
-  ToastAndroid,
+  Pressable
 } from 'react-native';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';

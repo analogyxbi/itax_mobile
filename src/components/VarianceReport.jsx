@@ -274,7 +274,7 @@ export default function VarianceReport() {
           <th>Bin</th>
           <th>UOM</th>
           <th>Counted</th>
-          <th>Inhand Qty</th>
+          <th>On hand Qty</th>
           <th>Adj Qty</th>
           <th>Adj Value</th>
         </tr>

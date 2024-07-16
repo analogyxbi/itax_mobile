@@ -1,12 +1,14 @@
 import { ScrollView, Text, TextInput, View } from "react-native"
 import { Button } from "react-native-paper";
-import { generatePDF } from "../../utils/PDFGenerator";
+import { generateReceiptPDF } from "../../utils/PDFGenerator";
 import RNPickerSelect from 'react-native-picker-select';
 import { globalStyles } from "../../style/globalStyles";
+import { AnalogyxBIClient } from "@analogyxbi/connection";
+import { useDispatch } from "react-redux";
 
 
 const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNewPackSlip, handleSave }) => {
-
+    const dispatch = useDispatch()
     const renderBinOptions = (values) => {
         const result = values.map((val) => ({
             ...val,
@@ -22,6 +24,18 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
         }
         return false;
     }
+
+    const generateQRCodeAndPrintPDF = async (currentLine, formData) => {
+        AnalogyxBIClient.post({endpoint:`/erp_woodland/resolve_api`, postPayload:{
+          text_qr:`${formData?.WareHouseCode} \\ ${formData?.BinNum} \\ ${currentLine?.POLinePartNum}`
+        }}).then(({json})=>{
+          generateReceiptPDF(json.image, currentLine, formData)
+        }).catch((err)=>{
+          alert("FAILED: QR Code generation error")
+          alert(JSON.stringify(err))
+        })
+      };
+
     return (
         <ScrollView style={{ flex: 1, maxHeight: '99%' }}>
             <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
@@ -202,8 +216,8 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
                         mode="contained"
                         // disabled={!saved}
                         onPress={() => {
-                            console.log({ currentLine, formData })
-                            generatePDF(currentLine, formData)
+                          
+                            generateQRCodeAndPrintPDF(currentLine, formData)
                         }}
                     >
                         Print Tags

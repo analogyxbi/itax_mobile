@@ -157,10 +157,7 @@ export const generatePDF = async (currentLine, formData) => {
   await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
 };
 
-export const generatTransferPDF = async (data, parts) => {
-  // <div><i>Vendor :</i> <span class="value">${currentLine?.VendorID} / ${currentLine?.VendorName}</span></div>
-  //                 <div  class="barcode">*${currentLine?.VendorID}*</div>
-  //                 <div><i>PO/Line/Rel :</i> <b>${currentLine?.PONum} / ${currentLine?.POLine} / ${currentLine?.PORelNum}</b></div>
+export const generatTransferPDF = async (data, parts, svgXmlString) => {
 
   const part = parts.find((o) => o.PartNum === data.current_part);
 
@@ -296,6 +293,9 @@ export const generatTransferPDF = async (data, parts) => {
             </tr>
           </tbody>
         </table>
+        <div style="text-align:center; margin-top:20px;">
+          <img src="data:image/png;base64,${svgXmlString}" alt="QR Code" />
+        </div>
       </div>
     </body>
   </html>`,

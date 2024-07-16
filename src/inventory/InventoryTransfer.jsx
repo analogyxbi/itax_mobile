@@ -431,6 +431,17 @@ const InventoryTransfer = () => {
     }
   }
 
+  const generateQRCodeAndPrintPDF = async (formData, currentParts) => {
+    AnalogyxBIClient.post({endpoint:`/erp_woodland/resolve_api`, postPayload:{
+      text_qr:`${formData?.to_whse} \\ ${formData?.to_bin} \\ ${formData?.current_part}`
+    }}).then(({json})=>{
+      generatTransferPDF(formData, currentParts, json.image)
+    }).catch((err)=>{
+      alert("FAILED: QR Code generation error")
+      alert(JSON.stringify(err))
+    })
+  };
+
   if (scannerVisible) {
     return (
       <BarcodeScannerComponent
@@ -751,7 +762,7 @@ const InventoryTransfer = () => {
           icon="printer"
           mode="contained"
           disabled={false}
-          onPress={() => generatTransferPDF(formData, currentParts)}
+          onPress={() => generateQRCodeAndPrintPDF(formData, currentParts)}
         >
           Print Tags
         </Button>

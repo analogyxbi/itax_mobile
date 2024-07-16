@@ -435,15 +435,6 @@ export default function CycleApp() {
           );
         })
         .catch((err) => {
-          // err.json().then(({ error }) => {
-          //   // dispatch(setOnError({ value: true, message: res.error }));
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: error.ErrorMessage,
-          //     })
-          //   );
-          // });
           getClientErrorMessage(err).then(({ message }) => {
             dispatch(
               setOnError({

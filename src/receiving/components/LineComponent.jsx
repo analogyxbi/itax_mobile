@@ -5,9 +5,10 @@ import RNPickerSelect from 'react-native-picker-select';
 import { globalStyles } from "../../style/globalStyles";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
 import { useDispatch } from "react-redux";
+import { setIsLoading, setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
 
 
-const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNewPackSlip, handleSave }) => {
+const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNewPackSlip, handleSave, isSaved, packSLipNUm }) => {
     const dispatch = useDispatch()
     const renderBinOptions = (values) => {
         const result = values.map((val) => ({
@@ -26,15 +27,40 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
     }
 
     const generateQRCodeAndPrintPDF = async (currentLine, formData) => {
-        AnalogyxBIClient.post({endpoint:`/erp_woodland/resolve_api`, postPayload:{
-          text_qr:`${formData?.WareHouseCode} \\ ${formData?.BinNum} \\ ${currentLine?.POLinePartNum}`
-        }}).then(({json})=>{
-          generateReceiptPDF(json.image, currentLine, formData)
-        }).catch((err)=>{
-          alert("FAILED: QR Code generation error")
-          alert(JSON.stringify(err))
+        dispatch(setIsLoading({ value: true, message: 'Printing...' }));
+        const epicor_endpoint = `/BaqSvc/WHAppPrint1(WOOD01)/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
+        const postData = [{
+            RcvDtl_Company: currentLine?.Company,
+            RcvDtl_ComplianceMsg: currentLine?.ComplianceMsg,
+            // RcvDtl_PackLine: 1,
+            RcvDtl_PackSlip: formData?.packslip || packSLipNUm,
+            RcvDtl_POLine: currentLine?.POLine,
+            RcvDtl_PONum: currentLine?.PONum,
+            RcvDtl_PurPoint: currentLine?.PurPoint,
+            // RcvDtl_VendorNum: 0,
+            RcvHead_Company: currentLine?.Company,
+            RcvHead_PackSlip: formData?.packslip || packSLipNUm,
+            RcvHead_PurPoint: currentLine?.PurPoint,
+            // RcvHead_VendorNum: 0,
+            RowMod: "A",
+            // SysRowID: currentLine?.SysRowID,
+            // RowIdent: "00000000-0000-0000-0000-000000000000",
+        }]
+        AnalogyxBIClient.post({
+            endpoint: `/erp_woodland/resolve_api`,
+            postPayload: {
+                epicor_endpoint,
+                request_type: 'GET',
+                data: JSON.stringify(postData),
+            },
+            stringify: false,
+        }).then(({ json }) => {
+            dispatch(setOnSuccess({ value: true, message: 'Printed' }));
+        }).catch(err => {
+            dispatch(setIsLoading({ value: false, message: '' }));
+            dispatch(setOnError({ value: true, message: 'Error Occured While Printing \n', err }));
         })
-      };
+    };
 
     return (
         <ScrollView style={{ flex: 1, maxHeight: '99%' }}>
@@ -214,9 +240,8 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
                         buttonColor={globalStyles.colors.success}
                         icon="printer"
                         mode="contained"
-                        // disabled={!saved}
+                        disabled={!isSaved}
                         onPress={() => {
-                          
                             generateQRCodeAndPrintPDF(currentLine, formData)
                         }}
                     >

@@ -111,6 +111,7 @@ const POReceipt = () => {
   const [whseBin, setWhseBin] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
@@ -575,6 +576,7 @@ const POReceipt = () => {
         setSaved(true);
         dispatch(setOnSuccess({ value: true, message: '' }));
         setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
+        setIsSaved(true)
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) => {
@@ -1095,6 +1097,8 @@ const POReceipt = () => {
                     bins,
                     onChangeText,
                     isNewPackSlip,
+                    isSaved,
+                    packSLipNUm
                   }}
                 />
               </View>

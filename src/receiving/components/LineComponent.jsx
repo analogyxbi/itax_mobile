@@ -28,29 +28,21 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
 
     const generateQRCodeAndPrintPDF = async (currentLine, formData) => {
         dispatch(setIsLoading({ value: true, message: 'Printing...' }));
-        const epicor_endpoint = `/BaqSvc/WHAppPrint1(WOOD01)/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
-        const postData = [{
-            RcvDtl_Company: currentLine?.Company,
-            RcvDtl_ComplianceMsg: currentLine?.ComplianceMsg,
-            // RcvDtl_PackLine: 1,
-            RcvDtl_PackSlip: formData?.packslip || packSLipNUm,
-            RcvDtl_POLine: currentLine?.POLine,
-            RcvDtl_PONum: currentLine?.PONum,
-            RcvDtl_PurPoint: currentLine?.PurPoint,
-            // RcvDtl_VendorNum: 0,
-            RcvHead_Company: currentLine?.Company,
-            RcvHead_PackSlip: formData?.packslip || packSLipNUm,
-            RcvHead_PurPoint: currentLine?.PurPoint,
-            // RcvHead_VendorNum: 0,
-            RowMod: "A",
-            // SysRowID: currentLine?.SysRowID,
-            // RowIdent: "00000000-0000-0000-0000-000000000000",
-        }]
+        const epicor_endpoint = `/BaqSvc/WHAppPrint2(WOOD01)/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
+        const postData = {
+            UD12_Character01: "Analogyx1",
+            UD12_Key1: `${currentLine?.PONum}`,
+            UD12_Key2: `${currentLine?.POLine}`,
+            UD12_Key3: "",
+            UD12_Key4: "",
+            UD12_Key5: "",
+            RowMod: "A"
+        }
         AnalogyxBIClient.post({
             endpoint: `/erp_woodland/resolve_api`,
             postPayload: {
                 epicor_endpoint,
-                request_type: 'GET',
+                request_type: 'PATCH',
                 data: JSON.stringify(postData),
             },
             stringify: false,

@@ -15,6 +15,7 @@ import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
 import {
   setCurrentCycle,
   setCycleTags,
+  setSelectedCycleDetails,
   setTagsData,
 } from '../reducer/inventory';
 import { showSnackbar } from '../../Snackbar/messageSlice';
@@ -404,46 +405,80 @@ export default function CycleApp() {
       })
     );
     try {
-      let values = {
-        ds: {
-          CCHdr: [
-            {
-              ...currentCycle,
-              BlankTagsOnly: false,
-              RowMod: 'U',
-            },
-          ],
-        },
-      };
-      const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload: {
-          epicor_endpoint,
-          request_type: 'POST',
-          data: JSON.stringify(values),
-        },
-        stringify: false,
-      })
-        .then(({ json }) => {
-          // delete data.odata
-          dispatch(
-            setOnSuccess({
-              value: true,
-              message: 'Count Posted Successfully.',
-            })
-          );
-        })
-        .catch((err) => {
-          getClientErrorMessage(err).then(({ message }) => {
-            dispatch(
-              setOnError({
-                value: true,
-                message: message,
+      if (currentCycle.WarehouseCode) {
+        // setCyclesLoading(true);
+        dispatch(setIsLoading({ value: true, message: 'Please wait...' }));
+        const filterString = encodeURI(
+          `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCMonth eq ${currentCycle.CCMonth} and CCYear eq ${currentCycle.CCYear} and Company eq '${currentCycle.Company}' and Plant eq '${currentCycle.Plant}')`
+        );
+        const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$expand=CCDtls&$filter=${filterString}`;
+        try {
+          AnalogyxBIClient.post({
+            endpoint: `/erp_woodland/resolve_api`,
+            postPayload: { epicor_endpoint, request_type: 'GET' },
+            stringify: false,
+          })
+            .then(({ json }) => {
+              dispatch(setSelectedCycleDetails(json.data.value));
+              const selectedData = json?.data?.value;
+              const details = selectedData && selectedData[0]?.CCDtls || [];
+              let values = {
+                ds: {
+                  CCHdr: [
+                    {
+                      ...currentCycle,
+                      BlankTagsOnly: false,
+                      RowMod: 'U',
+                    },
+                  ],
+                  CCDtl: details,
+                },
+              };
+              const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
+              AnalogyxBIClient.post({
+                endpoint: `/erp_woodland/resolve_api`,
+                postPayload: {
+                  epicor_endpoint,
+                  request_type: 'POST',
+                  data: JSON.stringify(values),
+                },
+                stringify: false,
               })
-            );
-          });
-        });
+                .then(({ json }) => {
+                  // delete data.odata
+                  dispatch(setIsLoading({ value: false, message: '' }));
+                  dispatch(
+                    setOnSuccess({
+                      value: true,
+                      message: 'Count Posted Successfully.',
+                    })
+                  );
+                })
+                .catch((err) => {
+                  dispatch(setIsLoading({ value: false, message: '' }));
+                  getClientErrorMessage(err).then(({ message }) => {
+                    dispatch(
+                      setOnError({
+                        value: true,
+                        message: message,
+                      })
+                    );
+                  });
+                });
+            })
+            .catch((err) => {
+              console.log(err)
+              dispatch(setIsLoading({ value: false, message: '' }));
+              dispatch(
+                showSnackbar('Error Occured While fetching cycle Details')
+              );
+            });
+        } catch (err) {
+          dispatch(setIsLoading({ value: false, message: '' }));
+          dispatch(showSnackbar('Error Occured While fetching cycle Details'));
+        }
+      }
+
     } catch (err) {
       console.log({ err });
       dispatch(showSnackbar('Error Occured while posting count'));

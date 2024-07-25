@@ -304,6 +304,7 @@ const POReceipt = () => {
   }, [tabValue]);
 
   const getWareHouseList = (warehouseCode) => {
+    setFormdata(prev => ({...prev, WareHouseCode: warehouseCode }))
     const filter = encodeURI(`WarehouseCode eq '${warehouseCode}'`);
     const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}&$top=1000`;
     const postPayload = {
@@ -321,9 +322,8 @@ const POReceipt = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          setWarehouseCodes(() => json.data.value);
+          // setWarehouseCodes(() => json.data.value);
           setBins(() => json.data.value);
-          // setLoading(false);
         })
         .catch((err) => {
           console.log(err);
@@ -339,10 +339,41 @@ const POReceipt = () => {
   const onChangeText = (val, name) => {
     setFormdata((form) => ({ ...form, [name]: val }));
     if (name === 'WareHouseCode') {
-      const filteredWareHouse = warehouseCodes?.filter(
-        (warehouse) => warehouse?.WarehouseCode === val
-      );
-      setBins(filteredWareHouse);
+      const filter = encodeURI(`WarehouseCode eq '${val}'`);
+      const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+      const postPayload = {
+        epicor_endpoint,
+        request_type: 'GET',
+      };
+
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload,
+          stringify: false,
+        })
+          .then(({ json }) => {
+            setBins(json.data.value);
+            dispatch(showSnackbar(`Bins fetched for ${val}`));
+          })
+          .catch((err) => {
+            // setLoading(false);
+            setRefreshing(false);
+            dispatch(
+              showSnackbar(
+                'Error getting the list of warehouses',
+                JSON.stringify(err)
+              )
+            );
+          });
+      } catch (err) {
+        dispatch(
+          showSnackbar(
+            'Error getting the list of warehouses',
+            JSON.stringify(err)
+          )
+        );
+      }
     }
     setSaved(false);
   };

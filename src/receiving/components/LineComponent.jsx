@@ -4,12 +4,13 @@ import { generateReceiptPDF } from "../../utils/PDFGenerator";
 import RNPickerSelect from 'react-native-picker-select';
 import { globalStyles } from "../../style/globalStyles";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setIsLoading, setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
 
 
 const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNewPackSlip, handleSave, isSaved, packSLipNUm }) => {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
+    const { warehouses, binsData } = useSelector((state) => state.inventory);
     const renderBinOptions = (values) => {
         const result = values.map((val) => ({
             ...val,
@@ -168,25 +169,23 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
                 isNewPackSlip &&
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.inputLabel}>Warehouse Code</Text>
-                        {/* <TextInput
-              style={styles.input}
-              onChangeText={(text) => onChangeText(text, 'WareHouseCode')}
-              value={formData?.WareHouseCode || currentLine?.WareHouseCode || "-"}
-              placeholder="Warehouse Code"
-            /> */}
-                        <Text style={{ padding: 10 }}>
-                            {currentLine?.WarehouseCode}
-                        </Text>
+                        <Text style={styles.inputLabel}>Warehouse</Text>
+                        <RNPickerSelect
+                            onValueChange={(text) => onChangeText(text, 'WareHouseCode')}
+                            items={warehouses?.map((data) => ({
+                                ...data,
+                                label: data.WarehouseCode,
+                                value: data.WarehouseCode,
+                            }))}
+                            placeholder={{
+                                label: 'WareHouseCode',
+                                value: null,
+                            }}
+                            value={formData?.WareHouseCode}
+                        />
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>Bin Number</Text>
-                        {/* <TextInput
-              style={styles.input}
-              onChangeText={(text) => onChangeText(text, 'BinNum')}
-              value={currentLine?.BinNum}
-              placeholder="Bin Number"
-            /> */}
                         <RNPickerSelect
                             onValueChange={(text) => onChangeText(text, 'BinNum')}
                             items={renderBinOptions(bins)}

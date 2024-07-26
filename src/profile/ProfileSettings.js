@@ -18,7 +18,7 @@ import { logout } from '../loginscreen/authSlice';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 // import { logoutUser } from '../loginscreen/actions/actions';
 // import { clearAllTabs } from '../welcome/actions/actions';
-
+import packageJson from "../../package.json"
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
@@ -131,7 +131,7 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
           opacity: 0.7,
         }}
       >
-        <Text>Version 1.0.23</Text>
+        <Text>{packageJson.version} </Text>
       </View>
 
       <TouchableOpacity

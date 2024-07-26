@@ -8,7 +8,7 @@ export default function getClientErrorMessage(response) {
         const jsonStr = JSON.parse(response.data);
         resolve({ message: jsonStr.ErrorMessage });
       } catch (err) {
-        resolve({ message: JSON.stringify(response.data) });
+        resolve({ message: "An Error Occured"});
       }
     });
   });
@@ -25,7 +25,7 @@ export function getClientPOErrorMessage(response) {
         const data = JSON.parse(jsonStr.data)
         resolve({ message: data.ErrorMessage });
       } catch (err) {
-        resolve({ message: JSON.stringify(result.error) });
+        resolve({ message: "An Error Occured." });
       }
     });
   });

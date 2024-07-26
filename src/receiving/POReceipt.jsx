@@ -54,7 +54,7 @@ import {
   setOnError,
   setOnSuccess,
 } from '../components/Loaders/toastReducers';
-import getClientErrorMessage from '../utils/getClientErrorMessage';
+import getClientErrorMessage, { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
 
 const initialFormdata = {
   poNum: '',
@@ -569,7 +569,7 @@ const POReceipt = () => {
       OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
-      WareHouseCode: currentLine?.WarehouseCode,
+      WareHouseCode: currentLine?.WarehouseCode || formData?.WareHouseCode,
       OurQty: formData.input,
       InputOurQty: formData.input,
       IUM: currentLine?.IUM,
@@ -606,13 +606,20 @@ const POReceipt = () => {
     })
       .then(({ json }) => {
         setSaved(true);
+        dispatch(setIsLoading({ value: false, message: '' }));
         dispatch(setOnSuccess({ value: true, message: '' }));
         setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
         setIsSaved(true)
       })
       .catch((err) => {
-        getClientErrorObject(err).then((res) => {
-          dispatch(showSnackbar(res.error));
+        dispatch(setIsLoading({ value: false, message: '' }));
+        getClientPOErrorMessage(err).then(({message}) => {
+          dispatch(
+            setOnError({
+              value: true,
+              message: message,
+            })
+          );
         });
       });
   };

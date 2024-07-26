@@ -6,11 +6,20 @@ import { globalStyles } from "../../style/globalStyles";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
 import { useDispatch, useSelector } from "react-redux";
 import { setIsLoading, setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
+import { useEffect, useState } from "react";
+import { setWarehouses, setWhseBins } from "../../inventory/reducer/inventory";
+import { showSnackbar } from "../../Snackbar/messageSlice";
+import SelectInput from "../../components/SelectInput";
 
 
-const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNewPackSlip, handleSave, isSaved, packSLipNUm }) => {
+const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, packSLipNUm }) => {
     const dispatch = useDispatch();
+    const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);
+    const [bins, setBins] = useState({
+        from: [],
+        to: [],
+    });
     const renderBinOptions = (values) => {
         const result = values.map((val) => ({
             ...val,
@@ -20,11 +29,102 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
         return result;
     };
 
+    function getWarehouse() {
+        setRefreshing(true);
+
+        const postPayload = {
+            epicor_endpoint:
+                '/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description',
+            request_type: 'GET',
+        };
+        try {
+            AnalogyxBIClient.post({
+                endpoint: `/erp_woodland/resolve_api`,
+                postPayload,
+                stringify: false,
+            })
+                .then(({ json }) => {
+                    dispatch(setWarehouses(json.data.value));
+                    setRefreshing(false);
+                    dispatch(showSnackbar('Warehouse List refreshed'));
+                })
+                .catch((err) => {
+                    // setLoading(false);
+                    setRefreshing(false);
+                    dispatch(
+                        showSnackbar(
+                            'Error getting the list of warehouses',
+                            JSON.stringify(err)
+                        )
+                    );
+                });
+        } catch (err) {
+            dispatch(
+                showSnackbar(
+                    'Error getting the list of warehouses',
+                    JSON.stringify(err)
+                )
+            );
+        }
+    }
+
+    useEffect(() => {
+        if (warehouses.length == 0) {
+            getWarehouse();
+        }
+    }, []);
+
     function handleValidate() {
         if (!formData.BinNum || !formData?.input) {
             return true;
         }
         return false;
+    }
+    useEffect(() => {
+        if (formData.WareHouseCode && !binsData[formData.WareHouseCode]) {
+            getBins('from', formData.WareHouseCode);
+        }
+    }, []);
+    function getBins(to, warehouse) {
+        setRefreshing(true);
+        const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
+        const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+        const postPayload = {
+            epicor_endpoint,
+            request_type: 'GET',
+        };
+
+        try {
+            AnalogyxBIClient.post({
+                endpoint: `/erp_woodland/resolve_api`,
+                postPayload,
+                stringify: false,
+            })
+                .then(({ json }) => {
+                    setBins((prev) => ({ ...prev, [to]: json.data.value }));
+                    dispatch(showSnackbar(`Bins fetched for ${warehouse}`));
+                    dispatch(setWhseBins({ warehouse, bins: json.data.value }));
+                    setRefreshing(false);
+                })
+                .catch((err) => {
+                    // setLoading(false);
+                    setRefreshing(false);
+                    dispatch(
+                        showSnackbar(
+                            'Error getting the list of warehouses',
+                            JSON.stringify(err)
+                        )
+                    );
+                    setRefreshing(false);
+                });
+        } catch (err) {
+            dispatch(
+                showSnackbar(
+                    'Error getting the list of warehouses',
+                    JSON.stringify(err)
+                )
+            );
+        }
     }
 
     const generateQRCodeAndPrintPDF = async (currentLine, formData) => {
@@ -54,6 +154,10 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
             dispatch(setOnError({ value: true, message: 'Error Occured While Printing \n', err }));
         })
     };
+
+    function onSelectBins(key, value) {
+        setFormdata((prev) => ({ ...prev, [key]: value }));
+    }
 
     return (
         <ScrollView style={{ flex: 1, maxHeight: '99%' }}>
@@ -170,30 +274,41 @@ const LineComponent = ({ currentLine, styles, formData, bins, onChangeText, isNe
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>Warehouse</Text>
-                        <RNPickerSelect
-                            onValueChange={(text) => onChangeText(text, 'WareHouseCode')}
-                            items={warehouses?.map((data) => ({
+                        <SelectInput
+                            value={formData.WareHouseCode || null}
+                            onChange={(itemValue) => {
+                                onSelectBins('WareHouseCode', itemValue);
+                                if (!binsData[itemValue]) {
+                                    getBins('from', itemValue);
+                                }
+                            }}
+                            options={warehouses?.map((data) => ({
                                 ...data,
                                 label: data.WarehouseCode,
                                 value: data.WarehouseCode,
                             }))}
-                            placeholder={{
-                                label: 'WareHouseCode',
-                                value: null,
-                            }}
-                            value={formData?.WareHouseCode}
+                            isLoading={refreshing}
+                            label="WarehouseCode"
+                        // handleRefresh={handleOptionsRefresh}
                         />
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>Bin Number</Text>
-                        <RNPickerSelect
-                            onValueChange={(text) => onChangeText(text, 'BinNum')}
-                            items={renderBinOptions(bins)}
-                            placeholder={{
-                                label: 'BinNum',
-                                value: null,
+                        <SelectInput
+                            value={formData.BinNum}
+                            onChange={(itemValue) => {
+                                onSelectBins('BinNum', itemValue);
                             }}
-                            value={formData?.BinNum}
+                            options={
+                                binsData[formData?.WareHouseCode]?.map((data) => ({
+                                    ...data,
+                                    label: data.BinNum,
+                                    value: data.BinNum,
+                                })) || []
+                            }
+                            isLoading={refreshing}
+                            // handleRefresh={handleOptionsRefresh}
+                            label="BinNum"
                         />
                     </View>
                 </View>

@@ -520,7 +520,8 @@ const POReceipt = () => {
   };
 
   const onSelectLine = (po) => {
-    getWareHouseList(po?.WarehouseCode);
+    // getWareHouseList(po?.WarehouseCode);
+    setFormdata(prev => ({...prev, WareHouseCode: po?.WarehouseCode}))
     const poDetails = (POData && POData[0]?.PODetails) || [];
     const selectedPo = poDetails.find((da) => da.POLine === po.POLine);
     if (isNewPackSlip && selectedPo) {
@@ -1129,7 +1130,8 @@ const POReceipt = () => {
                     onChangeText,
                     isNewPackSlip,
                     isSaved,
-                    packSLipNUm
+                    packSLipNUm,
+                    setFormdata
                   }}
                 />
               </View>

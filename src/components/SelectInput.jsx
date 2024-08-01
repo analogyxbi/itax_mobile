@@ -23,11 +23,13 @@ const SelectInput = ({
   const [searchText, setSearchText] = useState('');
   const [filteredOptions, setFilteredOptions] = useState(options);
 
+  // Handle option press to update the selected option
   const handleOptionPress = (option) => {
     onChange(option);
     setModalVisible(false);
   };
 
+  // Handle search input change to filter options
   const handleSearch = (text) => {
     setSearchText(text);
     const filtered = options.filter((option) =>
@@ -36,6 +38,7 @@ const SelectInput = ({
     setFilteredOptions(filtered);
   };
 
+  // Render options with a checkmark for the selected one
   const renderOptions = () => {
     if (filteredOptions?.length === 0) {
       return <Text>No options available</Text>;
@@ -43,10 +46,13 @@ const SelectInput = ({
     return filteredOptions?.map((option) => (
       <TouchableOpacity
         key={option.value}
-        style={styles.option}
+        style={[styles.option, option.value === value && styles.selectedOption]}
         onPress={() => handleOptionPress(option.value)}
       >
-        <Text>{option.value}</Text>
+        <Text style={styles.optionText}>{option.value}</Text>
+        {option.value === value && (
+          <Ionicons name="checkmark" size={20} color="#007BFF" />
+        )}
       </TouchableOpacity>
     ));
   };
@@ -147,8 +153,8 @@ const styles = StyleSheet.create({
     top: -15,
     right: -15,
     padding: 5,
-    backgroundColor:'red', 
-    borderRadius:25,
+    backgroundColor: 'red',
+    borderRadius: 25,
   },
   searchInput: {
     borderWidth: 1,
@@ -159,9 +165,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   option: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+  },
+  optionText: {
+    flex: 1,
+    fontSize: 16,
+  },
+  selectedOption: {
+    backgroundColor: '#f0f8ff', // Background color for selected option
   },
 });
 

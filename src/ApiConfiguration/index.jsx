@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  Pressable
+  Pressable,
+  SafeAreaView
 } from 'react-native';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
@@ -128,7 +129,7 @@ const ApiConfiguration = () => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.centeredView}>
+        <SafeAreaView style={styles.centeredView}>
           <View style={styles.header}>
             <Pressable onPress={() => setModalVisible(!modalVisible)}>
               <Ionicons
@@ -157,7 +158,7 @@ const ApiConfiguration = () => {
               // timeZone={userData?.timezone}
             />
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );

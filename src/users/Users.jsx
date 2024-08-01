@@ -8,6 +8,7 @@ import {
   Alert,
   Pressable,
   ToastAndroid,
+  SafeAreaView,
 } from 'react-native';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
@@ -117,7 +118,7 @@ const Users = () => {
   };
 
   return (
-    <View>
+    <SafeAreaView>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons
@@ -158,7 +159,7 @@ const Users = () => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.centeredView}>
+        <SafeAreaView style={styles.centeredView}>
           <View style={styles.header}>
             <Pressable onPress={() => setModalVisible(!modalVisible)}>
               <Ionicons
@@ -186,9 +187,9 @@ const Users = () => {
               timeZone={userData?.timezone || []}
             />
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

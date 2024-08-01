@@ -2,7 +2,7 @@
   "expo": {
     "name": "Warehouse App",
     "slug": "warehouse_app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/wicon.png",
     "jsEngine": "hermes",
@@ -15,7 +15,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": ["assets/*", "images/*"],
     "ios": {
       "infoPlist": {
         "NSAppTransportSecurity": {

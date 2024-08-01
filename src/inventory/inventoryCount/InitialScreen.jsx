@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  SafeAreaView,
 } from 'react-native';
 import { globalStyles } from '../../style/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +27,7 @@ const InitialScreen = ({
   const [genTags, setGenTags] = useState(false);
 
   return (
+    <SafeAreaView>
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable
@@ -121,6 +123,7 @@ const InitialScreen = ({
         message={'Are you sure you want to generate tags and start count?'}
       />
     </View>
+    </SafeAreaView>
   );
 };
 

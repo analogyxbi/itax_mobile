@@ -9,6 +9,7 @@ import {
   Pressable,
   BackHandler,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { globalStyles } from '../../style/globalStyles';
@@ -422,7 +423,7 @@ const CountingScreen = ({
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons
@@ -582,7 +583,7 @@ const CountingScreen = ({
         title="Add New Part"
         message={'Do you wish to add new part to the cycle?'}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

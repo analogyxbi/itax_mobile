@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { SafeAreaView, StyleSheet, View } from 'react-native';
 import InitialScreen from './InitialScreen';
 import CountingScreen from './CountingScreen';
 import { useDispatch, useSelector } from 'react-redux';
@@ -498,7 +498,7 @@ export default function CycleApp() {
   // }, [currentCycle]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Transferbackdrop
         loading={isLoading && !onSuccess}
         setLoading={(value) => dispatch(setIsLoading({ value, message: '' }))}
@@ -547,7 +547,7 @@ export default function CycleApp() {
           generateNewCCDtls={generateNewCCDtls}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

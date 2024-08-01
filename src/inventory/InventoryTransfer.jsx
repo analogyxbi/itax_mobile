@@ -453,7 +453,7 @@ const InventoryTransfer = () => {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons
@@ -767,7 +767,7 @@ const InventoryTransfer = () => {
           Print Tags
         </Button>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

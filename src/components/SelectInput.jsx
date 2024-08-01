@@ -80,6 +80,13 @@ const SelectInput = ({
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            {/* Close button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
             <TextInput
               style={styles.searchInput}
               placeholder="Search..."
@@ -133,6 +140,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: '80%',
     maxHeight: 400,
+    position: 'relative', // Ensure the close button is positioned relative to this container
+  },
+  closeButton: {
+    position: 'absolute',
+    top: -15,
+    right: -15,
+    padding: 5,
+    backgroundColor:'red', 
+    borderRadius:25,
   },
   searchInput: {
     borderWidth: 1,

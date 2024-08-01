@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { globalStyles } from "../../style/globalStyles";
 import { useNavigation } from "@react-navigation/native";
 import RNPickerSelect from 'react-native-picker-select';
@@ -9,7 +9,7 @@ import { Button } from "react-native-paper";
 const CycleSchedule = () => {
     const navigation = useNavigation();
     return (
-        <View style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.header}>
                 <Pressable onPress={() => navigation.goBack()}>
                     <Ionicons
@@ -145,7 +145,7 @@ const CycleSchedule = () => {
                     </Button>
                 </View>
             </View>
-        </View>
+        </SafeAreaView>
     )
 }
 

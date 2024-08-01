@@ -1,4 +1,4 @@
-import { LogBox } from 'react-native';
+import { LogBox, SafeAreaView } from 'react-native';
 import 'react-native-gesture-handler';
 LogBox.ignoreAllLogs(true);
 
@@ -81,6 +81,7 @@ function CustomDrawerContent(props) {
 const DrawerRoutes = (props) => {
   // enableFreeze(true);
   return (
+    <SafeAreaView style={styles.container}>
     <Drawer.Navigator
       screenOptions={{
         drawerType: 'slide',
@@ -115,6 +116,7 @@ const DrawerRoutes = (props) => {
         );
       })}
     </Drawer.Navigator>
+    </SafeAreaView>
   );
 };
 const AuthStack = ({ isAuthenticated, setIsAuthenticated }) => {
@@ -266,5 +268,8 @@ const styles = StyleSheet.create({
   drawerLabelStyles: {
     fontSize: constant.textFontSize,
     marginHorizontal: -constant.SPACING,
+  },
+  container: {
+    flex: 1,
   },
 });

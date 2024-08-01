@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
   Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -195,7 +196,7 @@ const InventoryCount = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <LoadingBackdrop
         visible={isLoading}
         onDismiss={() => {
@@ -255,7 +256,7 @@ const InventoryCount = () => {
       >
         <Text style={styles.receiveButtonText}>Next</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

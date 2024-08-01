@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
   Pressable,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -25,7 +26,7 @@ const SelectCycle = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons
@@ -67,7 +68,7 @@ const SelectCycle = () => {
         <CountOption name="Print Report" route="select_inventory_cycle" />
         <CountOption name="Post" route="select_inventory_cycle" />
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

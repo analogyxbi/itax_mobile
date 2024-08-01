@@ -27,8 +27,8 @@ const InitialScreen = ({
   const [genTags, setGenTags] = useState(false);
 
   return (
-    <SafeAreaView>
-    <View style={styles.container}>
+   
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable
           onPress={() => {
@@ -122,8 +122,8 @@ const InitialScreen = ({
         title="Initiate Count Process"
         message={'Are you sure you want to generate tags and start count?'}
       />
-    </View>
     </SafeAreaView>
+   
   );
 };
 

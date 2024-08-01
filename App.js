@@ -41,12 +41,15 @@ import InventoryCount from './src/inventory/inventoryCount';
 import CycleSchedule from './src/inventory/inventoryCount/CycleSchedule';
 import SelectCycle from './src/inventory/inventoryCount/SelectCycle';
 import CycleApp from './src/inventory/inventoryCount/CycleApp';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 SplashScreen.preventAutoHideAsync(); // Prevent the splash screen from auto-hiding
+
+
 
 function ReceivingNavigator() {
   return (
@@ -181,13 +184,23 @@ const RootNavigation = () => {
     let csrf = await AsyncStorage.getItem('csrf');
     let url = await AsyncStorage.getItem('url');
     if (csrf !== null && url != null) {
-      setupClient(csrf, url);
+    setupClient(csrf, url);
+    AnalogyxBIClient.post({endpoint:`/erp_woodland/resolve_api`, postPayload: {
+      text_qr:"testing"
+     },
+    stringify:false}).then(async (data)=>{
       dispatch(login({ csrf, url }));
       await AsyncStorage.multiSet([
         ['csrf', csrf],
         ['url', url],
       ]);
       setIsAuthenticated(true);
+    }).catch((err)=>{
+      setIsAuthenticated(false)
+      AsyncStorage.removeItem('csrf')
+    })
+    }else{
+      setIsAuthenticated(false)
     }
     await SplashScreen.hideAsync();
   };

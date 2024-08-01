@@ -29,7 +29,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
   const [passwordHidden, setPasswordHidden] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [url, setUrl] = useState(''); //gets overwritten when value is edited
+  const [url, setUrl] = useState(AsyncStorage.getItem('url')); //gets overwritten when value is edited
   const dispatch = useDispatch();
   const [csrf, setCsrf] = useState('');
   const [loading, setLoading] = useState(false);

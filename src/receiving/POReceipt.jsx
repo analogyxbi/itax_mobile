@@ -418,7 +418,7 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
-            attachments.forEach(async (data)=> await uploadImage(data, packSLipNUm, json.data.value[0]['SysRowId']))
+            attachments.forEach(async (data)=> await uploadImage(data, packSLipNUm, json.data.SysRowID))
             setCreatepackslipLoading(false);
             setTabvalue('2');
           })
@@ -653,6 +653,7 @@ const POReceipt = () => {
       img_string: data.base64,
       img_format: data.mimeType
     }
+    console.log("UPLOAFING", payload)
     AnalogyxBIClient.post({endpoint:`/erp_woodland/save_po_images`, 
       postPayload:payload,
       stringify: false,

@@ -418,6 +418,7 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
+            attachments.forEach(async (data)=> await uploadImage(data, packSLipNUm, json.data.value[0]['SysRowId']))
             setCreatepackslipLoading(false);
             setTabvalue('2');
           })
@@ -644,6 +645,20 @@ const POReceipt = () => {
     }
   };
 
+
+  const uploadImage = (data, packslip_id, packslip_fk) => {
+    const payload = {
+      packslip_fk,
+      packslip_id,
+      img_string: data.base64,
+      img_format: data.mimeType
+    }
+    AnalogyxBIClient.post({endpoint:`/erp_woodland/save_po_images`, 
+      postPayload:payload,
+      stringify: false,
+    }).then(({json})=> console.log({json})).catch((err)=> console.log({err}))
+  }
+
   const captureImage = async () => {
     await getCameraPermission();
     let result = await ImagePicker.launchCameraAsync({
@@ -657,12 +672,16 @@ const POReceipt = () => {
     if (!result.canceled) {
       // Do something with the captured image URI
       setAttachments((prev) => [...prev, ...result.assets]);
+      // uploadImage(result.assets[0])
       // You may want to set the captured image URI to state or handle it in any way your application requires
     }
   };
   const removeImage = (indexToRemove) => {
     setAttachments(attachments.filter((_, index) => index !== indexToRemove));
   };
+
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -884,6 +903,7 @@ const POReceipt = () => {
                 >
                   {POData[0]?.VendorName || 'N/A'}
                 </Text>
+
                 <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                   <Text style={styles.inputLabel}>Packslip</Text>
                   <TouchableOpacity

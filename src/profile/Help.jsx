@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
-import { Dimensions, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { globalStyles } from "../style/globalStyles";
 import { Ionicons } from "@expo/vector-icons";
 import packageJson from "../../package.json"
@@ -10,14 +10,14 @@ const windowHeight = Dimensions.get('window').height;
 const HelpScreen = () => {
     const navigation = useNavigation();
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Ionicons
                     onPress={() => navigation.goBack()}
                     name="chevron-back"
                     size={24}
                     color="#4287F5"
-                // style={{ position: 'absolute', marginLeft: 10, zIndex: 1 }}
+                style={{ position: 'absolute', marginLeft: 10, zIndex: 1 }}
                 />
                 <View style={{ alignItems: 'center', width: windowWidth }}>
                     <Text style={styles.headerText}>Help</Text>
@@ -61,7 +61,7 @@ const HelpScreen = () => {
                 </Text>
             </View>
             <Text style={{ alignSelf: "center", marginTop: 300 }}>Version: {packageJson.version} </Text>
-        </ScrollView>
+        </SafeAreaView>
     )
 }
 const styles = StyleSheet.create({
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
     },
     content: {
         // backgroundColor: '#f1f1f1',
-        margin: 10,
+        // margin: 10,
         padding: 15,
         borderRadius: 8,
         minHeight: 150,
-      },
+    },
     header: {
         backgroundColor: 'white',
         shadowOffset: { height: 3, width: 0 },
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
 
     headerText: {
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 18,
         alignSelf: 'center',
     },
     sectionTitle: {

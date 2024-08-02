@@ -20,6 +20,7 @@ import _ from 'lodash';
 import { useDispatch, useSelector } from 'react-redux';
 import getClientErrorObject from '../utils/getClientErrorObject';
 import { setUserData } from '../loginscreen/authSlice';
+import { showSnackbar } from '../Snackbar/messageSlice';
 const initialFormData = {
   first_name: '',
   last_name: '',
@@ -28,7 +29,7 @@ const initialFormData = {
   email: '',
   phone: '',
   roles: '',
-  time_zone: '',
+  time_zone_id: 0,
   user_group: '',
   password: '',
   confirm_password: '',
@@ -78,7 +79,7 @@ const Users = () => {
     ) {
       return true;
     }
-
+    dispatch(showSnackbar("Some Fields missing."))
     return false;
   };
 
@@ -102,16 +103,20 @@ const Users = () => {
       })
         .then(({ json }) => {
           // onSaveData({ ...data, id: json.id }, type);
-          console.log('Successsss');
-          ToastAndroid.show(t(json.message), ToastAndroid.SHORT);
+          dispatch(showSnackbar("User Created"))
+          // ToastAndroid.show(t(json.message), ToastAndroid.SHORT);
           setFormData(initialFormData);
           setModalVisible(false);
         })
-        .catch((err) =>
+        .catch((err) => {
           getClientErrorObject(err).then((res) => {
-            console.log({ err });
-            ToastAndroid.show(t(res), ToastAndroid.SHORT);
+            console.log({ res, err });
+          dispatch(showSnackbar("Error Occured"))
+
+            // ToastAndroid.show(t(res), ToastAndroid.SHORT);
           })
+        
+        }
         );
       // setModalVisible(!modalVisible)
     }

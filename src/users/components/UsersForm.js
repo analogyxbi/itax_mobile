@@ -183,7 +183,7 @@ const UsersForm = ({
             value={formData?.roles}
           />
         </View>
-        <View style={[styles.input, styles.select]}>
+        {/* <View style={[styles.input, styles.select]}>
           <RNPickerSelect
             onValueChange={(text) => onChangeText(text, 'time_zone')}
             placeholder={{
@@ -193,8 +193,8 @@ const UsersForm = ({
             items={renderLabelsValues(timeZone)}
             value={formData?.time_zone}
           />
-        </View>
-        <View style={[styles.input, styles.select]}>
+        </View> */}
+        {/* <View style={[styles.input, styles.select]}>
           <RNPickerSelect
             onValueChange={(text) => onChangeText(text, 'user_group')}
             placeholder={{
@@ -204,7 +204,7 @@ const UsersForm = ({
             items={renderLabelsValues(userGroups)}
             value={formData?.user_group}
           />
-        </View>
+        </View> */}
         <TextInput
           style={styles.input}
           onChangeText={(text) => onChangeText(text, 'password')}
@@ -230,12 +230,14 @@ const UsersForm = ({
           </Text>
         )}
       </ScrollView>
-      <TouchableOpacity
-        style={styles.resetButton}
-        onPress={() => setFormData(initialFormData)}
-      >
-        <Text style={styles.resetButtonText}>Reset</Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={() => setFormData(initialFormData)}
+        >
+          <Text style={styles.resetButtonText}>Reset</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -254,12 +256,23 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   resetButton: {
-    alignItems: 'center',
-    display: 'flex',
+    // alignItems: 'center',
+    // display: 'flex',
   },
   resetButtonText: {
     fontSize: 23,
     color: globalStyles.colors.primary,
+  },
+  footer: {
+    width: '100%',
+    padding: 10,
+    backgroundColor: '#fff',
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 0,
   },
 });
 

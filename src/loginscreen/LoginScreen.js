@@ -29,7 +29,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
   const [passwordHidden, setPasswordHidden] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [url, setUrl] = useState(AsyncStorage.getItem('url')); //gets overwritten when value is edited
+  const [url, setUrl] = useState(''); //gets overwritten when value is edited
   const dispatch = useDispatch();
   const [csrf, setCsrf] = useState('');
   const [loading, setLoading] = useState(false);
@@ -203,6 +203,11 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       return true;
     } else return false;
   };
+
+  useEffect(async ()=>{
+    const url = await AsyncStorage.getItem('url')
+    if(url) setUrl(url)
+  },[])
 
   const eyeVisible = () => {
     if (passwordHidden == true) {
@@ -416,12 +421,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'column',
+    position:'relative'
   },
-
   eye: {
-    alignSelf: 'flex-end',
-    right: '10%',
-    bottom: '42%',
+    position: 'absolute',
+    right: 50,
+    top: 18,
     zIndex: 999,
   },
 });

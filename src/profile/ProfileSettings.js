@@ -55,7 +55,6 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
         dispatch(logout(null));
         setIsAuthenticated(false);
         removeItemValue('csrf');
-        removeItemValue('url');
         setLoading(false);
       })
       .catch((err) => {
@@ -63,7 +62,6 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
         dispatch(logout(null));
         setIsAuthenticated(false);
         removeItemValue('csrf');
-        removeItemValue('url');
         setLoading(false);
         setIndicator(false);
       });

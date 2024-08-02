@@ -48,9 +48,9 @@ export default function VarianceReport() {
   const { cycleTags, currentCycle, selectedCycleDetails } = useSelector((state) => state.inventory);
   const dispatch = useDispatch();
 
-  const fetchReportData = () => {
+  const fetchReportData = async () => {
     if (currentCycle != {}) {
-      dispatch(setIsLoading({ value: true, message: 'Fetching Tags...' }));
+      // dispatch(setIsLoading({ value: true, message: 'Fetching Report Data...' }));
       const filters = encodeURI(
         `(CCTag_WarehouseCode eq '${currentCycle.WarehouseCode}' and CCTag_CycleSeq eq ${currentCycle.CycleSeq} and CCTag_CCYear eq ${currentCycle.CCYear} and CCTag_CCMonth eq ${currentCycle.CCMonth})`
       );

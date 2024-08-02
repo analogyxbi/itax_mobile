@@ -2,7 +2,9 @@ import Colors from "../../utils/Colors";
 import ApiConfiguration from "../ApiConfiguration";
 import { Icons } from "../components/Icons";
 import Homepage from "../homepage/Homepage";
+import HelpScreen from "../profile/Help";
 import ProfileSettings from "../profile/ProfileSettings";
+import UserInfo from "../profile/UserInfo";
 import Users from "../users/Users";
 
 
@@ -18,6 +20,8 @@ export const constant = {
 export const ScreensArray = [
   { route: 'Home', label: 'Home', type: Icons.Ionicons, icon: 'home-outline', component: Homepage, },
   { route: 'Users', label: 'Users', type: Icons.Feather, icon: "users", component: Users, },
+  { route: 'UserInfo', label: 'UserInfo', type: Icons.Feather, icon: "users", component: UserInfo, },
+  { route: 'Help', label: 'Help', type: Icons.Feather,  component: HelpScreen, },
   { route: 'APIConfiguration', label: 'API Configuration', type: Icons.MaterialCommunityIcons, icon: "api", component: ApiConfiguration, },
 ];
 

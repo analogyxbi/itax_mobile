@@ -18,10 +18,12 @@ const toastSlice = createSlice({
       state.isLoading = action.payload.value;
     },
     setOnSuccess: (state, action) => {
+      state.isLoading = false
       state.message = action.payload.message;
       state.onSuccess = action.payload.value;
     },
     setOnError: (state, action) => {
+      state.isLoading = false
       state.message = action.payload.message;
       state.onError = action.payload.value;
     },

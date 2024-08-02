@@ -13,7 +13,8 @@ import { globalStyles } from '../style/globalStyles';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
-import { setIsLoading } from './Loaders/toastReducers';
+import { setIsLoading, setOnError } from './Loaders/toastReducers';
+import { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
 
 function parseAndFormatFloat(floatString, decimalPlaces) {
   // Parse the float from the string
@@ -50,7 +51,7 @@ export default function VarianceReport() {
 
   const fetchReportData = async () => {
     if (currentCycle != {}) {
-      // dispatch(setIsLoading({ value: true, message: 'Fetching Report Data...' }));
+      dispatch(setIsLoading({ value: true, message: 'Fetching Report Data...' }));
       const filters = encodeURI(
         `(CCTag_WarehouseCode eq '${currentCycle.WarehouseCode}' and CCTag_CycleSeq eq ${currentCycle.CycleSeq} and CCTag_CCYear eq ${currentCycle.CCYear} and CCTag_CCMonth eq ${currentCycle.CCMonth})`
       );
@@ -65,22 +66,36 @@ export default function VarianceReport() {
       })
         .then(({ json }) => {
           setReportData(json.data.value)
+          printToFile(json.data.value)
           dispatch(setIsLoading({ value: false, message: '' }));
         }).catch((err) => {
+          // console.log({err: err.json()})
           dispatch(setIsLoading({ value: false, message: '' }));
-          dispatch(
-            showSnackbar('Error Occured While fetching cycle Details')
-          );
+          err.json().then((errRes)=>{
+            dispatch(
+              showSnackbar(errRes.ErrorMessage)
+            );
+          })
+          // getClientPOErrorMessage(err).then(({message})=>{
+          //   dispatch(
+          //     showSnackbar(message)
+          //   );
+          // }).catch((err)=>  dispatch(
+          //   showSnackbar('Error Occured While fetching cycle Details')
+          // ) )
+         
         });
     }
   }
+  // dispatch(setIsLoading({ value: false, message: '' }));
 
-  useEffect(() => {
-    fetchReportData();
-  }, [])
 
-  const printToFile = async () => {
-    const htmlContent = createDynamicTable();
+  // useEffect(() => {
+  //   fetchReportData();
+  // }, [])
+
+  const printToFile = async (data) => {
+    const htmlContent = createDynamicTable(data);
     try {
       const { uri } = await Print.printToFileAsync({
         html: htmlContent,
@@ -94,7 +109,7 @@ export default function VarianceReport() {
     }
   };
 
-  const createDynamicTable = () => {
+  const createDynamicTable = (reportData) => {
     // Generating table rows dynamically
     let now = new Date();
     // console.log('NOW');
@@ -292,7 +307,7 @@ export default function VarianceReport() {
   };
 
   return (
-    <TouchableOpacity style={styles.button} onPress={printToFile}>
+    <TouchableOpacity style={styles.button} onPress={fetchReportData}>
       <Text style={styles.buttonText}>Print Report</Text>
     </TouchableOpacity>
   );

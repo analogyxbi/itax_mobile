@@ -218,9 +218,13 @@ const POReceipt = () => {
           })
           .catch((err) => {
             setLoading(false);
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(showSnackbar(message));
-            });
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+            // getClientErrorMessage(err).then(({ message }) => {
+            //   dispatch(showSnackbar(message));
+            // });
           });
       } catch (err) {
         setLoading(false);
@@ -250,9 +254,10 @@ const POReceipt = () => {
           .catch((err) => {
             setExistingPackslipLoading(false);
             setIsNewpackslip(true);
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(showSnackbar(message));
-            });
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
         setExistingPackslipLoading(false);
@@ -282,9 +287,10 @@ const POReceipt = () => {
           })
           .catch((err) => {
             setPackslipLoading(false);
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(showSnackbar(message));
-            });
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
             // setIsNewpackslip(true);
           });
       } catch (err) {
@@ -326,10 +332,10 @@ const POReceipt = () => {
           setBins(() => json.data.value);
         })
         .catch((err) => {
-          console.log(err);
-          getClientErrorMessage(err).then(({ message }) => {
-            dispatch(showSnackbar(message));
-          });
+          err.json().then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            // console.log({ res });
+          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           // setLoading(false);
         });
     } catch (err) {
@@ -425,9 +431,10 @@ const POReceipt = () => {
           .catch((err) => {
             dispatch(showSnackbar('Error adding the Packslip'));
             setCreatepackslipLoading(false);
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(showSnackbar(message));
-            });
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
         setCreatepackslipLoading(false);
@@ -473,9 +480,10 @@ const POReceipt = () => {
           })
           .catch((err) => {
             setIsPOsLoading(false);
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(showSnackbar(message));
-            });
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
         setIsPOsLoading(false);

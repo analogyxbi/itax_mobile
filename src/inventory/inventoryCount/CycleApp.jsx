@@ -64,29 +64,25 @@ export default function CycleApp() {
               message: showLoading
                 ? 'Tags fetched successfully'
                 : isCount
-                ? 'Count Started Successfully.'
-                : 'Cycle Started Successfully.',
+                  ? 'Count Started Successfully.'
+                  : 'Cycle Started Successfully.',
             })
           );
         }
       })
       .catch((err) => {
-        getClientErrorMessage(err).then(({ message }) => {
-          dispatch(
-            setOnError({
-              value: true,
-              message: message,
-            })
-          );
-        });
-        // err.json().then(({ error }) => {
+        // getClientErrorMessage(err).then(({ message }) => {
         //   dispatch(
         //     setOnError({
         //       value: true,
-        //       message: error.ErrorMessage,
+        //       message: message,
         //     })
         //   );
         // });
+        err.json().then((res) => {
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          // console.log({ res });
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   }
 
@@ -156,23 +152,18 @@ export default function CycleApp() {
           }
         })
         .catch((err) => {
-          getClientErrorMessage(err).then(({ message }) => {
-            dispatch(
-              setOnError({
-                value: true,
-                message: message,
-              })
-            );
-          });
-          // err.json().then(({ error }) => {
-          //   // dispatch(setOnError({ value: true, message: res.error }));
+          // getClientErrorMessage(err).then(({ message }) => {
           //   dispatch(
           //     setOnError({
           //       value: true,
-          //       message: error.ErrorMessage,
+          //       message: message,
           //     })
           //   );
           // });
+          err.json().then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            // console.log({ res });
+          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating tags'));
@@ -237,23 +228,18 @@ export default function CycleApp() {
           fetchAllTags(false, true);
         })
         .catch((err) => {
-          getClientErrorMessage(err).then(({ message }) => {
-            dispatch(
-              setOnError({
-                value: true,
-                message: message,
-              })
-            );
-          });
-          // err.json().then(({ error }) => {
-          //   // dispatch(setOnError({ value: true, message: res.error }));
+          // getClientErrorMessage(err).then(({ message }) => {
           //   dispatch(
           //     setOnError({
           //       value: true,
-          //       message: error.ErrorMessage,
+          //       message: message,
           //     })
           //   );
           // });
+          err.json().then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            // console.log({ res });
+          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating new tags'));
@@ -291,23 +277,18 @@ export default function CycleApp() {
         fetchAllTags(false);
       })
       .catch((err) => {
-        getClientErrorMessage(err).then(({ message }) => {
-          dispatch(
-            setOnError({
-              value: true,
-              message: message,
-            })
-          );
-        });
-        // err.json().then(({ error }) => {
+        // getClientErrorMessage(err).then(({ message }) => {
         //   dispatch(
         //     setOnError({
         //       value: true,
-        //       message: error.ErrorMessage,
+        //       message: message,
         //     })
         //   );
-        //   // dispatch(setOnError({ value: true, message: res.error }));
         // });
+        err.json().then((res) => {
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          // console.log({ res });
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   }
 
@@ -368,23 +349,18 @@ export default function CycleApp() {
           }
         })
         .catch((err) => {
-          // err.json().then(({ error }) => {
-          //   // dispatch(setOnError({ value: true, message: res.error }));
+          err.json().then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            // console.log({ res });
+          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          // getClientErrorMessage(err).then(({ message }) => {
           //   dispatch(
           //     setOnError({
           //       value: true,
-          //       message: error.ErrorMessage,
+          //       message: message,
           //     })
           //   );
           // });
-          getClientErrorMessage(err).then(({ message }) => {
-            dispatch(
-              setOnError({
-                value: true,
-                message: message,
-              })
-            );
-          });
         });
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating tags'));
@@ -455,15 +431,19 @@ export default function CycleApp() {
                   );
                 })
                 .catch((err) => {
-                  dispatch(setIsLoading({ value: false, message: '' }));
-                  getClientErrorMessage(err).then(({ message }) => {
-                    dispatch(
-                      setOnError({
-                        value: true,
-                        message: message,
-                      })
-                    );
-                  });
+                  
+                  err.json().then((res) => {
+                    dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+                    // console.log({ res });
+                  }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+                  // getClientErrorMessage(err).then(({ message }) => {
+                  //   dispatch(
+                  //     setOnError({
+                  //       value: true,
+                  //       message: message,
+                  //     })
+                  //   );
+                  // });
                 });
             })
             .catch((err) => {

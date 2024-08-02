@@ -144,14 +144,18 @@ const CountingScreen = ({
             setCountedQty('0');
           })
           .catch((err) => {
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(
-                setOnError({
-                  value: true,
-                  message: message,
-                })
-              );
-            });
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+            // getClientErrorMessage(err).then(({ message }) => {
+            //   dispatch(
+            //     setOnError({
+            //       value: true,
+            //       message: message,
+            //     })
+            //   );
+            // });
           });
       } else {
         dispatch(
@@ -212,23 +216,18 @@ const CountingScreen = ({
         // await updateCCDtls(value, part);
       })
       .catch((err) => {
-        // err.json().then(({ error }) => {
-        //   // dispatch(setOnError({ value: true, message: res.error }));
+        err.json().then((res) => {
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          // console.log({ res });
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+        // getClientErrorMessage(err).then(({ message }) => {
         //   dispatch(
         //     setOnError({
         //       value: true,
-        //       message: error.ErrorMessage,
+        //       message: message,
         //     })
         //   );
         // });
-        getClientErrorMessage(err).then(({ message }) => {
-          dispatch(
-            setOnError({
-              value: true,
-              message: message,
-            })
-          );
-        });
       });
   }
 
@@ -249,23 +248,18 @@ const CountingScreen = ({
         await updateCCDtls(value, part, details);
       })
       .catch((err) => {
-        // err.json().then(({ error }) => {
-        //   // dispatch(setOnError({ value: true, message: res.error }));
+        err.json().then((res) => {
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          // console.log({ res });
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+        // getClientErrorMessage(err).then(({ message }) => {
         //   dispatch(
         //     setOnError({
         //       value: true,
-        //       message: error.ErrorMessage,
+        //       message: message,
         //     })
         //   );
         // });
-        getClientErrorMessage(err).then(({ message }) => {
-          dispatch(
-            setOnError({
-              value: true,
-              message: message,
-            })
-          );
-        });
       });
   }
 
@@ -298,23 +292,18 @@ const CountingScreen = ({
             await postGetNewCCDtl(value, part, details);
           })
           .catch((err) => {
-            // err.json().then(({ error }) => {
-            //   // dispatch(setOnError({ value: true, message: res.error }));
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+            // getClientErrorMessage(err).then(({ message }) => {
             //   dispatch(
             //     setOnError({
             //       value: true,
-            //       message: error.ErrorMessage,
+            //       message: message,
             //     })
             //   );
             // });
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(
-                setOnError({
-                  value: true,
-                  message: message,
-                })
-              );
-            });
           });
       } else {
         dispatch(
@@ -376,49 +365,33 @@ const CountingScreen = ({
             );
           })
           .catch((err) => {
-            // dispatch(
-            //   setOnError({
-            //     value: true,
-            //     message: 'error',
-            //   })
-            // );
-            // err.json().then(({ error }) => {
-            //   // dispatch(setOnError({ value: true, message: res.error }));
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+            // getClientErrorMessage(err).then(({ message }) => {
             //   dispatch(
             //     setOnError({
             //       value: true,
-            //       message: error.ErrorMessage,
+            //       message: message,
             //     })
             //   );
             // });
-            getClientErrorMessage(err).then(({ message }) => {
-              dispatch(
-                setOnError({
-                  value: true,
-                  message: message,
-                })
-              );
-            });
           });
       })
       .catch((err) => {
-        // err.json().then(({ error }) => {
-        //   // dispatch(setOnError({ value: true, message: res.error }));
+        err.json().then((res) => {
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          // console.log({ res });
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+        // getClientErrorMessage(err).then(({ message }) => {
         //   dispatch(
         //     setOnError({
         //       value: true,
-        //       message: error.ErrorMessage,
+        //       message: message,
         //     })
         //   );
         // });
-        getClientErrorMessage(err).then(({ message }) => {
-          dispatch(
-            setOnError({
-              value: true,
-              message: message,
-            })
-          );
-        });
       });
   }
 

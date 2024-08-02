@@ -175,23 +175,26 @@ const InventoryTransfer = () => {
           // console.log('Stock Transfer failed');
           // console.log({ err });
           // // dispatch(showSnackbar('Error Occured'));
-          // err.json().then((res) => {
-          //   dispatch(setOnError({ value: true, message: res.error }));
-          //   console.log({ response });
+          err.json().then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            // console.log({ res });
+          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          // getClientErrorMessage(err).then(({ message }) => {
+          //   dispatch(
+          //     setOnError({
+          //       value: true,
+          //       message: message,
+          //     })
+          //   );
           // });
-          getClientErrorMessage(err).then(({ message }) => {
-            dispatch(
-              setOnError({
-                value: true,
-                message: message,
-              })
-            );
-          });
         });
     } catch (err) {
       dispatch(setOnError({ value: true, message: '✗ An Error Occured' }));
     }
   }
+
+  // dispatch(setOnError({ value: true, message: "" }));
+
 
   function fetchPartDetails(data) {
     setRefreshing(true);

@@ -1,97 +1,79 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button, Alert, Linking, Dimensions, TouchableOpacity, Image } from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Button,
+  Alert,
+  Linking,
+  Dimensions,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
-import { AntDesign } from '@expo/vector-icons';
+import {
+  AntDesign,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
+} from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Entypo } from '@expo/vector-icons';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import getClientErrorObject from '../utils/getClientErrorObject';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setUserData } from '../loginscreen/authSlice';
+import HomepageIcon from '../ApiConfiguration/components/HomepageIcon';
+import { globalStyles } from '../style/globalStyles';
+import { Snackbar } from 'react-native-paper';
 
 const screenWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
 export default function Homepage() {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(false);
-  const [scannerVisible, setScannerVisible] = useState(false);
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const { visible, message } = useSelector((state) => state.snackbar); // Add this line
 
   useEffect(() => {
     const endpoint = `/user_management/users?json=true`;
-    AnalogyxBIClient.get({ endpoint }).then(({ json }) => {
-      dispatch(setUserData(json));
-    }).catch((err) => {
-      getClientErrorObject(err).then(res => ToastAndroid.show(t(res), ToastAndroid.SHORT))
-    })
-  }, [])
-  useEffect(() => {
-    const getBarCodeScannerPermissions = async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-    };
-
-    getBarCodeScannerPermissions();
+    AnalogyxBIClient.get({ endpoint })
+      .then(({ json }) => {
+        dispatch(setUserData(json));
+      })
+      .catch((err) => {
+        getClientErrorObject(err).then((res) =>
+          ToastAndroid.show(t(res), ToastAndroid.SHORT)
+        );
+      });
   }, []);
-
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true);
-    if (data.startsWith('http')) {
-      Alert.alert(
-        'Open URL',
-        `Do you want to open this URL?\n${data}`,
-        [
-          {
-            text: 'Cancel',
-            onPress: () => setScanned(false),
-            style: 'cancel',
-          },
-          {
-            text: 'Open',
-            onPress: () => {
-              setScanned(false);
-              Linking.openURL(data);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } else {
-      alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+  const getRandomColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
     }
+    return color;
   };
 
-  const openScanner = () => {
-    setScannerVisible(true);
-    setScanned(false);
-  };
-
-  const closeScanner = () => {
-    setScannerVisible(false);
-  };
-
-  if (hasPermission === null) {
-    return <Text>Requesting for camera permission</Text>;
-  }
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
-  }
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.openDrawer()}
-          style={styles.leftIcon}>
+          style={styles.leftIcon}
+        >
           <Entypo name="menu" size={28} color="black" />
         </TouchableOpacity>
-        <Image
-          source={require('../../images/analogyxbi-logo-horiz.png')}
-          style={styles.logo}
-        />
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../../images/woodland_logo.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
         <TouchableOpacity
           style={styles.rightIcon}
           onPress={() => navigation.navigate('ProfileSettings')}
@@ -99,32 +81,26 @@ export default function Homepage() {
           <Feather name="user" size={24} color="black" />
         </TouchableOpacity>
       </View>
-      <Text style={styles.heading}>iTax</Text>
-      <TouchableOpacity style={styles.closeButton} onPress={openScanner}>
-        <Text style={styles.closeButtonText}>Open Scanner</Text>
-      </TouchableOpacity>
-      {/* <Button title="Open Scanner" onPress={openScanner} style={styles.buttonBehind} /> */}
-      {scannerVisible && (
-        <BarCodeScanner
-          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-          style={StyleSheet.absoluteFillObject}
+      <View style={[globalStyles.dFlexR, styles.homepageIcons]}>
+        <HomepageIcon
+          name="Inventory Transfer"
+          onPress={() => navigation.navigate('inventory_transfer')}
+          icon={<MaterialIcons name="inventory" style={styles.iconImage} />}
         />
-      )}
-      <View style={styles.bottomButtonsContainer}>
-        {/* {scanned && (
-        )} */}
-        {scannerVisible && (
-          <>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setScanned(false)}>
-              <Text style={styles.closeButtonText}>Scan Again</Text>
-            </TouchableOpacity>
-
-            {/* <Button title="Open Scanner" onPress={openScanner} style={styles.button} /> */}
-            <TouchableOpacity style={styles.closeButton} onPress={closeScanner}>
-              <Text style={styles.closeButtonText}>Close Scanner</Text>
-            </TouchableOpacity>
-          </>
-        )}
+        <HomepageIcon
+          name="Inventory Count"
+          onPress={() => navigation.navigate('inventory_count')}
+          icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage}/>}
+        />
+        <HomepageIcon
+          name="PO Receipt"
+          onPress={() => navigation.navigate('po_reciept')}
+          icon={<FontAwesome5 name="receipt" style={styles.iconImage} />}
+        />
+        <HomepageIcon
+          name="Job Receipt"
+          icon={<Ionicons name="receipt" style={styles.iconImage} />}
+        />
       </View>
     </View>
   );
@@ -153,15 +129,13 @@ const styles = StyleSheet.create({
   buttonBehind: {
     flex: 1,
     marginHorizontal: 5,
-    zIndex: 1
+    zIndex: 1,
   },
   heading: {
-    fontWeight: 'bold',
-    fontSize: 40,
-    color: '#B628F8',
+    fontSize: 30,
+    color: globalStyles.colors.primary,
     marginTop: 20,
     marginBottom: 20,
-    textAlign: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -169,14 +143,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     marginBottom: 20,
+    height: 30,
   },
   leftIcon: {
     marginRight: 'auto',
   },
+  logoContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
   logo: {
-    width: '40%',
-    height: 40,
-    marginLeft: '5%',
+    width: '60%',
+    height: '60%',
   },
   rightIcon: {
     marginLeft: 'auto',
@@ -191,5 +169,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  homepageIcons: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    marginTop: 20,
+    flexWrap: 'wrap',
+  },
+  iconImage: {
+    color: globalStyles.colors.success,
+    fontSize: 100,
   },
 });

@@ -5,34 +5,38 @@ import {
   Dimensions,
   TouchableOpacity,
   Pressable,
+  Image,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { globalStyles } from '../style/globalStyles';
 
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
 const UserInfo = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
+  const userData = useSelector((state) => state.auth.user_data);
+  console.log("userdata", userData)
 
-  const [userData, setUserData] = useState([]);
-  const [url, setUrl] = useState('');
+  // const [userData, setUserData] = useState([]);
+  // const [url, setUrl] = useState('');
 
-  const getUserData = async () => {
-    let user = await AsyncStorage.getItem('userData');
-    let url = await AsyncStorage.getItem('url');
-    setUserData(() => JSON.parse(user));
-    setUrl(() => url);
-  };
+  // const getUserData = async () => {
+  //   let user = await AsyncStorage.getItem('userData');
+  //   let url = await AsyncStorage.getItem('url');
+  //   setUserData(() => JSON.parse(user));
+  //   setUrl(() => url);
+  // };
 
-  useEffect(() => {
-    getUserData();
-  }, []);
+  // useEffect(() => {
+  //   getUserData();
+  // }, []);
 
   //prettier-ignore
   return (
@@ -50,11 +54,29 @@ const UserInfo = () => {
         </View>
       </View>
       <View style={styles.content}>
-        <Text style={{...styles.dataText, fontSize: 16, color: '#4287F5'}}>Logged in as: {userData?.username}</Text>
-        <Text style={{color: 'gray'}}>Connected via: {url}</Text>
-        <Text style={styles.dataText}>First name: {userData?.firstName}</Text>
-        <Text style={styles.dataText}>Last name: {userData?.lastName}</Text>
-        <Text style={styles.dataText}>Email: {userData?.email}</Text>
+        <View
+          style={{
+            backgroundColor: '#f4f4f4',
+            padding: 10,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <Image
+            width={'100%'}
+            style={{ width: 200, height: 200, borderRadius: 100 }}
+            source={
+              userData?.user?.profile_pic
+                ? { uri: `data:image/jpg;base64,${userData?.user?.profile_pic}` }
+                : require('../../assets/profile_dummy.webp')
+            }
+          />
+        </View>
+        <Text style={{ ...styles.dataText, fontSize: 18, color: '#4287F5' }}>Logged in as: {userData?.user?.username}</Text>
+        {/* <Text style={{color: 'gray'}}>Connected via: {url}</Text> */}
+        <Text style={styles.dataText}>First name: {userData?.user?.firstName}</Text>
+        <Text style={styles.dataText}>Last name: {userData?.user?.lastName}</Text>
+        <Text style={styles.dataText}>Email: {userData?.user?.email}</Text>
       </View>
     </SafeAreaView>
   );
@@ -69,7 +91,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    backgroundColor: '#f1f1f1',
+    // backgroundColor: '#f1f1f1',
     margin: 10,
     padding: 15,
     borderRadius: 8,
@@ -78,8 +100,9 @@ const styles = StyleSheet.create({
 
   dataText: {
     marginVertical: 3,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '500',
+    color: globalStyles.colors.darkGrey,
   },
 
   header: {
@@ -96,7 +119,7 @@ const styles = StyleSheet.create({
 
   headerText: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
     alignSelf: 'center',
   },
 

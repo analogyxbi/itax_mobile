@@ -4,6 +4,7 @@ import React from 'react';
 import {
   Dimensions,
   Image,
+  SafeAreaView,
   StyleSheet,
   Text,
   View
@@ -19,7 +20,7 @@ const UserInfo = () => {
   const userData = useSelector((state) => state.auth.user_data);
   console.log("userdata", userData)
   return (
-    <View style={styles.main}>
+    <SafeAreaView style={styles.main}>
       <View style={styles.header}>
         <Ionicons
           onPress={() => navigation.goBack()}
@@ -57,7 +58,7 @@ const UserInfo = () => {
         <Text style={styles.dataText}>Last name: {userData?.user?.lastName}</Text>
         <Text style={styles.dataText}>Email: {userData?.user?.email}</Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

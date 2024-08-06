@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import { DrawerItemList } from '@react-navigation/drawer';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
@@ -12,14 +13,13 @@ import {
   UIManager,
   View,
 } from 'react-native';
+import { useSelector } from 'react-redux';
+import Styles from '../src/common/Styles';
+import { Container } from '../src/components/Container';
+import Icon from '../src/components/Icons';
+import { Row } from '../src/components/Row';
 import { constant, drawerMenu } from '../src/constants/constants';
 import Colors from './Colors';
-import Icon from '../src/components/Icons';
-import { Container } from '../src/components/Container';
-import { Row } from '../src/components/Row';
-import Styles from '../src/common/Styles';
-import { Feather } from '@expo/vector-icons';
-import { useSelector } from 'react-redux';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -39,10 +39,6 @@ const CustomDrawer = (props) => {
           alignItems: 'center',
         }}
       >
-        {/* <Image
-          source={require('../assets/icon.png')} // Add your profile picture source here
-          style={{ width: 80, height: 80, borderRadius: 40 }}
-        /> */}
         <Image
           width={'100%'}
           style={{ width: 80, height: 80, borderRadius: 40 }}

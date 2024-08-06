@@ -1,18 +1,14 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Dimensions,
-  TouchableOpacity,
-  Pressable,
-  Image,
-} from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React from 'react';
+import {
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
+import { useSelector } from 'react-redux';
 import { globalStyles } from '../style/globalStyles';
 
 const windowHeight = Dimensions.get('window').height;
@@ -20,25 +16,8 @@ const windowWidth = Dimensions.get('window').width;
 
 const UserInfo = () => {
   const navigation = useNavigation();
-  // const dispatch = useDispatch();
   const userData = useSelector((state) => state.auth.user_data);
   console.log("userdata", userData)
-
-  // const [userData, setUserData] = useState([]);
-  // const [url, setUrl] = useState('');
-
-  // const getUserData = async () => {
-  //   let user = await AsyncStorage.getItem('userData');
-  //   let url = await AsyncStorage.getItem('url');
-  //   setUserData(() => JSON.parse(user));
-  //   setUrl(() => url);
-  // };
-
-  // useEffect(() => {
-  //   getUserData();
-  // }, []);
-
-  //prettier-ignore
   return (
     <View style={styles.main}>
       <View style={styles.header}>

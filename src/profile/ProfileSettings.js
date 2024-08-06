@@ -1,7 +1,7 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,11 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
+import packageJson from "../../package.json";
 import { logout } from '../loginscreen/authSlice';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-// import { logoutUser } from '../loginscreen/actions/actions';
-// import { clearAllTabs } from '../welcome/actions/actions';
-import packageJson from "../../package.json"
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 

@@ -1,4 +1,6 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
   Pressable,
@@ -8,23 +10,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { globalStyles } from '../../style/globalStyles';
-import { useNavigation } from '@react-navigation/native';
-import SelectInput from '../../components/SelectInput';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import CyclesListTable from './components/CyclesListTable';
-import { ActivityIndicator } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
+import LoadingBackdrop from '../../components/Loaders/LoadingBackdrop';
+import { setIsLoading } from '../../components/Loaders/toastReducers';
+import SelectInput from '../../components/SelectInput';
+import { showSnackbar } from '../../Snackbar/messageSlice';
+import { globalStyles } from '../../style/globalStyles';
 import {
   setCurrentCycle,
   setCyclesData,
   setSelectedCycleDetails,
   setWarehouses,
 } from '../reducer/inventory';
-import { showSnackbar } from '../../Snackbar/messageSlice';
 import { validateVariable } from '../Utils/InventoryUtils';
-import LoadingBackdrop from '../../components/Loaders/LoadingBackdrop';
-import { setIsLoading } from '../../components/Loaders/toastReducers';
+import CyclesListTable from './components/CyclesListTable';
 
 const InventoryCount = () => {
   const { currentCycle, cyclesData, warehouses } = useSelector(

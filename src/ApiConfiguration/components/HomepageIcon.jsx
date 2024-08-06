@@ -1,8 +1,7 @@
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { globalStyles } from "../../style/globalStyles";
-import { useNavigation } from "@react-navigation/native";
-
 
 const HomepageIcon = ({ icon, bgcolor, name, onPress }) => {
     const navigation = useNavigation();

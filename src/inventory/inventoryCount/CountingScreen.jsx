@@ -1,39 +1,36 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
+import Entypo from '@expo/vector-icons/Entypo';
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Pressable,
-  BackHandler,
-  Alert,
-  SafeAreaView,
+  View
 } from 'react-native';
+import { Menu } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { globalStyles } from '../../style/globalStyles';
-import { useNavigation } from '@react-navigation/native';
-import BarcodeScannerComponent from '../../components/BarcodeScannerComponent';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../../Snackbar/messageSlice';
+import BarcodeScannerComponent from '../../components/BarcodeScannerComponent';
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
 } from '../../components/Loaders/toastReducers';
 import PopUpDialog from '../../components/PopUpDialog';
+import { globalStyles } from '../../style/globalStyles';
+import { createDsPayload, updatePartToDataset } from '../Utils/InventoryUtils';
 import {
   removeTag,
   setCurrentCycle,
   setSelectedCycleDetails,
 } from '../reducer/inventory';
-import { Button, Menu, Divider } from 'react-native-paper';
-import Entypo from '@expo/vector-icons/Entypo';
 import TagsPopUp from './components/TagsPopUp';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import { createDsPayload, updatePartToDataset } from '../Utils/InventoryUtils';
-import getClientErrorMessage from '../../utils/getClientErrorMessage';
 
 const CountingScreen = ({
   part,
@@ -55,7 +52,6 @@ const CountingScreen = ({
   const [cameraState, setCameraState] = useState(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
-  const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [submitConfirm, setSubmitConfirm] = useState(false);
   const [visible, setVisible] = React.useState(false);
   const [genNewTag, setGenNewTag] = useState(false);
@@ -67,9 +63,6 @@ const CountingScreen = ({
   const closeMenu = () => setVisible(false);
 
   const dispatch = useDispatch();
-  const openScanner = () => {
-    setScannerVisible(true);
-  };
   const closeScanner = () => {
     setCameraState(null);
     setScannerVisible(false);
@@ -89,7 +82,6 @@ const CountingScreen = ({
       let data = details.split(' \\ ');
       setBin(data[1]);
     }
-    // setFormData((prev) => ({ ...prev, [state]: details }));
     setCameraState(null);
     closeScanner();
   }
@@ -146,16 +138,7 @@ const CountingScreen = ({
           .catch((err) => {
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(
-            //     setOnError({
-            //       value: true,
-            //       message: message,
-            //     })
-            //   );
-            // });
           });
       } else {
         dispatch(
@@ -178,7 +161,6 @@ const CountingScreen = ({
     }
   }
 
-  // dispatch(setOnError({ message: '', value: true }));
 
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
@@ -218,16 +200,7 @@ const CountingScreen = ({
       .catch((err) => {
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
       });
   }
 
@@ -250,16 +223,7 @@ const CountingScreen = ({
       .catch((err) => {
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
       });
   }
 
@@ -294,16 +258,7 @@ const CountingScreen = ({
           .catch((err) => {
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(
-            //     setOnError({
-            //       value: true,
-            //       message: message,
-            //     })
-            //   );
-            // });
           });
       } else {
         dispatch(
@@ -367,31 +322,13 @@ const CountingScreen = ({
           .catch((err) => {
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(
-            //     setOnError({
-            //       value: true,
-            //       message: message,
-            //     })
-            //   );
-            // });
           });
       })
       .catch((err) => {
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
       });
   }
 

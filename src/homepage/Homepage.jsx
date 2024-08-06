@@ -1,36 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import {
-  Text,
-  View,
-  StyleSheet,
-  Button,
-  Alert,
-  Linking,
-  Dimensions,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import {
-  AntDesign,
+  Entypo,
+  Feather,
   FontAwesome5,
   Ionicons,
-  MaterialIcons,
+  MaterialIcons
 } from '@expo/vector-icons';
-import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Entypo } from '@expo/vector-icons';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import getClientErrorObject from '../utils/getClientErrorObject';
+import React, { useEffect } from 'react';
+import {
+  Dimensions,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { setUserData } from '../loginscreen/authSlice';
 import HomepageIcon from '../ApiConfiguration/components/HomepageIcon';
+import { setUserData } from '../loginscreen/authSlice';
 import { globalStyles } from '../style/globalStyles';
-import { Snackbar } from 'react-native-paper';
-
-const screenWidth = Dimensions.get('window').width;
-const windowHeight = Dimensions.get('window').height;
-const windowWidth = Dimensions.get('window').width;
+import getClientErrorObject from '../utils/getClientErrorObject';
 
 export default function Homepage() {
   const navigation = useNavigation();
@@ -49,14 +38,6 @@ export default function Homepage() {
         );
       });
   }, []);
-  const getRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-  };
 
   return (
     <View style={styles.container}>

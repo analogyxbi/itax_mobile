@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Image,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  ScrollView,
-  Modal,
+  View
 } from 'react-native';
 
 const ImagePreview = ({ imageBase64, onClose }) => {

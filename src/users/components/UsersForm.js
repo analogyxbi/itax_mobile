@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Button,
   Dimensions,
   SafeAreaView,
   ScrollView,
@@ -8,11 +7,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { Switch } from 'react-native-paper';
 import RNPickerSelect from 'react-native-picker-select';
 import { globalStyles } from '../../style/globalStyles';
-import { Switch } from 'react-native-paper';
 
 const roleOptions = [
   {

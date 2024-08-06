@@ -13,18 +13,17 @@ import React from 'react';
 // import EvilIcons from '@expo/EvilIcons';
 import {
   AntDesign,
+  Entypo,
+  EvilIcons,
+  Feather,
   FontAwesome,
   FontAwesome5,
-  FontAwesome6,
-  Ionicons,
-  Feather,
-  MaterialCommunityIcons,
-  Entypo,
-  MaterialIcons,
-  SimpleLineIcons,
-  Octicons,
   Foundation,
-  EvilIcons,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+  Octicons,
+  SimpleLineIcons
 } from '@expo/vector-icons';
 export const Icons = {
   MaterialCommunityIcons,

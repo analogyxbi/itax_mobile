@@ -1,20 +1,18 @@
-import React, { useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Pressable,
-  SafeAreaView,
-} from 'react-native';
-import { globalStyles } from '../../style/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import React, { useState } from 'react';
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import PopUpDialog from '../../components/PopUpDialog';
-// import PDFComponent from '../../components/PDFComponent';r
 import VarianceReport from '../../components/VarianceReport';
+import { globalStyles } from '../../style/globalStyles';
 
 const InitialScreen = ({
   setScreen,
@@ -90,9 +88,6 @@ const InitialScreen = ({
           <Text style={styles.buttonText}>Count</Text>
         </TouchableOpacity>
 
-        {/* <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Print Report</Text>
-        </TouchableOpacity> */}
         <VarianceReport />
         <TouchableOpacity
           onPress={() => setPostCountData(true)}

@@ -2,49 +2,35 @@ import { LogBox, SafeAreaView } from 'react-native';
 import 'react-native-gesture-handler';
 LogBox.ignoreAllLogs(true);
 
-import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as SplashScreen from 'expo-splash-screen';
 import * as React from 'react';
 import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 import { Provider as PaperProvider, Snackbar } from 'react-native-paper';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import Homepage from './src/homepage/Homepage';
-import LoginScreen from './src/loginscreen/LoginScreen';
-import { login } from './src/loginscreen/authSlice';
-import ProfileSettings from './src/profile/ProfileSettings';
-import setupClient from './src/setup/setupClient';
-import store from './src/store';
-import Users from './src/users/Users';
-// import { initAuth } from './src/loginscreen/actions/actions';
-import {
-  DrawerContentScrollView,
-  DrawerItemList,
-  createStackNavigator,
-} from '@react-navigation/drawer';
-import { Image, Text, View } from 'react-native';
-import Colors from './utils/Colors';
-import { StyleSheet } from 'react-native';
-import { AppRegistry } from 'react-native';
-import CustomDrawer from './utils/CustomDrawer';
-import { ScreensArray } from './src/constants/constants';
 import Icon from './src/components/Icons';
-import POReceipt from './src/receiving/POReceipt';
-import { globalStyles } from './src/style/globalStyles';
-import InventoryTransfer from './src/inventory/InventoryTransfer';
-import { hideSnackbar } from './src/Snackbar/messageSlice';
-import * as SplashScreen from 'expo-splash-screen';
-import CycleCountPeriod from './src/inventory/inventoryCount/CycleCountPeriod';
+import { ScreensArray } from './src/constants/constants';
 import InventoryCount from './src/inventory/inventoryCount';
-import CycleSchedule from './src/inventory/inventoryCount/CycleSchedule';
-import SelectCycle from './src/inventory/inventoryCount/SelectCycle';
 import CycleApp from './src/inventory/inventoryCount/CycleApp';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
+import SelectCycle from './src/inventory/inventoryCount/SelectCycle';
+import InventoryTransfer from './src/inventory/InventoryTransfer';
+import { login } from './src/loginscreen/authSlice';
+import LoginScreen from './src/loginscreen/LoginScreen';
 import HelpScreen from './src/profile/Help';
+import ProfileSettings from './src/profile/ProfileSettings';
 import UserInfo from './src/profile/UserInfo';
-// import { enableFreeze } from 'react-native-screens';
+import POReceipt from './src/receiving/POReceipt';
+import setupClient from './src/setup/setupClient';
+import { hideSnackbar } from './src/Snackbar/messageSlice';
+import store from './src/store';
+import { globalStyles } from './src/style/globalStyles';
+import Colors from './utils/Colors';
+import CustomDrawer from './utils/CustomDrawer';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -52,7 +38,6 @@ const Drawer = createDrawerNavigator();
 SplashScreen.preventAutoHideAsync(); // Prevent the splash screen from auto-hiding
 
 const DrawerRoutes = (props) => {
-  // enableFreeze(true);
   return (
     <SafeAreaView style={styles.container}>
     <Drawer.Navigator
@@ -133,9 +118,7 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       {/* <Stack.Screen name="Receiving" component={POReceipt} /> */}
       <Stack.Screen name="po_reciept" component={POReceipt} />
       <Stack.Screen name="inventory_transfer" component={InventoryTransfer} />
-      <Stack.Screen name="cycle_count_period" component={CycleCountPeriod} />
       <Stack.Screen name="inventory_count" component={InventoryCount} />
-      <Stack.Screen name="inventory_cycle_schedule" component={CycleSchedule} />
       <Stack.Screen name="select_inventory_cycle" component={SelectCycle} />
       <Stack.Screen name="cycle_details" component={CycleApp} />
       <Stack.Screen name="Help" component={HelpScreen} />

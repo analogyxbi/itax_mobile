@@ -1,20 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Button,
-  Platform,
-  Text,
-  TouchableOpacity,
-} from 'react-native';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
-import { globalStyles } from '../style/globalStyles';
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import { setIsLoading, setOnError } from './Loaders/toastReducers';
-import { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
+import { globalStyles } from '../style/globalStyles';
+import { setIsLoading } from './Loaders/toastReducers';
 
 function parseAndFormatFloat(floatString, decimalPlaces) {
   // Parse the float from the string
@@ -76,23 +72,10 @@ export default function VarianceReport() {
               showSnackbar(errRes.ErrorMessage)
             );
           })
-          // getClientPOErrorMessage(err).then(({message})=>{
-          //   dispatch(
-          //     showSnackbar(message)
-          //   );
-          // }).catch((err)=>  dispatch(
-          //   showSnackbar('Error Occured While fetching cycle Details')
-          // ) )
          
         });
     }
   }
-  // dispatch(setIsLoading({ value: false, message: '' }));
-
-
-  // useEffect(() => {
-  //   fetchReportData();
-  // }, [])
 
   const printToFile = async (data) => {
     const htmlContent = createDynamicTable(data);
@@ -112,7 +95,6 @@ export default function VarianceReport() {
   const createDynamicTable = (reportData) => {
     // Generating table rows dynamically
     let now = new Date();
-    // console.log('NOW');
     const tableRows = reportData
       .filter((data) => data?.CCTag_PartNum?.length > 0)
       .map(

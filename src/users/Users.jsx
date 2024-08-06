@@ -182,7 +182,7 @@ const Users = () => {
               />
             </Pressable>
           </View>
-          <View>
+          <View style={{height:'100%'}}>
             <UsersForm
               formData={formData}
               usersData={userData?.users_data || []}

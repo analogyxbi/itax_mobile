@@ -1,16 +1,13 @@
-import { ScrollView, Text, TextInput, View } from "react-native"
-import { Button } from "react-native-paper";
-import { generateReceiptPDF } from "../../utils/PDFGenerator";
-import RNPickerSelect from 'react-native-picker-select';
-import { globalStyles } from "../../style/globalStyles";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
+import { useEffect, useState } from "react";
+import { ScrollView, Text, TextInput, View } from "react-native";
+import { Button } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import { setIsLoading, setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
-import { useEffect, useState } from "react";
+import SelectInput from "../../components/SelectInput";
 import { setWarehouses, setWhseBins } from "../../inventory/reducer/inventory";
 import { showSnackbar } from "../../Snackbar/messageSlice";
-import SelectInput from "../../components/SelectInput";
-
+import { globalStyles } from "../../style/globalStyles";
 
 const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, packSLipNUm }) => {
     const dispatch = useDispatch();
@@ -20,14 +17,6 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
         from: [],
         to: [],
     });
-    const renderBinOptions = (values) => {
-        const result = values.map((val) => ({
-            ...val,
-            label: val.BinNum,
-            value: val.BinNum,
-        }));
-        return result;
-    };
 
     function getWarehouse() {
         setRefreshing(true);
@@ -224,13 +213,6 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                                 /{currentLine.IUM || '-'}
                             </Text>
                     }
-
-                    {/* <TextInput
-              style={styles.input}
-              onChangeText={(text) => onChangeText(text, 'arrived_qty')}
-              value={currentLine.PORelArrivedQty && Math.round(currentLine.PORelArrivedQty)?.toString()}
-              placeholder="Arrived qty"
-            /> */}
                 </View>
             </View>
             <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
@@ -244,20 +226,6 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                     />
                 </View>
             </View>
-            {/* <View style={[globalStyles.dFlexR, globalStyles.justifySE]}>
-          <View>
-            <Text style={styles.inputLabel}>Complete</Text>
-            <Checkbox status={true ? 'checked' : 'unchecked'} />
-          </View>
-          <View>
-            <Text style={styles.inputLabel}>Insp Req</Text>
-            <Checkbox status={true ? 'checked' : 'unchecked'} />
-          </View>
-          <View>
-            <Text style={styles.inputLabel}>Print Label</Text>
-            <Checkbox status={true ? 'checked' : 'unchecked'} />
-          </View>
-        </View> */}
             <Text style={styles.sideHeading}>Location</Text>
             <View>
                 <Text style={styles.inputLabel}>Note</Text>

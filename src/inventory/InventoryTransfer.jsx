@@ -1,48 +1,42 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import {
   AntDesign,
-  Ionicons,
-  MaterialCommunityIcons,
+  Ionicons
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { BarCodeScanner } from 'expo-barcode-scanner';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  RefreshControl,
-  SafeAreaView,
 } from 'react-native';
-import { globalStyles } from '../style/globalStyles';
-import Transferbackdrop from '../components/Loaders/Transferbackdrop';
-import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import RNPickerSelect from 'react-native-picker-select';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  clearBinData,
-  setInitialState,
-  setWarehouses,
-  setWhseBins,
-} from './reducer/inventory';
 import { Button } from 'react-native-paper';
+import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
-import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
-import PopUpDialog from '../components/PopUpDialog';
-import Icon from '../components/Icons';
-import { generatTransferPDF, generatePDF } from '../utils/PDFGenerator';
-import { BarCodeScanner } from 'expo-barcode-scanner';
 import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
-import SelectInput from '../components/SelectInput';
+import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
+import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
+import Transferbackdrop from '../components/Loaders/Transferbackdrop';
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
 } from '../components/Loaders/toastReducers';
-import getClientErrorMessage from '../utils/getClientErrorMessage';
+import PopUpDialog from '../components/PopUpDialog';
+import SelectInput from '../components/SelectInput';
+import { globalStyles } from '../style/globalStyles';
+import { generatTransferPDF } from '../utils/PDFGenerator';
+import {
+  setWarehouses,
+  setWhseBins
+} from './reducer/inventory';
 
 const initForm = {
   current_whse: null,
@@ -172,29 +166,15 @@ const InventoryTransfer = () => {
           setEnablePrint(true);
         })
         .catch((err) => {
-          // console.log('Stock Transfer failed');
-          // console.log({ err });
-          // // dispatch(showSnackbar('Error Occured'));
           err.json().then((res) => {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
             // console.log({ res });
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-          // getClientErrorMessage(err).then(({ message }) => {
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: message,
-          //     })
-          //   );
-          // });
         });
     } catch (err) {
       dispatch(setOnError({ value: true, message: '✗ An Error Occured' }));
     }
   }
-
-  // dispatch(setOnError({ value: true, message: "" }));
-
 
   function fetchPartDetails(data) {
     setRefreshing(true);
@@ -348,20 +328,6 @@ const InventoryTransfer = () => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleValidate() {
-    if (
-      !formData ||
-      !formData.current_whse ||
-      !formData.current_bin ||
-      !formData.to_whse ||
-      !formData.to_bin ||
-      !formData.quantity ||
-      formData.quantity == 0
-    ) {
-      return true;
-    }
-    return false;
-  }
 
   function captureDetails(details, state) {
     let validDetail = details?.trim(); // Trim any leading/trailing whitespace

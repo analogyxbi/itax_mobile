@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
-import InitialScreen from './InitialScreen';
-import CountingScreen from './CountingScreen';
-import { useDispatch, useSelector } from 'react-redux';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
+import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
 } from '../../components/Loaders/toastReducers';
-import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
-import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
+import { showSnackbar } from '../../Snackbar/messageSlice';
 import {
   setCurrentCycle,
   setCycleTags,
   setSelectedCycleDetails,
   setTagsData,
 } from '../reducer/inventory';
-import { showSnackbar } from '../../Snackbar/messageSlice';
-import getClientErrorMessage from '../../utils/getClientErrorMessage';
+import CountingScreen from './CountingScreen';
+import InitialScreen from './InitialScreen';
 
 export default function CycleApp() {
   const [screen, setScreen] = useState('initial'); // Initial screen state
@@ -71,17 +70,8 @@ export default function CycleApp() {
         }
       })
       .catch((err) => {
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   }
@@ -126,7 +116,6 @@ export default function CycleApp() {
         stringify: false,
       })
         .then(({ json }) => {
-          // delete data.odata
           const newData = {
             ...currentCycle,
             CycleStatus: 1,
@@ -146,23 +135,13 @@ export default function CycleApp() {
           );
           if (startCount) {
             startCountProcess(newData);
-            // fetchAllTags(false);
           } else {
             fetchAllTags(true);
           }
         })
         .catch((err) => {
-          // getClientErrorMessage(err).then(({ message }) => {
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: message,
-          //     })
-          //   );
-          // });
           err.json().then((res) => {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });
     } catch (err) {
@@ -219,26 +198,11 @@ export default function CycleApp() {
               ...newData,
             })
           );
-          // dispatch(
-          //   setOnSuccess({
-          //     value: true,
-          //     message: 'Tags generated Successfully.',
-          //   })
-          // );
           fetchAllTags(false, true);
         })
         .catch((err) => {
-          // getClientErrorMessage(err).then(({ message }) => {
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: message,
-          //     })
-          //   );
-          // });
           err.json().then((res) => {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });
     } catch (err) {
@@ -277,17 +241,8 @@ export default function CycleApp() {
         fetchAllTags(false);
       })
       .catch((err) => {
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   }
@@ -353,14 +308,6 @@ export default function CycleApp() {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
             // console.log({ res });
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-          // getClientErrorMessage(err).then(({ message }) => {
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: message,
-          //     })
-          //   );
-          // });
         });
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating tags'));
@@ -436,14 +383,6 @@ export default function CycleApp() {
                     dispatch(setOnError({ value: true, message: res.ErrorMessage }));
                     // console.log({ res });
                   }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-                  // getClientErrorMessage(err).then(({ message }) => {
-                  //   dispatch(
-                  //     setOnError({
-                  //       value: true,
-                  //       message: message,
-                  //     })
-                  //   );
-                  // });
                 });
             })
             .catch((err) => {
@@ -460,7 +399,6 @@ export default function CycleApp() {
       }
 
     } catch (err) {
-      console.log({ err });
       dispatch(showSnackbar('Error Occured while posting count'));
       dispatch(
         setOnError({
@@ -471,11 +409,6 @@ export default function CycleApp() {
     }
   }
 
-  // useEffect(() => {
-  //   if (currentCycle && currentCycle.CycleStatus >= 2) {
-  //     fetchAllTags(false, true);
-  //   }
-  // }, [currentCycle]);
 
   return (
     <SafeAreaView style={styles.container}>

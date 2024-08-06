@@ -1,6 +1,6 @@
-import React, { useRef, forwardRef } from 'react';
-import { Button, StyleSheet, View } from 'react-native';
 import LottieView from 'lottie-react-native';
+import React, { forwardRef, useRef } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 const AnimatedLottieView = forwardRef(({ source, style }, ref) => {
   return <LottieView autoPlay ref={ref} style={style} source={source} />;

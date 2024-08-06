@@ -1,8 +1,8 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Modal, StyleSheet, Text } from 'react-native';
 import LottieView from 'lottie-react-native';
-import ErrorAnimation from '../../../assets/Lottie/error.json';
+import React, { useEffect, useRef } from 'react';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
+import ErrorAnimation from '../../../assets/Lottie/error.json';
 
 const ErrorBackdrop = ({ visible, onDismiss }) => {
   const animationRef = useRef(null);

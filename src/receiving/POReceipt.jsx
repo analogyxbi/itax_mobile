@@ -1,15 +1,16 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import {
   AntDesign,
   Feather,
-  FontAwesome,
   FontAwesome5,
-  Ionicons,
-  MaterialCommunityIcons,
+  Ionicons
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { BarCodeScanner } from 'expo-barcode-scanner';
+import * as ImagePicker from 'expo-image-picker';
+import _ from 'lodash';
 import { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -17,44 +18,36 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  Platform,
-  FlatList,
+  View
 } from 'react-native';
 import {
+  ActivityIndicator,
   Button,
-  Checkbox,
-  Portal,
-  SegmentedButtons,
+  MD2Colors,
   Modal,
-  FAB,
+  Portal,
+  SegmentedButtons
 } from 'react-native-paper';
-import { globalStyles } from '../style/globalStyles';
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import getClientErrorObject from '../utils/getClientErrorObject';
-import { ActivityIndicator, MD2Colors } from 'react-native-paper';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import _ from 'lodash';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
-import CustomDatatable from '../components/CustomDatatable';
-import LinesCard from './components/LinesCard';
-import { setPOdataResponse } from './reducer/poReceipts';
-import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
-import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
-import Transferbackdrop from '../components/Loaders/Transferbackdrop';
-import ExpoCamera from '../components/Camera';
-import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
-import * as ImagePicker from 'expo-image-picker';
 import AttachedImage from '../components/AttachedImage';
-import LineComponent from './components/LineComponent';
+import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
+import ExpoCamera from '../components/Camera';
+import CustomDatatable from '../components/CustomDatatable';
 import ImagePreview from '../components/ImagePreview';
+import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
+import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
+import Transferbackdrop from '../components/Loaders/Transferbackdrop';
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
 } from '../components/Loaders/toastReducers';
-import getClientErrorMessage, { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
+import { globalStyles } from '../style/globalStyles';
+import { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
+import LineComponent from './components/LineComponent';
+import LinesCard from './components/LinesCard';
+import { setPOdataResponse } from './reducer/poReceipts';
 
 const initialFormdata = {
   poNum: '',
@@ -75,12 +68,10 @@ const POReceipt = () => {
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [localPoData, setLocalPoData] = useState({ 1: podata });
   const [hasPermission, setHasPermission] = useState(null);
-  const [warehouseCodes, setWarehouseCodes] = useState([]);
   const [isNewPackSlip, setIsNewpackslip] = useState(true);
   const [createPackslipLoading, setCreatepackslipLoading] = useState(false);
   const navigation = useNavigation();
   const [tabValue, setTabvalue] = useState('1');
-  const [cameraState, setCameraState] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [vendorNameSearch, setVendorNameSearch] = useState('');
   const [scannerVisible, setScannerVisible] = useState(false);
@@ -93,7 +84,6 @@ const POReceipt = () => {
   const [selectedPackSlip, setSelectedPackslip] = useState({});
   const [packslipLoading, setPackslipLoading] = useState(false);
   const [isPosLoading, setIsPOsLoading] = useState(false);
-  const [selectedPOdata, setSelectedPOdata] = useState({});
   const [existingPackslips, setExistingPackSlips] = useState([]);
   const [existingPackslipLoading, setExistingPackslipLoading] = useState(false);
   const [currentLine, setCurrentLine] = useState({});
@@ -102,13 +92,11 @@ const POReceipt = () => {
   const [saved, setSaved] = useState(false);
   const [bins, setBins] = useState([]);
   const [filteredPos, setFilteredPos] = useState([]);
-  const [openBarcodescreen, setOpenBarcodeScreen] = useState(false);
   const [customTableState, setCustomTableState] = useState({
     page: 1,
     totalPages: 1000,
     limit: 100,
   });
-  const [whseBin, setWhseBin] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -136,22 +124,6 @@ const POReceipt = () => {
     setScannerVisible(false);
   };
 
-  const renderWarehouseOptions = (values) => {
-    const result = values.map((val) => ({
-      ...val,
-      label: val.WarehouseCode,
-      value: val.WarehouseCode,
-    }));
-    return result;
-  };
-
-  // if (hasPermission === null) {
-  //     return <Text>Requesting for camera permission</Text>;
-  // }
-  // if (hasPermission === false) {
-  //     return <Text>No access to camera</Text>;
-  // }
-
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -160,32 +132,6 @@ const POReceipt = () => {
     getBarCodeScannerPermissions();
     setLocalPoData({});
   }, []);
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true);
-    if (data.startsWith('http')) {
-      Alert.alert(
-        'Open URL',
-        `Do you want to open this URL?\n${data}`,
-        [
-          {
-            text: 'Cancel',
-            onPress: () => setScanned(false),
-            style: 'cancel',
-          },
-          {
-            text: 'Open',
-            onPress: () => {
-              setScanned(false);
-              Linking.openURL(data);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } else {
-      alert(`Bar code with type ${type} and data ${data} has been scanned!`);
-    }
-  };
 
   const getPoReciept = async () => {
     setLoading(true);
@@ -194,14 +140,8 @@ const POReceipt = () => {
     setPackSlipNUm('');
     setExistingPackSlips([]);
     setIsNewpackslip(true);
-    // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
-    // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls`;
-    if (poNum) {
-      // let filterQuery = encodeURI(`PONum eq ${poNum}`);
-      // epicor_endpoint = epicor_endpoint + `&$filter=${filterQuery}`
-      // const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=PONum eq ${poNum}`
+   if (poNum) {
       const epicor_endpoint = `/Erp.BO.POSvc/POes?$filter=PONum eq ${poNum}&$expand=PODetails`;
-      // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls&$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -221,11 +161,7 @@ const POReceipt = () => {
             setLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(showSnackbar(message));
-            // });
           });
       } catch (err) {
         setLoading(false);
@@ -257,7 +193,6 @@ const POReceipt = () => {
             setIsNewpackslip(true);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
@@ -273,7 +208,6 @@ const POReceipt = () => {
   const fetchPackslips = () => {
     setPackslipLoading(true);
     if (poNum) {
-      // setIsNewpackslip(false);
       const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
@@ -284,19 +218,15 @@ const POReceipt = () => {
           .then(({ json }) => {
             setPackSlipData(json.data.value);
             setPackslipLoading(false);
-            // setIsNewpackslip(false);
           })
           .catch((err) => {
             setPackslipLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // setIsNewpackslip(true);
           });
       } catch (err) {
         setPackslipLoading(false);
-        // setIsNewpackslip(true);
       }
     } else {
       dispatch(showSnackbar('Enter the PO Num first'));
@@ -310,39 +240,6 @@ const POReceipt = () => {
     }
   }, [tabValue]);
 
-  const getWareHouseList = (warehouseCode) => {
-    setFormdata(prev => ({...prev, WareHouseCode: warehouseCode }))
-    const filter = encodeURI(`WarehouseCode eq '${warehouseCode}'`);
-    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}&$top=1000`;
-    const postPayload = {
-      epicor_endpoint,
-      request_type: 'GET',
-    };
-    // if (poNum) {
-    //   let filterQuery = encodeURI(`PONum eq ${poNum}`);
-    //   epicor_endpoint.concat(`&$filter=${filterQuery}`);
-    // }
-    try {
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload,
-        stringify: false,
-      })
-        .then(({ json }) => {
-          // setWarehouseCodes(() => json.data.value);
-          setBins(() => json.data.value);
-        })
-        .catch((err) => {
-          err.json().then((res) => {
-            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
-          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-          // setLoading(false);
-        });
-    } catch (err) {
-      // setLoading(false);
-    }
-  };
   const onChangeText = (val, name) => {
     setFormdata((form) => ({ ...form, [name]: val }));
     if (name === 'WareHouseCode') {
@@ -500,10 +397,6 @@ const POReceipt = () => {
       }));
       setIsPOsLoading(false);
     }
-    // } else {
-    //   dispatch(showSnackbar('Enter the vendor name first'));
-    //   setIsPOsLoading(false)
-    // }
   };
 
   const onChangeSearchQuery = (val) => {
@@ -517,7 +410,6 @@ const POReceipt = () => {
   };
 
   useEffect(() => {
-    // getWareHouseList()
     if (showPOModal && _.isEmpty(localPoData)) {
       searchPoNum();
     }
@@ -531,7 +423,6 @@ const POReceipt = () => {
   };
 
   const onSelectLine = (po) => {
-    // getWareHouseList(po?.WarehouseCode);
     setFormdata(prev => ({...prev, WareHouseCode: po?.WarehouseCode}))
     const poDetails = (POData && POData[0]?.PODetails) || [];
     const selectedPo = poDetails.find((da) => da.POLine === po.POLine);
@@ -624,14 +515,10 @@ const POReceipt = () => {
       })
       .catch((err) => {
         dispatch(setIsLoading({ value: false, message: '' }));
-        getClientPOErrorMessage(err).then(({message}) => {
-          dispatch(
-            setOnError({
-              value: true,
-              message: message,
-            })
-          );
-        });
+        err.json().then((res) => {
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          // console.log({ res });
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   };
 
@@ -683,8 +570,6 @@ const POReceipt = () => {
     if (!result.canceled) {
       // Do something with the captured image URI
       setAttachments((prev) => [...prev, ...result.assets]);
-      // uploadImage(result.assets[0])
-      // You may want to set the captured image URI to state or handle it in any way your application requires
     }
   };
   const removeImage = (indexToRemove) => {

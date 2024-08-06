@@ -42,44 +42,14 @@ import CycleSchedule from './src/inventory/inventoryCount/CycleSchedule';
 import SelectCycle from './src/inventory/inventoryCount/SelectCycle';
 import CycleApp from './src/inventory/inventoryCount/CycleApp';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
+import HelpScreen from './src/profile/Help';
+import UserInfo from './src/profile/UserInfo';
 // import { enableFreeze } from 'react-native-screens';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 SplashScreen.preventAutoHideAsync(); // Prevent the splash screen from auto-hiding
-
-
-
-function ReceivingNavigator() {
-  return (
-    <>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Receiving" component={Users} />
-        <Stack.Screen name="POReceipt" component={Users} />
-        <Stack.Screen name="Orders" component={Users} />
-      </Stack.Navigator>
-    </>
-  );
-}
-
-function CustomDrawerContent(props) {
-  return (
-    <DrawerContentScrollView {...props}>
-      <View style={{ backgroundColor: '#f4f4f4', padding: 20 }}>
-        <Image
-          source={require('./assets/icon.png')} // Add your profile picture source here
-          style={{ width: 80, height: 80, borderRadius: 40 }}
-        />
-        <Text style={{ marginTop: 10, fontSize: 16, fontWeight: 'bold' }}>
-          Satendra Kumar R
-        </Text>
-      </View>
-
-      <CustomDrawer {...props} />
-    </DrawerContentScrollView>
-  );
-}
 
 const DrawerRoutes = (props) => {
   // enableFreeze(true);
@@ -168,6 +138,8 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="inventory_cycle_schedule" component={CycleSchedule} />
       <Stack.Screen name="select_inventory_cycle" component={SelectCycle} />
       <Stack.Screen name="cycle_details" component={CycleApp} />
+      <Stack.Screen name="Help" component={HelpScreen} />
+      <Stack.Screen name="UserInfo" component={UserInfo} />
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );

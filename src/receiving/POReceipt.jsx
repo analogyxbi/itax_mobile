@@ -112,6 +112,7 @@ const POReceipt = () => {
   const [attachments, setAttachments] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [packslipButtonCliked, setPackslipButtonClicked] = useState(false);
 
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
@@ -393,6 +394,7 @@ const POReceipt = () => {
     } else {
       setTabvalue('2');
     }
+    setPackslipButtonClicked(true);
   };
 
   const createPackSlip = () => {
@@ -770,7 +772,7 @@ const POReceipt = () => {
                 {
                   value: '2',
                   label: 'Receipt',
-                  disabled: _.isEmpty(packSLipNUm) || _.isEmpty(POData),
+                  disabled: _.isEmpty(packSLipNUm) || _.isEmpty(POData) || !packslipButtonCliked,
                   icon: () => (
                     <FontAwesome5
                       name="receipt"

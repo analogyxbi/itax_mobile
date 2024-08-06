@@ -110,7 +110,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
         }
       })
       .catch((error) => {
-        console.log(error.response);
         if (error.response.data) {
           if (error.response?.data?.message) {
             console.log('Error message:');
@@ -125,7 +124,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
           );
         } else {
           // Something happened in setting up the request that triggered the error
-          console.log('Error Message:', error.message);
           alert('An unexpected error occurred.');
         }
         setLoading(false);
@@ -204,9 +202,21 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
     } else return false;
   };
 
-  useEffect(async ()=>{
+
+async function setCacheFromLocal(){
+  try{
     const url = await AsyncStorage.getItem('url')
-    if(url) setUrl(url)
+    if(url) {
+      setUrl(url)
+    }
+  }catch(err){
+    console.log("Error")
+  }
+}
+
+  useEffect(()=>{
+    setCacheFromLocal()
+    // console.log("test")
   },[])
 
   const eyeVisible = () => {
@@ -230,9 +240,9 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
         style={styles.main}
       >
         <View style={styles.container}>
-          <BlurView intensity={80} style={styles.loginBox}>
+          <BlurView intensity={100} style={styles.loginBox}>
             <Image
-              source={require('../../images/analogyxbi-logo-horiz.png')}
+              source={require('../../images/wland_logo.png')}
               style={styles.logo}
             ></Image>
 
@@ -349,7 +359,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 60,
     alignSelf: 'center',
-    marginTop: 40,
+    marginTop: 60,
   },
 
   welcomeText: {

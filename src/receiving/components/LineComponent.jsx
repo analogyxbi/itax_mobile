@@ -148,7 +148,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
             },
             stringify: false,
         }).then(({ json }) => {
-            dispatch(setOnSuccess({ value: true, message: 'Printed' }));
+            dispatch(setOnSuccess({ value: true, message: 'Print Job created.' }));
         }).catch(err => {
             dispatch(setIsLoading({ value: false, message: '' }));
             dispatch(setOnError({ value: true, message: 'Error Occured While Printing \n', err }));

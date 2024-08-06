@@ -2,7 +2,7 @@
   "expo": {
     "name": "Warehouse App",
     "slug": "warehouse_app",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/wicon.png",
     "jsEngine": "hermes",

@@ -40,7 +40,7 @@ const UserInfo = () => {
 
   //prettier-ignore
   return (
-    <SafeAreaView style={styles.main}>
+    <View style={styles.main}>
       <View style={styles.header}>
         <Ionicons
           onPress={() => navigation.goBack()}
@@ -78,7 +78,7 @@ const UserInfo = () => {
         <Text style={styles.dataText}>Last name: {userData?.user?.lastName}</Text>
         <Text style={styles.dataText}>Email: {userData?.user?.email}</Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

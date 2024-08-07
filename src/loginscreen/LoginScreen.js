@@ -273,7 +273,7 @@ async function setCacheFromLocal(){
           <Text
             style={{
               position: 'absolute',
-              bottom: 60,
+              bottom: 25,
               opacity: 0.5,
             }}
           >
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   loginBox: {
     backgroundColor: 'transparent',
     width: '90%',
-    height: '70%',
+    height: '80%',
     borderRadius: 10,
     overflow: 'hidden',
   },

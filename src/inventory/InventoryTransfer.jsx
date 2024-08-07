@@ -659,7 +659,7 @@ const InventoryTransfer = () => {
                 value={formData.to_whse}
                 onChange={(itemValue) => {
                   onSelectBins('to_whse', itemValue);
-                  formData.tobin = '';
+                  setFormData(prev => ({ ...prev, to_bin: '' }))
                   if (!binsData[itemValue]) {
                     getBins('to', itemValue);
                   }

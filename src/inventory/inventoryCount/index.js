@@ -220,6 +220,7 @@ const InventoryCount = () => {
           <SelectInput
             value={warehouse}
             onChange={(itemValue, data) => {
+              dispatch(setCurrentCycle({}));
               dispatch(setCyclesData([]));
               setWarehouse(itemValue);
               setCyclesVisible(false);
@@ -252,7 +253,7 @@ const InventoryCount = () => {
       </View>
       <TouchableOpacity
         style={styles.receiveButton}
-        onPress={() => !validateVariable(currentCycle) ? getSelectedCycleDetails() : dispatch(showSnackbar('Please select the cycle to preoceed further'))}
+        onPress={() => !validateVariable(currentCycle) ? getSelectedCycleDetails() : dispatch(showSnackbar('Please select the cycle to proceed further'))}
       >
         <Text style={styles.receiveButtonText}>Next</Text>
       </TouchableOpacity>

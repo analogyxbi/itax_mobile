@@ -131,7 +131,7 @@ const InventoryTransfer = () => {
 
   function initiateTransfer() {
     setSubmitConfirm(false);
-    if (formData.quantity <= 0 || selectedPart.QtyOnHand <= formData.quantity) {
+    if (formData.quantity <= 0 || selectedPart.QtyOnHand < formData.quantity) {
       return dispatch(showSnackbar('Error setting Quantity'));
     }
 
@@ -505,6 +505,7 @@ const InventoryTransfer = () => {
                 onChange={(itemValue) => {
                   formData.current_bin = '';
                   formData.current_part = '';
+                  setSelectedPart({})
                   onSelectBins('current_whse', itemValue);
 
                   if (!binsData[itemValue]) {
@@ -541,6 +542,7 @@ const InventoryTransfer = () => {
                 value={formData.current_bin}
                 onChange={(itemValue) => {
                   formData.current_part = '';
+                  setSelectedPart({})
                   onSelectBins('current_bin', itemValue);
                 }}
                 options={

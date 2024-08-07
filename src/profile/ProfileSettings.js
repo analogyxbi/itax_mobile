@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 import packageJson from "../../package.json";
 import { logout } from '../loginscreen/authSlice';
+import { globalStyles } from '../style/globalStyles';
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
@@ -133,7 +134,7 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
         onPress={() => onLogoutPressed()}
         style={styles.logoutButton}
       >
-        <View>{loading ? <ActivityIndicator /> : <Text>Log Out</Text>}</View>
+        <View>{loading ? <ActivityIndicator /> : <Text style={styles.logoutText}>Log Out</Text>}</View>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -146,6 +147,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     flex: 1,
   },
+  
 
   header: {
     backgroundColor: 'white',
@@ -183,12 +185,22 @@ const styles = StyleSheet.create({
   },
 
   logoutButton: {
-    backgroundColor: 'orange',
+    backgroundColor: globalStyles.colors.success,
     alignItems: 'center',
     marginTop: 50,
     width: windowWidth * 0.6,
     alignSelf: 'center',
     padding: 5,
     borderRadius: 5,
+    height:48,
+   
   },
+  logoutText:{
+    color: 'white',
+    textAlign: 'center',
+    verticalAlign:'middle',
+    marginTop:10,
+    fontWeight:600,
+    fontSize:16
+  }
 });

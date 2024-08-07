@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   countOption: {
-    height: 30,
+    height: 48,
     borderRadius: 10,
     borderColor: globalStyles.colors.success,
     borderWidth: 2,
@@ -316,13 +316,13 @@ const styles = StyleSheet.create({
   },
   receiveButton: {
     backgroundColor: globalStyles.colors.success,
-    padding: 10,
+    padding: 18,
     borderRadius: 5,
     position: 'absolute',
-    bottom: 10,
-    width: '95%',
+    bottom: 40,
+    width: 400,
     zIndex: 10,
-    marginHorizontal: 10,
+    marginHorizontal: 15,
   },
   receiveButtonText: {
     color: 'white',

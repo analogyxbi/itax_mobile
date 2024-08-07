@@ -56,7 +56,7 @@ export default function CycleApp() {
       .then(({ json }) => {
         dispatch(setTagsData(json.data.value));
         dispatch(setCycleTags(json.data.value));
-        if (isCount || showLoading) {
+        // if (isCount || showLoading) {
           dispatch(
             setOnSuccess({
               value: true,
@@ -67,7 +67,7 @@ export default function CycleApp() {
                   : 'Cycle Started Successfully.',
             })
           );
-        }
+        // }
       })
       .catch((err) => {
         err.json().then((res) => {

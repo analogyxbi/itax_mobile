@@ -113,6 +113,7 @@ const InitialScreen = ({
         handleCancel={() => setGenTags(false)}
         handleOk={() => {
           generateTagsAndStartCount();
+          setGenTags(false)
         }}
         title="Initiate Count Process"
         message={'Are you sure you want to generate tags and start count?'}

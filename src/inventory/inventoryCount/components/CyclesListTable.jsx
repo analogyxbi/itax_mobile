@@ -25,11 +25,12 @@ const CyclesListTable = ({ data, loading, onSelectCycle }) => {
       </View>
       <ScrollView style={styles.scrollView}>
         {loading && (
-          <ActivityIndicator
-            style={styles.activityIndicator}
-          />
+          <View style={styles.noDataContainer}>
+            <Text style={styles.noDataText}>Please wait...</Text>
+            <ActivityIndicator color={'lime'} />
+          </View>
         )}
-        {!loading && data.length > 0 ? (
+        {data.length > 0 ? (
           <View>
             {data?.map((da, index) => (
               <TouchableOpacity key={index} onPress={() => onSelectCycle(da)}>
@@ -53,12 +54,12 @@ const CyclesListTable = ({ data, loading, onSelectCycle }) => {
               </TouchableOpacity>
             ))}
           </View>
-        ) : (
-          <View style={styles.noDataContainer}>
-            <Text style={styles.noDataText}>Please wait...</Text>
-            <ActivityIndicator color={'lime'} />
-          </View>
-        )}
+        )
+          : !loading ? (
+            <View style={styles.noDataContainer}>
+              <Text style={styles.noDataText}>No data found</Text>
+            </View>) : <></> 
+          }
       </ScrollView>
     </View>
   );

@@ -80,6 +80,7 @@ const InventoryCount = () => {
   const fetchCycles = () => {
     if (warehouse) {
       setCyclesLoading(true);
+      setCyclesVisible(true);
       const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
       const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${filter}&$top=1000`;
       try {
@@ -106,7 +107,6 @@ const InventoryCount = () => {
 
   const onClickSelect = () => {
     dispatch(setCurrentCycle({}));
-    setCyclesVisible(true);
     fetchCycles();
     // if (cyclesData.length == 0) {
     // }

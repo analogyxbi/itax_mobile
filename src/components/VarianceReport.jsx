@@ -83,12 +83,9 @@ export default function VarianceReport() {
       const { uri } = await Print.printToFileAsync({
         html: htmlContent,
       });
-
-      console.log('File has been saved to:', uri);
-
       await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
     } catch (error) {
-      console.error('Error printing to file:', error);
+      dispatch(showSnackbar('Error printing to file:', error));
     }
   };
 

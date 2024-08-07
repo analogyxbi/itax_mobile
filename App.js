@@ -31,6 +31,7 @@ import store from './src/store';
 import { globalStyles } from './src/style/globalStyles';
 import Colors from './utils/Colors';
 import CustomDrawer from './utils/CustomDrawer';
+import PrivacyPolicy from './src/profile/PrivacyPolicy';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -123,6 +124,7 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="cycle_details" component={CycleApp} />
       <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="UserInfo" component={UserInfo} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );

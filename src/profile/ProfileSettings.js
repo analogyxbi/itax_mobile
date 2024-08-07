@@ -1,5 +1,5 @@
 import { AnalogyxBIClient } from '@analogyxbi/connection';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
@@ -118,6 +118,14 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
         <Text style={styles.optionText}>Help</Text>
       </Pressable>
 
+      <Pressable
+        onPress={() => navigation.navigate('PrivacyPolicy')}
+        style={styles.option}
+      >
+        <MaterialIcons name="policy" size={18} color="black" style={{ marginRight: 10 }} />
+        <Text style={styles.optionText}>Privacy Policy</Text>
+      </Pressable>
+
       <View
         style={{
           width: windowWidth,
@@ -147,14 +155,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     flex: 1,
   },
-  
+
 
   header: {
     backgroundColor: 'white',
     shadowOffset: { height: 3, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    height: windowHeight * 0.08,
+    height: windowHeight * 0.06,
     alignItems: 'center',
     marginBottom: 10,
     flexDirection: 'row',
@@ -192,15 +200,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: 5,
     borderRadius: 5,
-    height:48,
-   
+    height: 48,
+
   },
-  logoutText:{
+  logoutText: {
     color: 'white',
     textAlign: 'center',
-    verticalAlign:'middle',
-    marginTop:10,
-    fontWeight:600,
-    fontSize:16
+    verticalAlign: 'middle',
+    marginTop: 10,
+    fontWeight: "600",
+    fontSize: 16
   }
 });

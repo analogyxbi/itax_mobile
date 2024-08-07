@@ -55,6 +55,8 @@ export const generatTransferPDF = async (data, parts, svgXmlString) => {
           width: 100%;
           display: flex;
           justify-content: center;
+          align-items: center;
+          flex-direction: column;
         }
         .bottom_container{
           display: flex;

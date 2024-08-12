@@ -550,7 +550,7 @@ const POReceipt = () => {
       img_string: data.base64,
       img_format: data.mimeType
     }
-    console.log("UPLOAFING", payload)
+   
     AnalogyxBIClient.post({endpoint:`/erp_woodland/save_po_images`, 
       postPayload:payload,
       stringify: false,

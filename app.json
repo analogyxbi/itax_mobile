@@ -24,7 +24,7 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera to scan QR, Barcodes and Packslips which helps us identify and manage inventory items efficiently",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
       },
       "bundleIdentifier": "com.analogyx.woodland"
@@ -72,7 +72,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes and barcodes, which helps us identify and manage inventory items efficiently",
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
         }

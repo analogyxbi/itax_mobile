@@ -474,7 +474,7 @@ const POReceipt = () => {
       OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
-      WareHouseCode: currentLine?.WarehouseCode || formData?.WareHouseCode,
+      WareHouseCode: formData?.WareHouseCode || currentLine?.WarehouseCode,
       OurQty: formData.input,
       InputOurQty: formData.input,
       IUM: currentLine?.IUM,
@@ -486,8 +486,8 @@ const POReceipt = () => {
     };
     if (currentLine.PackLine) {
       receipt.PackLine = currentLine.PackLine;
-      receipt.WareHouseCode = currentLine?.WareHouseCode;
-      receipt.BinNum = currentLine?.BinNum;
+      receipt.WareHouseCode = formData?.WareHouseCode || currentLine?.WarehouseCode;
+      receipt.BinNum = formData?.BinNum || currentLine?.BinNum;
     }
     const postPayload = {
       Company: POData[0]?.Company,

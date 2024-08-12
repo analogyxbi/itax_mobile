@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   Modal,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ const SelectInput = ({
   onChange,
   isLoading,
   handleRefresh,
-  placeholder, // New prop for placeholder text
+  placeholder,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -38,29 +38,35 @@ const SelectInput = ({
     setFilteredOptions(filtered);
   };
 
-  // Render options with a checkmark for the selected one
-  const renderOptions = () => {
-    if (filteredOptions?.length === 0) {
-      return <Text>No options available</Text>;
-    }
-    return filteredOptions?.map((option) => (
-      <TouchableOpacity
-        key={option.value}
-        style={[styles.option, option.value === value && styles.selectedOption]}
-        onPress={() => handleOptionPress(option.value)}
-      >
-        <Text style={styles.optionText}>{option.value}</Text>
-        {option.value === value && (
-          <Ionicons name="checkmark" size={20} color="#007BFF" />
-        )}
-      </TouchableOpacity>
-    ));
-  };
+  // Render each option item
+  const renderOption = ({ item }) => (
+    <TouchableOpacity
+      style={[styles.option, item.value === value && styles.selectedOption]}
+      onPress={() => handleOptionPress(item.value)}
+    >
+      <Text style={styles.optionText}>{item.value}</Text>
+      {item.value === value && (
+        <Ionicons name="checkmark" size={20} color="#007BFF" />
+      )}
+    </TouchableOpacity>
+  );
 
   // Update filteredOptions when options prop changes
   useEffect(() => {
     setFilteredOptions(options);
   }, [options]);
+
+  const OptionItem = React.memo(({ item, isSelected, onPress }) => (
+    <TouchableOpacity
+      style={[styles.option, isSelected && styles.selectedOption]}
+      onPress={() => onPress(item.value)}
+    >
+      <Text style={styles.optionText}>{item.value}</Text>
+      {isSelected && (
+        <Ionicons name="checkmark" size={20} color="#007BFF" />
+      )}
+    </TouchableOpacity>
+  ));
 
   return (
     <View style={styles.container}>
@@ -99,7 +105,18 @@ const SelectInput = ({
               onChangeText={handleSearch}
               value={searchText}
             />
-            <ScrollView>{renderOptions()}</ScrollView>
+            <FlatList
+              data={filteredOptions}
+              renderItem={({ item }) => (
+                <OptionItem
+                  item={item}
+                  isSelected={item.value === value}
+                  onPress={handleOptionPress}
+                />
+              )}
+              keyExtractor={(item) => item.value}
+              ListEmptyComponent={<Text>No options available</Text>}
+            />
           </View>
         </View>
       </Modal>
@@ -129,7 +146,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   placeholder: {
-    color: '#aaa', // Placeholder text color
+    color: '#aaa',
   },
   dropdownIcon: {
     marginLeft: 10,
@@ -146,7 +163,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: '80%',
     maxHeight: 400,
-    position: 'relative', // Ensure the close button is positioned relative to this container
+    position: 'relative',
   },
   closeButton: {
     position: 'absolute',
@@ -176,7 +193,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   selectedOption: {
-    backgroundColor: '#f0f8ff', // Background color for selected option
+    backgroundColor: '#f0f8ff',
   },
 });
 

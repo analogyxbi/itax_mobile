@@ -77,7 +77,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
     function getBins(to, warehouse) {
         setRefreshing(true);
         const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
-        const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+        const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}&$top=10000`;
         const postPayload = {
             epicor_endpoint,
             request_type: 'GET',
@@ -90,6 +90,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                 stringify: false,
             })
                 .then(({ json }) => {
+                    console.log({json})
                     setBins((prev) => ({ ...prev, [to]: json.data.value }));
                     dispatch(showSnackbar(`Bins fetched for ${warehouse}`));
                     dispatch(setWhseBins({ warehouse, bins: json.data.value }));

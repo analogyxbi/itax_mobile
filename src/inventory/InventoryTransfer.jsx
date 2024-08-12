@@ -34,6 +34,7 @@ import SelectInput from '../components/SelectInput';
 import { globalStyles } from '../style/globalStyles';
 import { generatTransferPDF } from '../utils/PDFGenerator';
 import {
+  setInitialState,
   setWarehouses,
   setWhseBins
 } from './reducer/inventory';
@@ -231,8 +232,12 @@ const InventoryTransfer = () => {
 
   function getBins(to, warehouse) {
     setRefreshing(true);
-    const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
-    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+    const warehouseFilter = encodeURI(`WarehouseCode eq '${warehouse}'`);
+    const inactiveFilter = encodeURI('InActive eq false');
+
+    // Combine the filters using the `and` operator
+    const combinedFilter = `${warehouseFilter} and ${inactiveFilter}`;
+    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${combinedFilter}&$top=10000`;
     const postPayload = {
       epicor_endpoint,
       request_type: 'GET',
@@ -245,6 +250,7 @@ const InventoryTransfer = () => {
         stringify: false,
       })
         .then(({ json }) => {
+          console.log({json})
           setBins((prev) => ({ ...prev, [to]: json.data.value }));
           dispatch(showSnackbar(`Bins fetched for ${warehouse}`));
           dispatch(setWhseBins({ warehouse, bins: json.data.value }));
@@ -441,10 +447,10 @@ const InventoryTransfer = () => {
             title={'Please wait'}
             refreshing={refreshing}
             onRefresh={() => {
-              // setFormData({});
-              // dispatch(setInitialState());
-              // setCurrentParts([]);
-              // getWarehouse();
+              setFormData({});
+              dispatch(setInitialState());
+              setCurrentParts([]);
+              getWarehouse();
             }}
           />
         }

@@ -243,8 +243,12 @@ const POReceipt = () => {
   const onChangeText = (val, name) => {
     setFormdata((form) => ({ ...form, [name]: val }));
     if (name === 'WareHouseCode') {
-      const filter = encodeURI(`WarehouseCode eq '${val}'`);
-      const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+      const warehouseFilter = encodeURI(`WarehouseCode eq '${val}'`);
+      const inactiveFilter = encodeURI('InActive eq false');
+
+    // Combine the filters using the `and` operator
+      const combinedFilter = `${warehouseFilter} and ${inactiveFilter}`;
+      const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${combinedFilter}&$top=10000`;
       const postPayload = {
         epicor_endpoint,
         request_type: 'GET',
@@ -261,7 +265,6 @@ const POReceipt = () => {
             dispatch(showSnackbar(`Bins fetched for ${val}`));
           })
           .catch((err) => {
-            // setLoading(false);
             setRefreshing(false);
             dispatch(
               showSnackbar(
@@ -455,7 +458,7 @@ const POReceipt = () => {
       AutoReceipt: false,
       POType: POData[0]?.POType,
       Received: reverse,
-      ReceivedTo: 'PUR-STK',
+      ReceivedTo: currentLine?.TranType,
       ReceivedComplete: false,
       ArrivedDate: today.toISOString(),
       VendorQty: formData.input,
@@ -477,6 +480,9 @@ const POReceipt = () => {
       IUM: currentLine?.IUM,
       PUM: currentLine?.PUM,
       RowMod: !reverse ? 'U' : 'A',
+      JobNum: currentLine?.JobNum,
+      JobSeq: currentLine?.JobSeq,
+      JobSeqType: currentLine?.JobSeqType,
     };
     if (currentLine.PackLine) {
       receipt.PackLine = currentLine.PackLine;

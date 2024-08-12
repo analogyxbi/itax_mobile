@@ -22,7 +22,7 @@ const PrivacyPolicy = () => {
                     <Text style={styles.headerText}>Privacy Policy</Text>
                 </View>
             </View>
-            <ScrollView style={{padding: 15}}>
+            <ScrollView style={{padding: 15, flex:1}}>
                 <Text style={styles.paragraph}>
                     This privacy policy applies to the Woodland app (hereby referred to as "Application") for mobile devices that was created by Analogyx (hereby referred to as "Service Provider") as a Free service. This service is intended for use "AS IS".
                 </Text>
@@ -107,7 +107,7 @@ const PrivacyPolicy = () => {
                 </Text>
 
                 <Text style={styles.heading}>Contact Us</Text>
-                <Text style={styles.paragraph}>
+                <Text style={[styles.paragraph, {marginBottom: 50}]}>
                     If you have any questions regarding privacy while using the Application, or have questions about the practices, please contact the Service Provider via email at https://analogyx.com/.
                 </Text>
             </ScrollView>

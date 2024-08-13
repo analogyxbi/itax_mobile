@@ -78,10 +78,10 @@ export default function Homepage() {
           onPress={() => navigation.navigate('po_reciept')}
           icon={<FontAwesome5 name="receipt" style={styles.iconImage} />}
         />
-        <HomepageIcon
+        {/* <HomepageIcon
           name="Job Receipt"
           icon={<Ionicons name="receipt" style={styles.iconImage} />}
-        />
+        /> */}
       </View>
     </View>
   );

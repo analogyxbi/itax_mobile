@@ -9,6 +9,7 @@ import { setWarehouses, setWhseBins } from "../../inventory/reducer/inventory";
 import { showSnackbar } from "../../Snackbar/messageSlice";
 import { globalStyles } from "../../style/globalStyles";
 import { getBinsData } from "../../utils/utils";
+import SelectAsync from "../../components/SelectAsync";
 
 const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved, warehouse }) => {
     const dispatch = useDispatch();
@@ -253,9 +254,6 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                             onChange={(itemValue) => {
                                 onSelectBins('WareHouseCode', itemValue);
                                 setFormdata(prev => ({...prev, BinNum: ''}));
-                                if (!binsData[itemValue]) {
-                                    getBins('from', itemValue);
-                                }
                             }}
                             options={warehouses?.map((data) => ({
                                 ...data,

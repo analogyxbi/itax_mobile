@@ -9,7 +9,7 @@ import { setWarehouses, setWhseBins } from "../../inventory/reducer/inventory";
 import { showSnackbar } from "../../Snackbar/messageSlice";
 import { globalStyles } from "../../style/globalStyles";
 
-const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, packSLipNUm }) => {
+const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved }) => {
     const dispatch = useDispatch();
     const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);
@@ -90,7 +90,6 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                 stringify: false,
             })
                 .then(({ json }) => {
-                    console.log({json})
                     setBins((prev) => ({ ...prev, [to]: json.data.value }));
                     dispatch(showSnackbar(`Bins fetched for ${warehouse}`));
                     dispatch(setWhseBins({ warehouse, bins: json.data.value }));
@@ -147,6 +146,11 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
 
     function onSelectBins(key, value) {
         setFormdata((prev) => ({ ...prev, [key]: value }));
+    }
+
+    function createNewReceipt(){
+        setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
+        setIsSaved(false);
     }
 
     return (
@@ -240,13 +244,14 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
             </View>
             {
                 isNewPackSlip &&
-                <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
+                <View style={[globalStyles.dFlexR, globalStyles.justifySB, { paddingHorizontal: 10 }]}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>Warehouse</Text>
                         <SelectInput
                             value={formData.WareHouseCode || null}
                             onChange={(itemValue) => {
                                 onSelectBins('WareHouseCode', itemValue);
+                                setFormdata(prev => ({...prev, BinNum: ''}));
                                 if (!binsData[itemValue]) {
                                     getBins('from', itemValue);
                                 }
@@ -300,15 +305,26 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                         Reverse
                     </Button>
                 }
-                <Button
-                    buttonColor={globalStyles.colors.success}
-                    icon="floppy"
-                    mode="contained"
-                    disabled={handleValidate()}
-                    onPress={() => handleSave(true)}
-                >
-                    Save
-                </Button>
+                {isSaved ?
+                    <Button
+                        buttonColor={globalStyles.colors.success}
+                        icon="plus"
+                        mode="contained"
+                        // disabled={handleValidate()}
+                        onPress={createNewReceipt}
+                    >
+                        New Receipt
+                    </Button> :
+                    <Button
+                        buttonColor={ globalStyles.colors.success }
+                        icon="floppy"
+                        mode="contained"
+                        disabled={handleValidate()}
+                        onPress={() => handleSave(true)}
+                    >
+                        Save
+                    </Button>}
+
                 {
                     isNewPackSlip &&
                     <Button

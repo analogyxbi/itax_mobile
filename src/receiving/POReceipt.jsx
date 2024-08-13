@@ -426,7 +426,7 @@ const POReceipt = () => {
   };
 
   const onSelectLine = (po) => {
-    setFormdata(prev => ({...prev, WareHouseCode: po?.WarehouseCode}))
+    setFormdata(prev => ({...prev, WareHouseCode: po?.WarehouseCode, BinNum:'', input:''}))
     const poDetails = (POData && POData[0]?.PODetails) || [];
     const selectedPo = poDetails.find((da) => da.POLine === po.POLine);
     if (isNewPackSlip && selectedPo) {
@@ -439,6 +439,7 @@ const POReceipt = () => {
       setCurrentLine(po);
     }
     setTabvalue('3');
+    setIsSaved(false);
   };
 
   const handleSave = (reverse) => {
@@ -516,7 +517,6 @@ const POReceipt = () => {
         setSaved(true);
         dispatch(setIsLoading({ value: false, message: '' }));
         dispatch(setOnSuccess({ value: true, message: '' }));
-        setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
         setIsSaved(true)
       })
       .catch((err) => {
@@ -1058,6 +1058,7 @@ const POReceipt = () => {
                     bins,
                     onChangeText,
                     isNewPackSlip,
+                    setIsSaved,
                     isSaved,
                     packSLipNUm,
                     setFormdata

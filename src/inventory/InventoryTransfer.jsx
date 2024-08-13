@@ -38,6 +38,8 @@ import {
   setWarehouses,
   setWhseBins
 } from './reducer/inventory';
+import { getBinsData } from '../utils/utils';
+import SelectAsync from '../components/SelectAsync';
 
 const initForm = {
   current_whse: null,
@@ -513,10 +515,9 @@ const InventoryTransfer = () => {
                   formData.current_part = '';
                   setSelectedPart({})
                   onSelectBins('current_whse', itemValue);
-
-                  if (!binsData[itemValue]) {
-                    getBins('from', itemValue);
-                  }
+                  // if (!binsData[itemValue]) {
+                  //   getBins('from', itemValue);
+                  // }
                 }}
                 options={warehouses.map((data) => ({
                   ...data,
@@ -544,7 +545,7 @@ const InventoryTransfer = () => {
                   />
                 </TouchableOpacity>
               </View>
-              <SelectInput
+              <SelectAsync
                 value={formData.current_bin}
                 onChange={(itemValue) => {
                   formData.current_part = '';
@@ -561,6 +562,8 @@ const InventoryTransfer = () => {
                 isLoading={refreshing}
                 handleRefresh={handleOptionsRefresh}
                 label="current_bin"
+                fetchOptions={getBinsData}
+                warehouse={formData.current_whse}
               />
             </View>
           </View>
@@ -666,9 +669,9 @@ const InventoryTransfer = () => {
                 onChange={(itemValue) => {
                   onSelectBins('to_whse', itemValue);
                   setFormData(prev => ({ ...prev, to_bin: '' }))
-                  if (!binsData[itemValue]) {
-                    getBins('to', itemValue);
-                  }
+                  // if (!binsData[itemValue]) {
+                  //   getBins('to', itemValue);
+                  // }
                 }}
                 options={warehouses.map((data) => ({
                   ...data,
@@ -696,7 +699,7 @@ const InventoryTransfer = () => {
                   />
                 </TouchableOpacity>
               </View>
-              <SelectInput
+              <SelectAsync
                 value={formData.to_bin}
                 onChange={(itemValue) => {
                   onSelectBins('to_bin', itemValue);
@@ -711,6 +714,8 @@ const InventoryTransfer = () => {
                 isLoading={refreshing}
                 label="to_bin"
                 handleRefresh={handleOptionsRefresh}
+                fetchOptions={getBinsData}
+                warehouse={formData.to_whse}
               />
             </View>
           </View>

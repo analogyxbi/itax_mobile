@@ -8,8 +8,9 @@ import SelectInput from "../../components/SelectInput";
 import { setWarehouses, setWhseBins } from "../../inventory/reducer/inventory";
 import { showSnackbar } from "../../Snackbar/messageSlice";
 import { globalStyles } from "../../style/globalStyles";
+import { getBinsData } from "../../utils/utils";
 
-const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved }) => {
+const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved, warehouse }) => {
     const dispatch = useDispatch();
     const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);
@@ -268,7 +269,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>Bin Number</Text>
-                        <SelectInput
+                        <SelectAsync
                             value={formData.BinNum}
                             onChange={(itemValue) => {
                                 onSelectBins('BinNum', itemValue);
@@ -283,6 +284,8 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                             isLoading={refreshing}
                             // handleRefresh={handleOptionsRefresh}
                             label="BinNum"
+                            fetchOptions={getBinsData}
+                            warehouse={warehouse}
                         />
                     </View>
                 </View>

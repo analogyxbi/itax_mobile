@@ -1063,6 +1063,7 @@ const POReceipt = () => {
                     packSLipNUm,
                     setFormdata
                   }}
+                  warehouse={formData?.WareHouseCode || currentLine?.WarehouseCode}
                 />
               </View>
             )}

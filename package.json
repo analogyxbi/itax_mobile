@@ -1,6 +1,6 @@
 {
   "name": "woodland-application",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "main": "node_modules/expo/AppEntry.js",
   "proxy": "http://192.168.0.103:8088",
   "scripts": {

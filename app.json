@@ -24,7 +24,7 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera to scan QR, Barcodes and Packslips which helps us identify and manage inventory items efficiently",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera to scan QR, Barcodes and Packslips which helps us identify and manage inventory records.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
       },
       "bundleIdentifier": "com.analogyx.woodland"

@@ -23,6 +23,7 @@ import {
 import {
   ActivityIndicator,
   Button,
+  Divider,
   MD2Colors,
   Modal,
   Portal,
@@ -140,7 +141,7 @@ const POReceipt = () => {
     setPackSlipNUm('');
     setExistingPackSlips([]);
     setIsNewpackslip(true);
-   if (poNum) {
+    if (poNum) {
       const epicor_endpoint = `/Erp.BO.POSvc/POes?$filter=PONum eq ${poNum}&$expand=PODetails`;
       try {
         AnalogyxBIClient.post({
@@ -153,7 +154,6 @@ const POReceipt = () => {
               dispatch(showSnackbar('PO Not Found'));
             } else {
               setPOData(() => json.data.value);
-              console.log({ json });
             }
             setLoading(false);
           })
@@ -176,7 +176,7 @@ const POReceipt = () => {
     setExistingPackslipLoading(true);
     if (poNum) {
       setIsNewpackslip(false);
-      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum}&$expand=RcvDtls&$select=PONum,PackSlip,RcvDtls`;
+      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum}&$expand=RcvDtls&$select=PONum,PackSlip,SysRowID,RcvDtls`;
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -246,7 +246,7 @@ const POReceipt = () => {
       const warehouseFilter = encodeURI(`WarehouseCode eq '${val}'`);
       const inactiveFilter = encodeURI('InActive eq false');
 
-    // Combine the filters using the `and` operator
+      // Combine the filters using the `and` operator
       const combinedFilter = `${warehouseFilter} and ${inactiveFilter}`;
       const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${combinedFilter}&$top=10000`;
       const postPayload = {
@@ -326,7 +326,7 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
-            attachments.forEach(async (data)=> await uploadImage(data, packSLipNUm, json.data.SysRowID))
+            setSelectedPackslip(json?.data)
             setCreatepackslipLoading(false);
             setTabvalue('2');
           })
@@ -335,7 +335,6 @@ const POReceipt = () => {
             setCreatepackslipLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
@@ -384,7 +383,6 @@ const POReceipt = () => {
             setIsPOsLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
@@ -426,7 +424,7 @@ const POReceipt = () => {
   };
 
   const onSelectLine = (po) => {
-    setFormdata(prev => ({...prev, WareHouseCode: po?.WarehouseCode, BinNum:'', input:''}))
+    setFormdata(prev => ({ ...prev, WareHouseCode: po?.WarehouseCode, BinNum: '', input: '' }))
     const poDetails = (POData && POData[0]?.PODetails) || [];
     const selectedPo = poDetails.find((da) => da.POLine === po.POLine);
     if (isNewPackSlip && selectedPo) {
@@ -523,7 +521,6 @@ const POReceipt = () => {
         dispatch(setIsLoading({ value: false, message: '' }));
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   };
@@ -549,7 +546,7 @@ const POReceipt = () => {
   };
 
 
-  const uploadImage = (data, packslip_id, packslip_fk) => {
+  const uploadImage = (data, packslip_id, packslip_fk, onSuccess) => {
     const payload = {
       packslip_fk,
       packslip_id,
@@ -582,8 +579,17 @@ const POReceipt = () => {
     setAttachments(attachments.filter((_, index) => index !== indexToRemove));
   };
 
-
-
+  const handleUploadImages = () => {
+    if (!packSLipNUm) {
+      dispatch(showSnackbar('Select a Packslip first'));
+      return;
+    }
+    const rowId = selectedPackSlip?.SysRowID;
+      attachments?.forEach(async (data) => await uploadImage(data, packSLipNUm, rowId, () => {
+        dispatch(setOnSuccess({ value: true, message: 'Files Uploaded Successfully' }));
+        setAttachments([]);
+      }));
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -592,7 +598,7 @@ const POReceipt = () => {
           <BarcodeScannerComponent
             closeScanner={closeScanner}
             captureDetails={captureDetails}
-            // cameraState={cameraState}
+          // cameraState={cameraState}
           />
         </View>
       ) : cameraVisible ? (
@@ -920,60 +926,84 @@ const POReceipt = () => {
                     </Text>
                   </TouchableOpacity>
                 )}
-                <View
-                  style={{
-                    width: 200,
-                    alignSelf: 'flex-end',
-                    paddingHorizontal: 10,
-                  }}
-                >
-                  <Button
-                    type="text"
-                    // buttonColor={globalStyles.colors.primary}
-                    mode="outlined"
-                    // icon="camera"
-                    // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
-                    onPress={captureImage}
-                  >
-                    Upload Document
-                  </Button>
-                </View>
-                <View
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'flex-start',
-                    flexDirection: 'column',
-                    width: '100%',
-                  }}
-                >
-                  <ScrollView horizontal={true} style={styles.scrollView}>
-                    {attachments.map((item, index) => (
-                      <TouchableOpacity
-                        onPress={() => handleImagePress(item.base64)}
-                      >
-                        <AttachedImage
-                          key={index}
-                          imageBase64={item.base64}
-                          onRemove={() => removeImage(index)}
-                          handleImagePress={() => {}}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                    {previewImage && (
-                      <ImagePreview
-                        imageBase64={previewImage}
-                        onClose={handleClosePreview}
-                      />
-                    )}
-                  </ScrollView>
-                </View>
               </View>
             )}
             {tabValue == '2' && (
               <View style={styles.tabView}>
+                <Button
+                  type="text"
+                  style={{ alignSelf: "flex-end", width: 130 }}
+                  // buttonColor={globalStyles.colors.primary}
+                  // mode="outlined"
+                  icon="camera"
+                  // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
+                  onPress={captureImage}
+                >
+                  {attachments?.length > 0 ? "Add more" : "Attach Images"}
+                </Button>
+                {
+                  attachments.length > 0 && (
+                    <View>
+                      <View
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'flex-start',
+                          flexDirection: 'column',
+                          width: '100%',
+                        }}
+                      >
+                        <ScrollView horizontal={true} style={styles.scrollView}>
+                          {attachments.map((item, index) => (
+                            <TouchableOpacity
+                              onPress={() => handleImagePress(item.base64)}
+                            >
+                              <AttachedImage
+                                key={index}
+                                imageBase64={item.base64}
+                                onRemove={() => removeImage(index)}
+                                handleImagePress={() => { }}
+                              />
+                            </TouchableOpacity>
+                          ))}
+                          {previewImage && (
+                            <ImagePreview
+                              imageBase64={previewImage}
+                              onClose={handleClosePreview}
+                            />
+                          )}
+                        </ScrollView>
+                      </View>
+
+                    </View>
+                  )
+                }
+                {
+                  attachments?.length > 0 &&
+                  <View
+                    style={{
+                      marginTop: 10,
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "space-around",
+                    }}
+                  >
+                    <Button
+                      type="text"
+                      // buttonColor={globalStyles.colors.primary}
+                      // mode="outlined"
+                      icon="upload"
+                      disabled={attachments?.length === 0}
+                      onPress={handleUploadImages}
+                    >
+                      {`Upload ${attachments?.length} ${attachments.length == 1 ? "Image" : "Images"}`}
+                    </Button>
+                  </View>
+                }
+                <Divider bold />
+
                 {!_.isEmpty(selectedPackSlip) ? (
-                  <View style={{ height: '100%' }}>
+                  <View style={{ height: '100%', marginTop: 5 }}>
                     {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchExistingPackslips} >
                       <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>Refresh</Text>
                     </TouchableOpacity> */}
@@ -994,7 +1024,7 @@ const POReceipt = () => {
                         Packslip: {packSLipNUm}
                       </Text>
                       {selectedPackSlip &&
-                      selectedPackSlip?.RcvDtls?.length > 0 ? (
+                        selectedPackSlip?.RcvDtls?.length > 0 ? (
                         selectedPackSlip?.RcvDtls?.map((po) => (
                           <LinesCard
                             data={po}
@@ -1135,9 +1165,10 @@ const styles = StyleSheet.create({
     backgroundColor: globalStyles.colors.success,
     padding: 10,
     borderRadius: 5,
+    marginLeft: 10,
     position: 'absolute',
     bottom: 10,
-    width: '100%',
+    width: '94%',
     zIndex: 10,
   },
   receiveButtonText: {

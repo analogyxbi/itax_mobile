@@ -557,7 +557,7 @@ const POReceipt = () => {
     AnalogyxBIClient.post({endpoint:`/erp_woodland/save_po_images`, 
       postPayload:payload,
       stringify: false,
-    }).then(({json})=> console.log({json})).catch((err)=> console.log({err}))
+    }).then(({json})=> { console.log({ json }); (onSuccess) && onSuccess(); }).catch((err)=> dispatch(showSnackbar("error uploading image")))
   }
 
   const captureImage = async () => {

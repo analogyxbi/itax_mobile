@@ -103,6 +103,7 @@ const POReceipt = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [packslipButtonCliked, setPackslipButtonClicked] = useState(false);
   const [createPackslipResponse, setCreatePackslipResponse] = useState();
+  const [currentPacklines, setCurrentPacklines] = useState([]);
 
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
@@ -206,6 +207,37 @@ const POReceipt = () => {
     }
   };
 
+
+  const fetchCurrentPacklines = ()=>{
+    if (poNum && packSLipNUm) {
+      setPackslipLoading(true);
+      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum} and PackSlip eq '${packSLipNUm}'&$expand=RcvDtls&$select=PONum,PackSlip,SysRowID,RcvDtls`;
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: { epicor_endpoint, request_type: 'GET' },
+          stringify: false,
+        })
+          .then(( {json} ) => {
+            setSelectedPackslip(json?.data?.value ? json.data.value[0] : {})
+            setPackslipLoading(false);
+          })
+          .catch((err) => {
+            setPackslipLoading(false);
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          });
+      } catch (err) {
+        setPackslipLoading(false);
+        dispatch(showSnackbar('Something went wrong'));
+      }
+    } else {
+      dispatch(showSnackbar('PO and Packslip is required'));
+      setPackslipLoading(false);
+    }
+  }
+
   const fetchPackslips = () => {
     setPackslipLoading(true);
     if (poNum) {
@@ -238,6 +270,8 @@ const POReceipt = () => {
   useEffect(() => {
     if (tabValue === '2' && isNewPackSlip) {
       fetchPackslips();
+    }else if(tabValue === '2' && !isNewPackSlip){
+      fetchCurrentPacklines();
     }
   }, [tabValue]);
 
@@ -417,9 +451,6 @@ const POReceipt = () => {
 
   const onSelectPackslip = (po) => {
     setPackSlipNUm(po?.PackSlip);
-    if (!isNewPackSlip) {
-      setSelectedPackslip(po);
-    }
   };
 
   const onSelectLine = (po) => {
@@ -1003,11 +1034,11 @@ const POReceipt = () => {
 
                 {!_.isEmpty(selectedPackSlip) ? (
                   <View style={{ height: '100%', marginTop: 5 }}>
-                    {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchExistingPackslips} >
+                    <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchCurrentPacklines} >
                       <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>Refresh</Text>
-                    </TouchableOpacity> */}
+                    </TouchableOpacity>
                     <ScrollView>
-                      {existingPackslipLoading && (
+                      {packslipLoading && (
                         <ActivityIndicator
                           animating={true}
                           color={MD2Colors.red800}

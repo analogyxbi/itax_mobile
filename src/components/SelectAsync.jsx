@@ -35,7 +35,10 @@ const SelectAsync = ({
     // Debounced search handler
     const handleSearch = useCallback(
         debounce(async (text) => {
-            if (text.trim() === '') return; // Avoid unnecessary API calls for empty searches
+            if (text.trim() === '') {
+                setPage(-1)
+                return
+            }; // Avoid unnecessary API calls for empty searches
 
             setLoading(true);
             setPage(-1); // Reset to first page on new search
@@ -47,7 +50,8 @@ const SelectAsync = ({
                 setFilteredOptions(result.data);
                 setHasMore(result.hasMore);
             } catch (error) {
-                Alert.alert('Error', 'Failed to fetch options');
+                dispatch(showSnackbar('Failed to fetch options.'))
+                // Alert.alert('Error', 'Failed to fetch options');
             } finally {
                 setLoading(false);
             }
@@ -61,7 +65,10 @@ const SelectAsync = ({
         if(text.length>0){
             handleSearch(text);
         }else{
-            loadMoreData()
+            setPage(-1)
+            setTimeout(()=>{
+                loadMoreData()
+            })
         }
     };
 

@@ -28,20 +28,21 @@ const SelectAsync = ({
     const [options, setOptions] = useState([]);
     const [filteredOptions, setFilteredOptions] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(-1);
     const [hasMore, setHasMore] = useState(true);
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
+
     // Debounced search handler
     const handleSearch = useCallback(
         debounce(async (text) => {
-            //   if (text.trim() === '') return; // Avoid unnecessary API calls for empty searches
+            if (text.trim() === '') return; // Avoid unnecessary API calls for empty searches
 
             setLoading(true);
-            setPage(1); // Reset to first page on new search
+            setPage(-1); // Reset to first page on new search
             setHasMore(true);
 
             try {
-                const result = await fetchOptions(text, 1, warehouse); // Fetch first page
+                const result = await fetchOptions(text, 0, warehouse); // Fetch first page
                 setOptions(result.data);
                 setFilteredOptions(result.data);
                 setHasMore(result.hasMore);
@@ -57,94 +58,67 @@ const SelectAsync = ({
     // Handle search input change
     const onSearchChange = (text) => {
         setSearchText(text);
-        handleSearch(text);
+        if(text.length>0){
+            handleSearch(text);
+        }else{
+            loadMoreData()
+        }
     };
 
-    const loadMoreData = async (force) => {
-        // If `force` is false, respect the usual conditions (loading state and `hasMore` flag)
-        if (warehouse) {
-            // console.log("warehouse changed")
-            if (!force && (loading || !hasMore)) return;
-            // console.log("Calling APi changed", warehouse)
+    const loadMoreData = async () => {
+        if (!hasMore || loading) return;
 
-            // Set loading state to true regardless of `force`
-            setLoading(true);
+        setLoading(true);
 
-            try {
-                // Fetch new options
-                const result = await fetchOptions(searchText, page + 1, warehouse);
-              
-                if (result.data.length === 0) {
-                    // If no data, set hasMore to false
-                    setHasMore(false);
-                } else {
-                    // Update options and filteredOptions with the fetched data
-                   if(force){
-                    setOptions((prevOptions) => [ ...result.data]);
-                    setFilteredOptions((prevOptions) => [ ...result.data]);
-                   }else{
-                    setOptions((prevOptions) => [...prevOptions, ...result.data]);
-                    setFilteredOptions((prevOptions) => [...prevOptions, ...result.data]);
-                   }
-                    // Update pagination state
-                    setPage((prevPage) => prevPage + 1);
-                }
+        try {
+            const result = await fetchOptions(searchText, page + 1, warehouse);
 
-                // Update options and filteredOptions with the fetched data
-                //   setOptions((prevOptions) => [...prevOptions, ...result.data]);
-                //   setFilteredOptions((prevOptions) => [...prevOptions, ...result.data]);
-                //   // Update pagination state and `hasMore` flag
-                //   setPage((prevPage) => prevPage + 1);
-                //   setHasMore(result.hasMore);
-            } catch (error) {
-                // Handle error scenario
-                Alert.alert('Error', 'Failed to load more options');
-            } finally {
-                // Reset loading state
-                setLoading(false);
+            if (result.data.length === 0) {
+                setHasMore(false);
+            } else {
+                setOptions((prevOptions) => [...prevOptions, ...result.data]);
+                setFilteredOptions((prevOptions) => [...prevOptions, ...result.data]);
+                setPage((prevPage) => prevPage + 1);
             }
-        } else {
-            dispatch(showSnackbar("Warehouse code not found. Please select the Warehouse"))
+        } catch (error) {
+            Alert.alert('Error', 'Failed to load more options');
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
-
-        setHasMore(true)
-        loadMoreData(true)
-
-    }, [warehouse, modalVisible])
+        if (modalVisible) {
+            setHasMore(true);
+            loadMoreData();
+        }
+    }, [warehouse, modalVisible]);
 
     const handleOptionPress = (option) => {
         onChange(option);
-        setModalVisible(false);
-        setOptions([])
-        setFilteredOptions([])
-        setHasMore(true)
-        setSearchText('')
-        setPage(1)
+        closeModal();
     };
 
     const closeModal = () => {
         setModalVisible(false);
-        setOptions([])
-        setFilteredOptions([])
-        setSearchText('')
-        setHasMore(true)
-        setPage(1)
-    }
+        setOptions([]);
+        setFilteredOptions([]);
+        setSearchText('');
+        setHasMore(true);
+        setPage(-1);
+    };
 
-    const renderOption = ({ item }) => (
+    const OptionItem = React.memo(({ item, onPress, isSelected }) => (
         <TouchableOpacity
-            style={[styles.option, item.BinNum === value && styles.selectedOption]}
-            onPress={() => handleOptionPress(item.BinNum)}
+            style={[styles.option, isSelected && styles.selectedOption]}
+            onPress={() => onPress(item.BinNum)}
         >
-            <Text style={styles.optionText}> {item.BinNum}  </Text>
-            {item.BinNum === value && (
+            <Text style={styles.optionText}>{item.BinNum}</Text>
+            {isSelected && (
                 <Ionicons name="checkmark" size={20} color="#007BFF" />
             )}
         </TouchableOpacity>
-    );
+    ));
 
     return (
         <View style={styles.container}>
@@ -182,19 +156,29 @@ const SelectAsync = ({
                             onChangeText={onSearchChange}
                             value={searchText}
                         />
-                        {loading && page === 1 ? (
+                        {loading && page === -1 ? (
                             <ActivityIndicator size="large" color="#0000ff" />
                         ) : (
                             <FlatList
                                 data={filteredOptions}
-                                renderItem={renderOption}
-                                keyExtractor={(item) => item.BinNum.toString()} // Ensure unique key for each item
-                                onEndReached={() => { }}
+                                renderItem={({ item }) => (
+                                    <OptionItem
+                                        item={item}
+                                        onPress={handleOptionPress}
+                                        isSelected={item.BinNum === value}
+                                    />
+                                )}
+                                keyExtractor={(item) => item.BinNum.toString()}
+                                initialNumToRender={30}
+                                maxToRenderPerBatch={50}
+                                updateCellsBatchingPeriod={50}
+                                windowSize={5}
+                                onEndReached={loadMoreData}
                                 onEndReachedThreshold={0.5}
                                 ListEmptyComponent={!loading && <Text>No options available</Text>}
                             />
                         )}
-                        {loading && page > 1 && <ActivityIndicator size="small" color="#0000ff" />}
+                        {loading && page > -1 && <ActivityIndicator size="small" color="#0000ff" />}
                     </View>
                 </View>
             </Modal>

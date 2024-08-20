@@ -13,7 +13,7 @@ export async function getBinsData(searchText, page, warehouse) {
   if(searchText.length >0){
     combinedFilter = combinedFilter + ` and ${searchFilter}`
   }
-  const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${combinedFilter}&$top=30`; // Adjust pagination logic
+  const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${combinedFilter}&$skip=${page * 100}&$top=100`; // Adjust pagination logic
   const postPayload = {
     epicor_endpoint,
     request_type: 'GET',

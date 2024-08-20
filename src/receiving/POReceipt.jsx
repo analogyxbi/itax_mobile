@@ -102,6 +102,7 @@ const POReceipt = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
   const [packslipButtonCliked, setPackslipButtonClicked] = useState(false);
+  const [createPackslipResponse, setCreatePackslipResponse] = useState();
 
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
@@ -326,7 +327,7 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
-            // setSelectedPackslip(json?.data)
+            setCreatePackslipResponse(json?.data)
             setCreatepackslipLoading(false);
             setTabvalue('2');
           })
@@ -582,7 +583,7 @@ const POReceipt = () => {
       dispatch(showSnackbar('Select a Packslip first'));
       return;
     }
-    const rowId = selectedPackSlip?.SysRowID;
+    const rowId = createPackslipResponse?.SysRowID;
       attachments?.forEach(async (data) => await uploadImage(data, packSLipNUm, rowId, () => {
         dispatch(setOnSuccess({ value: true, message: 'Files Uploaded Successfully' }));
         setAttachments([]);

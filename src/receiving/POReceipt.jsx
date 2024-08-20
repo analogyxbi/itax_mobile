@@ -326,7 +326,7 @@ const POReceipt = () => {
         })
           .then(({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
-            setSelectedPackslip(json?.data)
+            // setSelectedPackslip(json?.data)
             setCreatepackslipLoading(false);
             setTabvalue('2');
           })
@@ -371,8 +371,6 @@ const POReceipt = () => {
               [pageValue]: json?.data?.value,
             }));
             setFilteredPos(json.data.value);
-            3;
-
             setCustomTableState((prev) => ({
               ...prev,
               page: pageValue,

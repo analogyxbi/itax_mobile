@@ -49,6 +49,7 @@ import { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
 import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
+import { convertQuantity } from '../../utils/uomconversion';
 
 const initialFormdata = {
   poNum: '',
@@ -58,6 +59,7 @@ const initialFormdata = {
   rel: '',
   order_qty: '',
   arrived_qty: '',
+  qty_type: 'Supplier',
   input: '',
   note: '',
   WareHouseCode: '',
@@ -474,6 +476,8 @@ const POReceipt = () => {
     dispatch(
       setIsLoading({ value: true, message: 'Saving the Receipt. Please wait' })
     );
+    const ourQty = formData?.qty_type === 'Supplier' ? convertQuantity(formData?.input, currentLine?.IUM,currentLine?.PUM).toString() : formData.input;
+    const supplierQty = formData?.qty_type === 'Our' ? convertQuantity(formData?.input,currentLine?.PUM, currentLine?.IUM).toString() : formData.input;
     const today = new Date();
     let receipt = {
       // ...currentLine,
@@ -490,28 +494,27 @@ const POReceipt = () => {
       ReceivedTo: currentLine?.TranType,
       ReceivedComplete: false,
       ArrivedDate: today.toISOString(),
-      VendorQty: formData.input,
       PORelArrivedQty: formData?.input,
       POLine: currentLine?.POLine,
       PORelNum: currentLine?.PORelNum,
       PartNum: currentLine?.POLinePartNum,
-      DocVendorUnitCost: currentLine.DocUnitCost
-        ? currentLine.DocUnitCost
-        : '0',
+      DocVendorUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       DocUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       VendorUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
       WareHouseCode: formData?.WareHouseCode || currentLine?.WarehouseCode,
-      OurQty: formData.input,
-      InputOurQty: formData.input,
+      OurQty: ourQty,
+      InputOurQty: supplierQty,
+      VendorQty: supplierQty,
       IUM: currentLine?.IUM,
       PUM: currentLine?.PUM,
       RowMod: !reverse ? 'U' : 'A',
       JobNum: currentLine?.JobNum,
       JobSeq: currentLine?.JobSeq,
       JobSeqType: currentLine?.JobSeqType,
+      QtyOption: formData?.qty_type || currentLine?.QtyOption,
     };
     if (currentLine.PackLine) {
       receipt.PackLine = currentLine.PackLine;
@@ -530,6 +533,7 @@ const POReceipt = () => {
       ReceivePerson: 'analogyx1',
       RcvDtls: [receipt],
     };
+    // console.log("postpayload", postPayload, currentLine)
 
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     AnalogyxBIClient.post({

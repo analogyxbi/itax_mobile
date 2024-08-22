@@ -1,7 +1,7 @@
 import { AnalogyxBIClient } from "@analogyxbi/connection";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, TextInput, View } from "react-native";
-import { Button } from "react-native-paper";
+import { Button, RadioButton } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import { setIsLoading, setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
 import SelectInput from "../../components/SelectInput";
@@ -10,6 +10,7 @@ import { showSnackbar } from "../../Snackbar/messageSlice";
 import { globalStyles } from "../../style/globalStyles";
 import { getBinsData } from "../../utils/utils";
 import SelectAsync from "../../components/SelectAsync";
+import { convertQuantity } from "../../../utils/uomconversion";
 
 const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved, warehouse }) => {
     const dispatch = useDispatch();
@@ -19,6 +20,24 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
         from: [],
         to: [],
     });
+    const [supplierQty, setSupplierQty] = useState('');
+    const [ourQty, setOurQty] = useState('');
+
+    const handleSupplierQtyChange = (text) => {
+        setFormdata(prev => ({ ...prev, input: text }));
+        const parsedQty = parseFloat(text) || 0;
+        setSupplierQty(text);
+        const convertedQty = convertUOMs(parsedQty, currentLine?.PUM, currentLine?.IUM);
+        setOurQty(convertedQty.toString());
+    };
+
+    const handleOurQtyChange = (text) => {
+        setFormdata(prev => ({ ...prev, input: text }));
+        const parsedQty = parseFloat(text) || 0;
+        setOurQty(text);
+        const convertedQty = convertUOMs(parsedQty, currentLine?.IUM, currentLine?.PUM);
+        setSupplierQty(convertedQty.toString());
+    };
 
     function getWarehouse() {
         setRefreshing(true);
@@ -150,9 +169,18 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
         setFormdata((prev) => ({ ...prev, [key]: value }));
     }
 
-    function createNewReceipt(){
+    function createNewReceipt() {
         setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
         setIsSaved(false);
+    }
+
+    useEffect(() => {
+        setFormdata(prev => ({ ...prev, qty_type: currentLine?.QtyOption == "Our" ? "Our" : "Supplier" }));
+    }, [currentLine])
+
+    const convertUOMs = (qty, from, to) => {
+        const ourQty = convertQuantity(qty, from, to);
+        return ourQty;
     }
 
     return (
@@ -222,14 +250,45 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                     }
                 </View>
             </View>
+            <View style={[globalStyles.dFlexR, globalStyles.justifySE]}>
+                <View style={[globalStyles.dFlexR]}>
+                    <RadioButton
+                        value="Supplier"
+                        disabled={isNewPackSlip && currentLine?.QtyOption == "Our"}
+                        status={formData?.qty_type === 'Supplier' ? 'checked' : 'unchecked'}
+                        onPress={() => setFormdata(prev => ({ ...prev, qty_type: 'Supplier' }))}
+                    />
+                    <Text style={styles.inputLabel}>Supplier Qty ({currentLine?.PUM})</Text>
+                </View>
+                <View style={[globalStyles.dFlexR]}>
+                    <RadioButton
+                        value="Our"
+                        disabled={isNewPackSlip && currentLine?.QtyOption == "Supplier"}
+                        status={formData?.qty_type === 'Our' ? 'checked' : 'unchecked'}
+                        onPress={() => setFormdata(prev => ({ ...prev, qty_type: 'Our' }))}
+                    />
+                    <Text style={styles.inputLabel}>Our Qty ({currentLine?.IUM})</Text>
+                </View>
+            </View>
             <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>Input Qty</Text>
                     <TextInput
+                        editable={formData?.qty_type !== 'Our'}
+                        keyboardType='numeric'
                         style={styles.input}
-                        onChangeText={(text) => onChangeText(text, 'input')}
-                        value={formData.input}
-                        placeholder="Input"
+                        onChangeText={handleSupplierQtyChange}
+                        value={supplierQty}
+                        placeholder="Supplier Qty"
+                    />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <TextInput
+                        editable={formData?.qty_type !== 'Supplier'}
+                        keyboardType='numeric'
+                        style={styles.input}
+                        onChangeText={handleOurQtyChange}
+                        value={ourQty}
+                        placeholder="Our Qty"
                     />
                 </View>
             </View>

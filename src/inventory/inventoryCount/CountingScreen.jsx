@@ -1,7 +1,7 @@
 import { AnalogyxBIClient } from '@analogyxbi/connection';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useEfrct, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -24,13 +24,16 @@ import {
 } from '../../components/Loaders/toastReducers';
 import PopUpDialog from '../../components/PopUpDialog';
 import { globalStyles } from '../../style/globalStyles';
-import { createDsPayload, updatePartToDataset } from '../Utils/InventoryUtils';
+import { createDsPayload, fetchCountPartDetails, updatePartToDataset } from '../Utils/InventoryUtils';
 import {
   removeTag,
   setCurrentCycle,
   setSelectedCycleDetails,
 } from '../reducer/inventory';
 import TagsPopUp from './components/TagsPopUp';
+import SelectInput from '../../components/SelectInput';
+import SelectInputValue from '../../components/SelectInputValue';
+import { isEmpty } from '../../utils/utils';
 
 const CountingScreen = ({
   part,
@@ -55,14 +58,42 @@ const CountingScreen = ({
   const [submitConfirm, setSubmitConfirm] = useState(false);
   const [visible, setVisible] = React.useState(false);
   const [genNewTag, setGenNewTag] = useState(false);
-  const { selectedCycleDetails } = useSelector((state) => state.inventory);
+  const { selectedCycleDetails, cycleTags } = useSelector((state) => state.inventory);
   const [addPart, setAddPart] = useState(false);
+  const [selectedTag, setSelectedTag] = useState({})
+  const [existingPartsOnTag, setExistingPartsOnTag] = useState(cycleTags.filter((data) => data.PartNum != "").map((data)=> data.PartNum))
+  const [CCPartsOnTag, setCCPartsOnTag] = useState(selectedCycleDetails[0].CCDtls.filter((data) => data.PartNum != "").map((data)=> data.PartNum))
+  const [selectedPart, setSelectedPart] = useState({})
+  const [nextConfirm, setNextConfirm] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const dispatch = useDispatch();
 
   const openMenu = () => setVisible(true);
 
   const closeMenu = () => setVisible(false);
 
-  const dispatch = useDispatch();
+  function pickUniquePart(existingParts, newParts) {
+    // Convert existingParts to a Set for efficient lookups
+    const existingSet = new Set(existingParts);
+    
+    // Filter newParts to get parts that are not in existingParts
+    const uniqueParts = newParts.filter(part => !existingSet.has(part));
+    
+    // Check if there are any unique parts available
+    if (uniqueParts.length === 0) {
+        return null; // No unique parts available
+    }
+    
+    // Pick a random item from uniqueParts
+    const randomIndex = Math.floor(Math.random() * uniqueParts.length);
+    return uniqueParts[randomIndex];
+}
+
+
+  function getUnusedPart(){
+    return pickUniquePart(existingPartsOnTag, CCPartsOnTag)
+  }
+
   const closeScanner = () => {
     setCameraState(null);
     setScannerVisible(false);
@@ -73,21 +104,82 @@ const CountingScreen = ({
       setCameraState(null);
       closeScanner();
       return dispatch(
-        showSnackbar('Warehouse or bin not found for the part number')
+        showSnackbar('Part or Bin not found for the part number')
       );
     }
     if (cameraState === 'part') {
-      setPart(details);
-    } else if (details.includes('\\')) {
-      let data = details.split(' \\ ');
-      setBin(data[1]);
+      if(details.includes('\\')){
+        let data = details.split(' \\ ');
+        setPart(data[2])
+      }else{
+        setPart(details);
+      }
+    } else if(cameraState === 'bin'){
+      if (details.includes('\\')) {
+        let data = details.split(' \\ ');
+        setBin(data[1]);
+      }else{
+        setBin(details)
+      }
     }
     setCameraState(null);
     closeScanner();
   }
 
+  async function setCycleDetailsToCount(part, plant){
+    setLoading(true)
+    const partDtls = await fetchCountPartDetails(part, plant, currentCycle.WarehouseCode)
+    setSelectedPart(partDtls)
+
+    setBin(partDtls?.PrimaryBinNum)
+    setPart(partDtls?.PartNum)
+    setCountedQty(`${partDtls?.QuantityOnHand}`)
+    const tag = tagsData[0]
+    setSelectedTag({...tag, label: tag.TagNum, value: tag.TagNum})
+    setNextConfirm(false)
+    setLoading(false)
+  }
+
+  async function setBlankFalse(values){
+    let data = values
+    const epicor_endpoint = `/Erp.BO.CountTagSvc/CountTags`
+    try{
+      const response = await AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(data),
+      },
+      stringify: false,
+    })
+      // delete data.odata
+      const { json } = response
+      dispatch(
+        setOnSuccess({
+          value: true,
+          message: `Data added on Tag ${values.TagNum}`,
+        })
+      );
+    }catch(err){
+      try {
+        const errorResponse = await err.json();
+        dispatch(setOnError({ value: true, message: errorResponse?.ErrorMessage }));
+      } catch (error) {
+        dispatch(setOnError({ value: true, message: 'An Error Occurred' }));
+      }
+    }
+  }
+
+  function findAndRemovePart(part){
+    const ccDtls = CCPartsOnTag.filter((p)=> p != part)
+    setCCPartsOnTag(()=> [...ccDtls])
+    setExistingPartsOnTag((prev)=> [...prev, part])
+  }
+
   function postTag() {
     setSubmitConfirm(false);
+    if(isEmpty(selectedTag)) return dispatch(showSnackbar("Please select the tag"))
     dispatch(
       setIsLoading({
         value: true,
@@ -97,8 +189,11 @@ const CountingScreen = ({
     try {
       const details = selectedCycleDetails[0].CCDtls;
       const cycleData = details.find((data) => data.PartNum == part);
+
       if (cycleData) {
-        const tag = tagsData[0];
+        let tag = selectedTag;
+        delete tag.label
+        delete tag.value
         let values = {
           ...tag,
           BinNum: bin,
@@ -106,11 +201,11 @@ const CountingScreen = ({
           TagNote: notes,
           CountedBy: 'App User',
           CountedQty: countedQty,
-          UOM: cycleData.BaseUOM,
+          UOM: selectedPart.IUM,
           TagReturned: true,
-          BlankTag: false,
+          PartNumIUM: selectedPart.IUM,
         };
-
+        delete values.SysRevID
         const epicor_endpoint = '/Erp.BO.CountTagSvc/CountTags';
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -121,19 +216,20 @@ const CountingScreen = ({
           },
           stringify: false,
         })
-          .then(({ json }) => {
-            // delete data.odata
-            dispatch(
-              setOnSuccess({
-                value: true,
-                message: `Data added on Tag ${tag.TagNum}`,
-              })
-            );
+          .then(async ({ json }) => {
+  
+          // delete data.odata
+            // dispatch(
+            //   setOnSuccess({
+            //     value: true,
+            //     message: `Data added on Tag ${tag.TagNum}`,
+            //   })
+            // );
             dispatch(removeTag(tag.TagNum));
-            setPart('');
-            setBin('');
-            setNotes('');
-            setCountedQty('0');
+            findAndRemovePart(cycleData.part)
+            // const unPart = getUnusedPart()
+            // setCycleDetailsToCount(unPart, 'MfgSys')
+            await setBlankFalse({...values, BlankTag: false})
           })
           .catch((err) => {
             err.json().then((res) => {
@@ -161,6 +257,10 @@ const CountingScreen = ({
     }
   }
 
+  useEffect(()=>{
+    const unPart = getUnusedPart()
+    setCycleDetailsToCount(unPart, 'MfgSys')
+  },[])
 
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
@@ -335,7 +435,7 @@ const CountingScreen = ({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => setScreen('initial')}>
           <Ionicons
             name="chevron-back-outline"
             size={24}
@@ -366,7 +466,7 @@ const CountingScreen = ({
             />
             {/* <Menu.Item onPress={() => {}} title="Item 2" />
             <Divider />
-            <Menu.Item onPress={() => {}} title="Item 3" /> */}
+           <Menu.Item onPress={() => {}} title="Item 3" /> */} 
           </Menu>
         </View>
       </View>
@@ -398,6 +498,23 @@ const CountingScreen = ({
       </View>
       <View style={styles.countingScreenContainer}>
         <ScrollView contentContainerStyle={styles.countingScreen}>
+          <View style={{flex:1, width:300}}>
+            <SelectInputValue
+              value={selectedTag.TagNum}
+              onChange={(itemValue) => {
+                setSelectedTag(itemValue)
+              }}
+              options={tagsData.map((data) => ({
+                ...data,
+                label: data.TagNum,
+                value: data.TagNum,
+              }))}
+              isLoading={false}
+              label="TagNum"
+              handleRefresh={()=>{}}
+              placeholder={"Select Tag Number"}
+            />
+            </View>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -441,6 +558,14 @@ const CountingScreen = ({
           />
           <TextInput
             style={styles.inputNoIcon}
+            placeholder="IUM"
+            value={selectedPart.IUM}
+            onChangeText={(text)=> {
+              setSelectedPart((prev)=>({...prev , IUM:text}))
+            }}
+          />
+          <TextInput
+            style={styles.inputNoIcon}
             placeholder="Notes (Manual Input - If any)"
             value={notes}
             onChangeText={setNotes}
@@ -455,14 +580,9 @@ const CountingScreen = ({
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.footerButton}
-            onPress={() => {
-              setPart('');
-              setBin('');
-              setCountedQty('');
-              setNotes('');
-            }}
+            onPress={() => setNextConfirm(true)}
           >
-            <Text style={styles.buttonText}>Clear</Text>
+            <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -473,6 +593,18 @@ const CountingScreen = ({
         handleOk={postTag}
         title="Save Changes"
         message={'Are you sure you want Save details on tag?'}
+      />
+      <PopUpDialog
+        visible={nextConfirm}
+        setVisible={setNextConfirm}
+        handleCancel={() => setNextConfirm(false)}
+        handleOk={()=> {
+          const unPart = getUnusedPart()
+          setCycleDetailsToCount(unPart, 'MfgSys')
+        }}
+        title="Move to next Part"
+        message={'Are you sure to change the tag?'}
+        loading={loading}
       />
       <TagsPopUp
         visible={genNewTag}

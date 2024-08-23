@@ -13,6 +13,8 @@ import {
 import PopUpDialog from '../../components/PopUpDialog';
 import VarianceReport from '../../components/VarianceReport';
 import { globalStyles } from '../../style/globalStyles';
+import { showSnackbar } from '../../Snackbar/messageSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 const InitialScreen = ({
   setScreen,
@@ -23,6 +25,11 @@ const InitialScreen = ({
   const navigation = useNavigation();
   const [postCountData, setPostCountData] = useState(false);
   const [genTags, setGenTags] = useState(false);
+  const { tagsData } = useSelector(
+    (state) => state.inventory
+  );
+
+  const dispatch = useDispatch()
 
   return (
    
@@ -68,6 +75,18 @@ const InitialScreen = ({
         </View>
       </View>
       <ScrollView contentContainerStyle={styles.initialScreen}>
+      <TouchableOpacity
+          style={{
+            ...styles.button,
+            // backgroundColor:
+            //   currentCycle.CycleStatus > 1
+            //     ? 'grey'
+            //     : globalStyles.colors.success,
+          }}
+          onPress={() => navigation.navigate('add_part_to_cycle')}
+        >
+          <Text style={styles.buttonText}>Add parts by Bin</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={{
             ...styles.button,
@@ -76,14 +95,22 @@ const InitialScreen = ({
                 ? 'grey'
                 : globalStyles.colors.success,
           }}
-          onPress={() => setGenTags(true)}
+          onPress={() => {
+            setGenTags(true)
+          }}
           disabled={currentCycle.CycleStatus > 1}
         >
           <Text style={styles.buttonText}>Initiate Counting Process</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => setScreen('counting')}
+          onPress={() => {
+            if(tagsData.length>0){
+              setScreen('counting')
+            }else{
+              dispatch(showSnackbar('No tags Available for Count. Please Initiale the counting process'))
+            }
+          }}
         >
           <Text style={styles.buttonText}>Count</Text>
         </TouchableOpacity>

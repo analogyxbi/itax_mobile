@@ -1,3 +1,7 @@
+import { AnalogyxBIClient } from "@analogyxbi/connection";
+import { setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
+import { setSelectedCycleCCDtls, setSelectedCycleDetails } from "../reducer/inventory";
+
 export const generateTags = {
   ds: {
     CCHdr: [
@@ -105,6 +109,40 @@ export function createDsPayload(cycle, part) {
   return data;
 }
 
+
+async function createMultiPartPayload(cycle, part) {
+  const partData = part.map((data) => ({
+    Company: cycle.Company,
+    WarehouseCode: cycle.WarehouseCode,
+    Plant: cycle.Plant,
+    CCYear: cycle.CCYear,
+    CCMonth: cycle.CCMonth,
+    FullPhysical: cycle.FullPhysical,
+    CycleSeq: cycle.CycleSeq,
+    PartNum: data.PartNum,
+    RowMod: 'A',
+  }));
+
+  const data = {
+    ds: {
+      CCHdr: [
+        {
+          ...cycle,
+        },
+      ],
+      CCDtl: [...partData],
+    },
+    plant: cycle.Plant,
+    warehouseCode: cycle.WarehouseCode,
+    ccYear: cycle.CCYear,
+    ccMonth: cycle.CCMonth,
+    fullPhysical: cycle.FullPhysical,
+    cycleSeq: cycle.CycleSeq,
+  };
+
+  return data;
+}
+
 export function updatePartToDataset(dataset, part) {
   let data = dataset.ds;
   let ccdetails = data.CCDtl;
@@ -117,4 +155,149 @@ export function updatePartToDataset(dataset, part) {
   });
   data.CCDtl = dtl;
   return { ds: data };
+}
+
+
+export async function fetchPartByWhseBin(whse, bin, select="PartNum") {
+  const data = {
+      whseCode: whse,
+      binNum: bin,
+  };
+
+  const epicor_endpoint = `/Erp.BO.PartBinSearchSvc/GetBinContents?$select=${select}`;
+  const postPayload = {
+      epicor_endpoint,
+      request_type: 'POST',
+      data: JSON.stringify(data),
+  };
+
+  try {
+      const response = await AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload,
+          stringify: false,
+      });
+      const part = response.json.data.returnObj.PartBinSearch;
+      return part;
+
+  } catch (err) {
+      console.error(`Error fetching Parts for warehouse ${data.whseCode} and bin ${data.binNum}:`, err);
+      throw err; // Optionally rethrow to handle it where this function is called
+  }
+}
+
+
+export async function addPartsDetailsToCycle(cycle, part, dispatch) {
+  const payload = await createMultiPartPayload(cycle, part);
+  const epicor_endpoint = '/Erp.BO.CCPartSelectUpdSvc/GetNewCCDtl';
+  const data = payload
+
+  try {
+    const response = await AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(data),
+      },
+      stringify: false,
+    });
+
+    const { json } = response;
+    // Assuming updateCCDtls needs to be awaited to complete before the function resolves
+    const res  = await updateMultiCCDtls(json.data.parameters, part, dispatch);
+    return res
+  } catch (err) {
+    console.error(err)
+    try {
+      const errorResponse = await err.json();
+      dispatch(setOnError({ value: true, message: errorResponse.ErrorMessage }));
+    } catch (error) {
+      dispatch(setOnError({ value: true, message: 'An Error Occurred' }));
+    }
+  }
+}
+
+async function updateMultiCCDtls(dataset, part, dispatch) {
+  const data = updateMultiPartToDataset(dataset, part);
+  const epicor_endpoint = '/Erp.BO.CCPartSelectUpdSvc/Update';
+  try {
+    const response = await AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(data),
+      },
+      stringify: false,
+    });
+    
+    const { json } = response;
+    dispatch(setSelectedCycleCCDtls(json.data.parameters.ds.CCDtl))
+    dispatch(setOnSuccess({ value: true, message: "Parts Added to the Cycle." }));
+    return "json"
+    
+    // dispatch(setSelectedCycleDetails)
+  } catch (err) {
+    console.error(err)
+    try {
+      const errorResponse = await err.json();
+      dispatch(setOnError({ value: true, message: errorResponse.ErrorMessage }));
+    } catch (error) {
+      dispatch(setOnError({ value: true, message: 'An Error Occurred' }));
+    }
+  }
+}
+
+
+export function updateMultiPartToDataset(dataset, part) {
+  let data = dataset.ds;
+  let ccdetails = data.CCDtl;
+  let dtl = [];
+  ccdetails.forEach((dtls) => {
+    let newDtls = dtls;
+    let foundData = part.find((data) => data.PartNum === dtls.PartNum)
+    if(foundData){
+      dtl.push({ ...newDtls, BaseUOM: foundData.IUM });
+    }
+  });
+  return { ds: {...data, CCDtl: dtl} };
+}
+
+
+export async function fetchCountPartDetails(part, plant="MfgSys", warehouseCode) {
+  if(part && warehouseCode){
+    const data =    {
+      "cPartNum": part,
+      "cPlant": plant
+    }
+    const epicor_endpoint = `/Erp.BO.PartOnHandWhseSvc/GetPartOnHandWhse`;
+    const postPayload = {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify(data),
+    };
+  
+    try {
+        const response = await AnalogyxBIClient.post({
+            endpoint: `/erp_woodland/resolve_api`,
+            postPayload,
+            stringify: false,
+        });
+        const { json } = response;
+        const onHandbinsArray = json.data.returnObj.PartOnHandWhse;
+        const found = onHandbinsArray.find((data) => data.WarehouseCode === warehouseCode)
+        if(found){
+          return found
+        }else{
+          return {
+            PartNum: part
+          }
+        }
+  
+    } catch (err) {
+        console.error(`Error fetching Parts for warehouse ${data.whseCode} and bin ${data.binNum}:`, err);
+        throw err; // Optionally rethrow to handle it where this function is called
+    }
+  }
 }

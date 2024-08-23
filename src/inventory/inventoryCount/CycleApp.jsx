@@ -1,5 +1,5 @@
 import { AnalogyxBIClient } from '@analogyxbi/connection';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
@@ -19,12 +19,14 @@ import {
 } from '../reducer/inventory';
 import CountingScreen from './CountingScreen';
 import InitialScreen from './InitialScreen';
+import { isEmpty } from '../../utils/utils';
 
 export default function CycleApp() {
   const [screen, setScreen] = useState('initial'); // Initial screen state
   const { currentCycle, tagsData, selectedCycleDetails } = useSelector(
     (state) => state.inventory
   );
+  
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [part, setPart] = useState('');
   const [bin, setBin] = useState('');
@@ -386,7 +388,6 @@ export default function CycleApp() {
                 });
             })
             .catch((err) => {
-              console.log(err)
               dispatch(setIsLoading({ value: false, message: '' }));
               dispatch(
                 showSnackbar('Error Occured While fetching cycle Details')
@@ -408,6 +409,10 @@ export default function CycleApp() {
       );
     }
   }
+
+  useEffect(()=>{
+    fetchAllTags(false, true)
+  },[])
 
 
   return (

@@ -42,11 +42,10 @@ export default function ExpoCamera({ setCameraVisible }) {
   };
   const takePicture = async () => {
     if (cameraRef.current) {
-      console.log({ cameraRef });
       const options = { quality: 0.5, base64: true, skipProcessing: true };
       const data = await cameraRef.current.takePictureAsync(options);
       const source = data.uri;
-      console.log({ data });
+  
       if (source) {
         await cameraRef.current.pausePreview();
         // setIsPreview(true);

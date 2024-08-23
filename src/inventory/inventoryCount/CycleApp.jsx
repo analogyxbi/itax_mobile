@@ -14,6 +14,7 @@ import { showSnackbar } from '../../Snackbar/messageSlice';
 import {
   setCurrentCycle,
   setCycleTags,
+  setScreenLayout,
   setSelectedCycleDetails,
   setTagsData,
 } from '../reducer/inventory';
@@ -22,8 +23,8 @@ import InitialScreen from './InitialScreen';
 import { isEmpty } from '../../utils/utils';
 
 export default function CycleApp() {
-  const [screen, setScreen] = useState('initial'); // Initial screen state
-  const { currentCycle, tagsData, selectedCycleDetails } = useSelector(
+  // const [screen, setScreen] = useState('initial'); // Initial screen state
+  const { currentCycle, tagsData, selectedCycleDetails, screen } = useSelector(
     (state) => state.inventory
   );
   
@@ -345,8 +346,8 @@ export default function CycleApp() {
           })
             .then(({ json }) => {
               dispatch(setSelectedCycleDetails(json.data.value));
-              const selectedData = json?.data?.value;
-              const details = selectedData && selectedData[0]?.CCDtls || [];
+              const selectedData = json.data.value[0];
+              const details = selectedData?.CCDtls ? selectedData?.CCDtls : [];
               let values = {
                 ds: {
                   CCHdr: [
@@ -356,7 +357,7 @@ export default function CycleApp() {
                       RowMod: 'U',
                     },
                   ],
-                  CCDtl: details,
+                  CCDtl: details.map((data)=> ({...data, PostStatus: 1})),
                 },
               };
               const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
@@ -441,7 +442,7 @@ export default function CycleApp() {
       />
       {screen === 'initial' ? (
         <InitialScreen
-          setScreen={setScreen}
+          setScreen={(data)=> dispatch(setScreenLayout(data))}
           currentCycle={currentCycle}
           generateTagsAndStartCount={generateTagsAndStartCount}
           loading={isLoading}
@@ -457,7 +458,7 @@ export default function CycleApp() {
           setCountedQty={setCountedQty}
           notes={notes}
           setNotes={setNotes}
-          setScreen={setScreen}
+          setScreen={(data)=> dispatch(setScreenLayout(data))}
           currentCycle={currentCycle}
           loading={isLoading}
           tagsData={tagsData}

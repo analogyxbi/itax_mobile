@@ -285,10 +285,10 @@ export async function fetchCountPartDetails(part, plant="MfgSys", warehouseCode)
             stringify: false,
         });
         const { json } = response;
-        const onHandbinsArray = json.data.returnObj.PartOnHandWhse;
+        const onHandbinsArray = json.data.returnObj.PartOnHandBin;
         const found = onHandbinsArray.find((data) => data.WarehouseCode === warehouseCode)
         if(found){
-          return found
+          return {...found, PrimaryBinNum:found.BinNum, IUM: found.UnitOfMeasure }
         }else{
           return {
             PartNum: part

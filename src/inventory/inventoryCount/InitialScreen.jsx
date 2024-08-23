@@ -85,7 +85,7 @@ const InitialScreen = ({
           }}
           onPress={() => navigation.navigate('add_part_to_cycle')}
         >
-          <Text style={styles.buttonText}>Add parts by Bin</Text>
+          <Text style={styles.buttonText}>Add Parts By BinNum</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={{

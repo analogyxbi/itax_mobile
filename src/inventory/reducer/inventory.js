@@ -34,6 +34,7 @@ const initialState = {
   selectedCycleDetails: [],
   tagsData: [],
   cycleTags: [],
+  screen:'initial'
 };
 
 const inventorySlice = createSlice({
@@ -70,6 +71,9 @@ const inventorySlice = createSlice({
         cycleTags: [],
       };
     },
+    setScreenLayout:(state,action) =>{
+      state.screen = action.payload;
+    },
     setCurrentCycle: (state, action) => {
       state.currentCycle = action.payload;
     },
@@ -77,7 +81,6 @@ const inventorySlice = createSlice({
       state.cyclesData = action.payload;
     },
     setSelectedCycleDetails: (state, action) => {
-      console.log({action})
       state.selectedCycleDetails = action.payload;
     },
     setSelectedCycleCCDtls: (state, action)=>{
@@ -116,7 +119,8 @@ export const {
   setTagsData,
   removeTag,
   setCycleTags,
-  setSelectedCycleCCDtls
+  setSelectedCycleCCDtls,
+  setScreenLayout
 } = inventorySlice.actions;
 
 export default inventorySlice.reducer;

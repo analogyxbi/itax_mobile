@@ -608,7 +608,11 @@ const CountingScreen = ({
         handleCancel={() => setNextConfirm(false)}
         handleOk={() => {
           const unPart = getUnusedPart();
-          setCycleDetailsToCount(unPart, 'MfgSys');
+          if(unPart){
+            setCycleDetailsToCount(unPart, 'MfgSys');
+          }else{
+            dispatch(showSnackbar('No More parts available for the cycle.'))
+          }
         }}
         title="Move to next Part"
         message={'Are you sure to change the tag?'}

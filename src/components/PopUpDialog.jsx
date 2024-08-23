@@ -17,13 +17,15 @@ const PopUpDialog = ({
     <View>
       <Portal>
         <Dialog visible={visible} onDismiss={hideDialog}>
-          <Dialog.Title>{title}</Dialog.Title>
+          <Dialog.Title>{loading ? "Please wait" :title}</Dialog.Title>
           <Dialog.Content>
             {loading ?  <ActivityIndicator /> :<Text variant="bodyMedium"> {message} </Text>}
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={handleCancel}>Cancel</Button>
-            <Button onPress={handleOk}>Ok</Button>
+            {!loading && <>
+              <Button onPress={handleCancel}>Cancel</Button>
+              <Button onPress={handleOk}>Ok</Button>
+            </>}
           </Dialog.Actions>
         </Dialog>
       </Portal>

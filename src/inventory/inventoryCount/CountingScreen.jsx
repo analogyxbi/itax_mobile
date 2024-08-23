@@ -3,6 +3,8 @@ import Entypo from '@expo/vector-icons/Entypo';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useEfrct, useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -134,6 +136,7 @@ const CountingScreen = ({
     setBin(partDtls?.PrimaryBinNum)
     setPart(partDtls?.PartNum)
     setCountedQty(`${partDtls?.QuantityOnHand}`)
+    setNotes('')
     const tag = tagsData[0]
     setSelectedTag({...tag, label: tag.TagNum, value: tag.TagNum})
     setNextConfirm(false)
@@ -443,7 +446,6 @@ const CountingScreen = ({
           />
         </Pressable>
         <Text style={styles.heading}>Counting Process</Text>
-
         <View style={styles.menu}>
           <Menu
             visible={visible}
@@ -464,12 +466,11 @@ const CountingScreen = ({
               }}
               title="Generate New Tags"
             />
-            {/* <Menu.Item onPress={() => {}} title="Item 2" />
-            <Divider />
-           <Menu.Item onPress={() => {}} title="Item 3" /> */} 
+            {/* Additional Menu Items can be added here */}
           </Menu>
         </View>
       </View>
+
       <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
         <View style={styles.row}>
           <View style={styles.column}>
@@ -496,14 +497,19 @@ const CountingScreen = ({
           </View>
         </View>
       </View>
-      <View style={styles.countingScreenContainer}>
-        <ScrollView contentContainerStyle={styles.countingScreen}>
-          <View style={{flex:1, width:300}}>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.countingScreen}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={{ flex: 1, width: 300 }}>
             <SelectInputValue
               value={selectedTag.TagNum}
-              onChange={(itemValue) => {
-                setSelectedTag(itemValue)
-              }}
+              onChange={(itemValue) => setSelectedTag(itemValue)}
               options={tagsData.map((data) => ({
                 ...data,
                 label: data.TagNum,
@@ -511,10 +517,10 @@ const CountingScreen = ({
               }))}
               isLoading={false}
               label="TagNum"
-              handleRefresh={()=>{}}
+              handleRefresh={() => {}}
               placeholder={"Select Tag Number"}
             />
-            </View>
+          </View>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -560,8 +566,8 @@ const CountingScreen = ({
             style={styles.inputNoIcon}
             placeholder="IUM"
             value={selectedPart.IUM}
-            onChangeText={(text)=> {
-              setSelectedPart((prev)=>({...prev , IUM:text}))
+            onChangeText={(text) => {
+              setSelectedPart((prev) => ({ ...prev, IUM: text }));
             }}
           />
           <TextInput
@@ -571,6 +577,7 @@ const CountingScreen = ({
             onChangeText={setNotes}
           />
         </ScrollView>
+
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.footerButton}
@@ -585,7 +592,8 @@ const CountingScreen = ({
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
+
       <PopUpDialog
         visible={submitConfirm}
         setVisible={setSubmitConfirm}
@@ -598,9 +606,9 @@ const CountingScreen = ({
         visible={nextConfirm}
         setVisible={setNextConfirm}
         handleCancel={() => setNextConfirm(false)}
-        handleOk={()=> {
-          const unPart = getUnusedPart()
-          setCycleDetailsToCount(unPart, 'MfgSys')
+        handleOk={() => {
+          const unPart = getUnusedPart();
+          setCycleDetailsToCount(unPart, 'MfgSys');
         }}
         title="Move to next Part"
         message={'Are you sure to change the tag?'}
@@ -632,7 +640,6 @@ const CountingScreen = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
     backgroundColor: '#fff',
   },
   header: {
@@ -640,6 +647,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
+    backgroundColor: '#fff', // Ensure header is visible with a background color
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
   heading: {
     fontSize: 22,
@@ -647,76 +657,9 @@ const styles = StyleSheet.create({
     color: globalStyles.colors.darkGrey,
     marginLeft: 20,
   },
-  countingScreenContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  countingScreen: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 10,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 20,
-    width: 300,
-    height: 40,
-    backgroundColor: '#fff',
-  },
-  input: {
-    flex: 1,
-    paddingLeft: 10,
-  },
   menu: {
     position: 'absolute',
     right: 18,
-  },
-  inputNoIcon: {
-    width: 300,
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingLeft: 10,
-    marginBottom: 20,
-    backgroundColor: '#fff',
-  },
-  icon: {
-    paddingHorizontal: 10,
-  },
-  footer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    position: 'absolute',
-    bottom: 0,
-    paddingVertical: 10,
-    backgroundColor: '#f8f8f8',
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-    width: '100%',
-  },
-  footerButton: {
-    width: 150,
-    height: 50,
-    backgroundColor: globalStyles.colors.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   detailsContainer: {
     flexWrap: 'wrap',
@@ -739,6 +682,68 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 16,
     color: '#666',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  countingScreenContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  countingScreen: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 20,
+    width: 300,
+    height: 40,
+    backgroundColor: '#fff',
+  },
+  input: {
+    flex: 1,
+    paddingLeft: 10,
+  },
+  inputNoIcon: {
+    width: 300,
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingLeft: 10,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+  },
+  icon: {
+    paddingHorizontal: 10,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    backgroundColor: '#f8f8f8',
+    borderTopWidth: 1,
+    borderColor: '#ccc',
+    width: '100%',
+  },
+  footerButton: {
+    width: 150,
+    height: 50,
+    backgroundColor: globalStyles.colors.success,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

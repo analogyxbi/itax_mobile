@@ -15,13 +15,14 @@ import debounce from 'lodash.debounce';
 import { useDispatch } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 
-const SelectAsync = ({
+const MultiSelectAsync = ({
     label,
-    value,
+    value, // Single value for single select or array for multi select
     onChange,
     placeholder,
     fetchOptions, // Function to fetch options from the server
-    warehouse
+    warehouse,
+    multi = false // Prop to determine if multi-select is enabled
 }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -102,8 +103,18 @@ const SelectAsync = ({
     }, [warehouse, modalVisible]);
 
     const handleOptionPress = (option) => {
-        onChange(option);
-        closeModal();
+        if (multi) {
+            // Handle multi-select
+            const newValues = value.includes(option.BinNum)
+                ? value.filter(val => val !== option.BinNum) // Remove option if it's already selected
+                : [...value, option.BinNum]; // Add option if it's not selected
+              
+            onChange(newValues);
+        } else {
+            // Handle single-select
+            onChange(option.BinNum);
+            closeModal();
+        }
     };
 
     const closeModal = () => {
@@ -118,7 +129,7 @@ const SelectAsync = ({
     const OptionItem = React.memo(({ item, onPress, isSelected }) => (
         <TouchableOpacity
             style={[styles.option, isSelected && styles.selectedOption]}
-            onPress={() => onPress(item.BinNum)}
+            onPress={() => onPress(item)}
         >
             <Text style={styles.optionText}>{item.BinNum}</Text>
             {isSelected && (
@@ -133,8 +144,8 @@ const SelectAsync = ({
                 style={styles.inputContainer}
                 onPress={() => setModalVisible(true)}
             >
-                <Text style={[styles.input, !value && styles.placeholder]}>
-                    {value || placeholder}
+                <Text style={[styles.input, !value?.length && styles.placeholder]}>
+                    {value.length ? value.join(', ') : placeholder}
                 </Text>
                 <Ionicons
                     name="chevron-down"
@@ -172,7 +183,7 @@ const SelectAsync = ({
                                     <OptionItem
                                         item={item}
                                         onPress={handleOptionPress}
-                                        isSelected={item.BinNum === value}
+                                        isSelected={value.includes(item.BinNum)}
                                     />
                                 )}
                                 keyExtractor={(item) => item.BinNum.toString()}
@@ -262,4 +273,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SelectAsync;
+export default MultiSelectAsync;

@@ -251,6 +251,7 @@ const InventoryCount = () => {
         )}
         {currentCycle && <CycleDetails />}
       </View>
+      
       <TouchableOpacity
         style={styles.receiveButton}
         onPress={() => !validateVariable(currentCycle) ? getSelectedCycleDetails() : dispatch(showSnackbar('Please select the cycle to proceed further'))}
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     position: 'absolute',
     bottom: 40,
-    width: 400,
+    width: 365,
     zIndex: 10,
     marginHorizontal: 15,
   },

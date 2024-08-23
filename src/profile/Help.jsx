@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { Dimensions, Linking, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import packageJson from "../../package.json";
+import packageJson from "../../app.json";
 import { globalStyles } from "../style/globalStyles";
 
 const windowWidth = Dimensions.get('window').width;
@@ -32,7 +32,7 @@ const HelpScreen = () => {
                 <Text style={styles.sectionTitle}>Contact Support</Text>
                 <Text style={styles.text}>
                     {"           "} If you need further assistance, please contact us at
-                    <TouchableOpacity onPress={() => Linking.openURL('https://analogyx.com/contact-us/#')}>
+                    <TouchableOpacity onPress={() => Linking.openURL('https://analogyx.com/contact-us')}>
                         <Text style={styles.link}> https://analogyx.com/contact-us/#</Text>
                     </TouchableOpacity>.
                 </Text>

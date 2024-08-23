@@ -32,6 +32,7 @@ import { globalStyles } from './src/style/globalStyles';
 import Colors from './utils/Colors';
 import CustomDrawer from './utils/CustomDrawer';
 import PrivacyPolicy from './src/profile/PrivacyPolicy';
+import AddPartToCycle from './src/inventory/inventoryCount/AddPartToCycle';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -125,6 +126,8 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="UserInfo" component={UserInfo} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
+      <Stack.Screen name="add_part_to_cycle" component={AddPartToCycle} />
+
       {/* <Stack.Screen name="ProfileSettings" component={ProfileSettings} /> */}
     </Stack.Navigator>
   );

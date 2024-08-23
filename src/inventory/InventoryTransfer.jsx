@@ -16,6 +16,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal, FlatList,
+  Button as RNButton
 } from 'react-native';
 import { Button } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
@@ -38,8 +40,10 @@ import {
   setWarehouses,
   setWhseBins
 } from './reducer/inventory';
-import { getBinsData } from '../utils/utils';
+import { fetchBinfromPartWhse, getBinsData, getPartWhseInfo, isEmpty } from '../utils/utils';
 import SelectAsync from '../components/SelectAsync';
+import SelectPartWhse from '../components/SelectPartWhse';
+import { Alert } from 'react-native';
 
 const initForm = {
   current_whse: null,
@@ -77,6 +81,8 @@ const InventoryTransfer = () => {
   const [scannedBarcodes, setScannedBarcodes] = useState([]);
   const [lastScannedTime, setLastScannedTime] = useState(null);
   const [cameraState, setCameraState] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [partsOptions, setPartsOptions] = useState([]);
 
   const openScanner = () => {
     setScannerVisible(true);
@@ -101,12 +107,12 @@ const InventoryTransfer = () => {
       {
         Company: selectedPart.Company,
         TranDate: currentDate.toISOString(),
-        FromWarehouseCode: formData.current_whse,
+        FromWarehouseCode: selectedPart.WhseCode,
         // FromWarehouseCode: formData.current_whse,
         Plant: selectedPart.PlantName, // PlantName
         Plant2: selectedPart.Plant, // Plant
         ToWarehouseCode: formData.to_whse,
-        FromBinNum: formData.current_bin,
+        FromBinNum: selectedPart.BinNum,
         ToBinNum: formData.to_bin,
         PartNum: selectedPart.PartNum,
         TransferQty: formData.quantity,
@@ -138,6 +144,10 @@ const InventoryTransfer = () => {
       return dispatch(showSnackbar('Error setting Quantity'));
     }
 
+    if(isEmpty(selectedPart)){
+      return dispatch(showSnackbar(`Part not found in any bins of Warehouse: ${formData.current_whse}`));
+    }
+
     dispatch(
       setIsLoading({
         value: true,
@@ -151,6 +161,7 @@ const InventoryTransfer = () => {
       request_type: 'POST',
       data: JSON.stringify(data),
     };
+  
     try {
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -252,7 +263,6 @@ const InventoryTransfer = () => {
         stringify: false,
       })
         .then(({ json }) => {
-          console.log({json})
           setBins((prev) => ({ ...prev, [to]: json.data.value }));
           dispatch(showSnackbar(`Bins fetched for ${warehouse}`));
           dispatch(setWhseBins({ warehouse, bins: json.data.value }));
@@ -419,6 +429,39 @@ const InventoryTransfer = () => {
     })
   };
 
+
+  const handleSelectPart = async (itemValue) => {
+    onSelectBins('current_part', itemValue.PartNum);
+    const partsData = await fetchBinfromPartWhse(itemValue.PartNum, formData.current_whse)
+    const parts = partsData.data?.returnObj?.PartBinSearch;
+
+    if (parts && parts.length > 0) {
+      if (parts.length === 1) {
+        // Only one part, set it as the selected part
+        setSelectedPart(parts[0]);
+      } else {
+        // More than one part, show a modal to let the user select
+        setPartsOptions(parts);
+        setIsModalVisible(true);
+      }
+    } else {
+      dispatch(showSnackbar(`Part not found in any bin for the warehouse: ${formData.current_whse}`))
+      setSelectedPart({});
+    }
+  };
+
+  const handlePartSelection = (part) => {
+    setSelectedPart(part);
+    setIsModalVisible(false);
+  };
+
+  const renderPartItem = ({ item }) => (
+    <TouchableOpacity onPress={() => handlePartSelection(item)} style={styles.item}>
+      <Text style={styles.itemText}>{item.PartNum} (Bin: {item.BinNum}) </Text>
+    </TouchableOpacity>
+  );
+
+
   if (scannerVisible) {
     return (
       <BarcodeScannerComponent
@@ -529,7 +572,7 @@ const InventoryTransfer = () => {
                 handleRefresh={handleOptionsRefresh}
               />
             </View>
-            <View style={{ flex: 1 }}>
+            {/* <View style={{ flex: 1 }}>
               <View style={globalStyles.dFlexR}>
                 <Text style={styles.inputLabel}>Current Bin </Text>
                 <TouchableOpacity
@@ -565,7 +608,7 @@ const InventoryTransfer = () => {
                 fetchOptions={getBinsData}
                 warehouse={formData.current_whse}
               />
-            </View>
+            </View> */}
           </View>
           <View>
             <View style={globalStyles.dFlexR}>
@@ -583,17 +626,9 @@ const InventoryTransfer = () => {
                 />
               </TouchableOpacity>
             </View>
-            <SelectInput
+            <SelectPartWhse
               value={formData.current_part}
-              onChange={(itemValue) => {
-                onSelectBins('current_part', itemValue);
-                const stock = currentParts.find(
-                  (data) => data.PartNum === itemValue
-                );
-                if (stock) {
-                  setSelectedPart(stock);
-                }
-              }}
+              onChange={handleSelectPart}
               options={currentParts.map((data) => ({
                 ...data,
                 label: data.PartNum,
@@ -602,7 +637,37 @@ const InventoryTransfer = () => {
               isLoading={refreshing}
               label="current_part"
               handleRefresh={handleOptionsRefresh}
+              fetchOptions={getPartWhseInfo}
+              warehouse={formData.current_whse}
             />
+             <Modal
+                transparent={true}
+                visible={isModalVisible}
+                onRequestClose={() => {
+                  // if(isEmpty(selectedPart)){
+                    setSelectedPart(partsOptions[0])
+                  // }
+                  setIsModalVisible(false)
+                }}
+                animationType="slide"
+              >
+                <View style={styles.modalBackground}>
+                  <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Please select a Bin</Text>
+                    <FlatList
+                      data={partsOptions}
+                      renderItem={renderPartItem}
+                      keyExtractor={item => item.PartNum}
+                    />
+                    <RNButton style={styles.button} title="Close" onPress={() => {
+                  // if(isEmpty(selectedPart)){
+                    setSelectedPart(partsOptions[0])
+                  // }
+                  setIsModalVisible(false)
+                }} />
+                  </View>
+                </View>
+              </Modal>
           </View>
           <Text
             style={{
@@ -735,7 +800,7 @@ const InventoryTransfer = () => {
           icon="transfer"
           mode="contained"
           onPress={() => setSubmitConfirm(true)}
-          // disabled={handleValidate()}
+          disabled={selectedPart.length>0 && quantity.length<=0}
         >
           Transfer
         </Button>
@@ -833,4 +898,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  item: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  itemText: {
+    fontSize: 16,
+  },
+  button:{
+    color: globalStyles.colors.success
+  }
 });

@@ -15,7 +15,7 @@ import debounce from 'lodash.debounce';
 import { useDispatch } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 
-const SelectAsync = ({
+const SelectPartWhse = ({
     label,
     value,
     onChange,
@@ -74,7 +74,7 @@ const SelectAsync = ({
 
     const loadMoreData = async () => {
         if (!hasMore || loading) return;
-
+        if(!warehouse) return dispatch(showSnackbar("Please Select the Current Warehouse."))
         setLoading(true);
 
         try {
@@ -118,9 +118,9 @@ const SelectAsync = ({
     const OptionItem = React.memo(({ item, onPress, isSelected }) => (
         <TouchableOpacity
             style={[styles.option, isSelected && styles.selectedOption]}
-            onPress={() => onPress(item.BinNum)}
+            onPress={() => onPress(item)}
         >
-            <Text style={styles.optionText}>{item.BinNum}</Text>
+            <Text style={styles.optionText}>{item.PartNum}</Text>
             {isSelected && (
                 <Ionicons name="checkmark" size={20} color="#007BFF" />
             )}
@@ -172,17 +172,17 @@ const SelectAsync = ({
                                     <OptionItem
                                         item={item}
                                         onPress={handleOptionPress}
-                                        isSelected={item.BinNum === value}
+                                        isSelected={item.PartNum === value}
                                     />
                                 )}
-                                keyExtractor={(item) => item.BinNum.toString()}
+                                keyExtractor={(item) => item.PartNum.toString()}
                                 initialNumToRender={30}
                                 maxToRenderPerBatch={50}
                                 updateCellsBatchingPeriod={50}
                                 windowSize={5}
-                                onEndReached={loadMoreData}
+                                onEndReached={() => {}}
                                 onEndReachedThreshold={0.5}
-                                ListEmptyComponent={!loading && <Text>No options available</Text>}
+                                ListEmptyComponent={!warehouse ? <Text>Please select the current warehouse.</Text> : !loading && <Text>No options available</Text>}
                             />
                         )}
                         {loading && page > -1 && <ActivityIndicator size="small" color="#0000ff" />}
@@ -262,4 +262,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SelectAsync;
+export default SelectPartWhse;

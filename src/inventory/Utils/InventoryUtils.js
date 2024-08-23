@@ -120,9 +120,11 @@ async function createMultiPartPayload(cycle, part) {
     FullPhysical: cycle.FullPhysical,
     CycleSeq: cycle.CycleSeq,
     PartNum: data.PartNum,
+    TotFrozenQOH: data.QtyOnHand,
+    TotFrozenVal:data.QtyOnHand,
     RowMod: 'A',
   }));
-
+  
   const data = {
     ds: {
       CCHdr: [

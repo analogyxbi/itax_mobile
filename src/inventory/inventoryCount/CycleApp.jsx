@@ -27,14 +27,12 @@ export default function CycleApp() {
   const { currentCycle, tagsData, selectedCycleDetails, screen } = useSelector(
     (state) => state.inventory
   );
-  
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [part, setPart] = useState('');
   const [bin, setBin] = useState('');
   const [countedQty, setCountedQty] = useState('');
   const [notes, setNotes] = useState('');
   const dispatch = useDispatch();
-
   function fetchAllTags(isCount = true, showLoading = false) {
     if (showLoading) {
       dispatch(

@@ -43,7 +43,6 @@ import {
 import { fetchBinfromPartWhse, getBinsData, getPartWhseInfo, isEmpty } from '../utils/utils';
 import SelectAsync from '../components/SelectAsync';
 import SelectPartWhse from '../components/SelectPartWhse';
-import { Alert } from 'react-native';
 
 const initForm = {
   current_whse: null,

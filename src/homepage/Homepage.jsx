@@ -4,6 +4,7 @@ import {
   Feather,
   FontAwesome5,
   Ionicons,
+  MaterialCommunityIcons,
   MaterialIcons
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -77,6 +78,16 @@ export default function Homepage() {
           name="PO Receipt"
           onPress={() => navigation.navigate('po_reciept')}
           icon={<FontAwesome5 name="receipt" style={styles.iconImage} />}
+        />
+        <HomepageIcon
+          name="Quantity Adjustments"
+          onPress={() => navigation.navigate('quantity_adjustments')}
+          icon={<MaterialCommunityIcons name="counter" style={styles.iconImage} />}
+        />
+        <HomepageIcon
+          name="Miscellaneous Material"
+          onPress={() => navigation.navigate('miscellaneous_material')}
+          icon={<MaterialIcons name="miscellaneous-services" style={styles.iconImage} />}
         />
         {/* <HomepageIcon
           name="Job Receipt"

@@ -30,6 +30,7 @@ import { fetchGlobalReasons, setGlobalReasons } from "./materialSlice";
 import Transferbackdrop from "../components/Loaders/Transferbackdrop";
 import SuccessBackdrop from "../components/Loaders/SuccessBackdrop";
 import ErrorBackdrop from "../components/Loaders/ErrorBackdrop";
+import PopUpDialog from "../components/PopUpDialog";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -39,7 +40,7 @@ const QuantityAdjustments = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [partNum, setPartNum] = useState("");
-  const [date, setDate] = useState(new Date().toISOString());
+  const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [binwithPart, setBinwithpart] = useState([]);
   const [formData, setFormData] = useState({});
@@ -47,11 +48,13 @@ const QuantityAdjustments = () => {
   const [partSpecification, setPartSpecification] = useState();
   const [selectedBin, setSelectedBin] = useState({});
   const [reasons, setReasons] = useState([]);
+  const [confirmAdjust, setConfirmAdjust] = useState(false)
   const { globalReasons } = useSelector((state) => state.material);
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
+
   const onChangeDate = (event) => {
     setShowPicker(false);
-    const pickedDate = new Date(event?.nativeEvent?.timestamp).toISOString();
+    const pickedDate = new Date(event?.nativeEvent?.timestamp);
     setDate(pickedDate);
   };
 
@@ -115,7 +118,13 @@ const QuantityAdjustments = () => {
   };
 
   const handleAdjust = async () => {
+    setConfirmAdjust(false)
     if (formData?.QuantityAdjust && formData?.QuantityAdjust.length>0  && partNum) {
+      if(typeof formData?.QuantityAdjust === 'string' && formData?.QuantityAdjust.length === 0){
+        return dispatch(showSnackbar("Invalid Quantity"));
+      }else if(typeof formData?.QuantityAdjust ==='number' && typeof formData?.QuantityAdjust === 0){
+        return dispatch(showSnackbar("Invalid Quantity"));
+      }
         dispatch(
             setIsLoading({
                 value: true,
@@ -265,7 +274,7 @@ const QuantityAdjustments = () => {
           ]}
           onPress={() => setShowPicker(true)}
         >
-          <Text>{date ? date : "Select Date"}</Text>
+          <Text>{date ? date.toISOString() : "Select Date"}</Text>
         </TouchableOpacity>
         {showPicker && (
           <RNDateTimePicker value={date} onChange={onChangeDate} mode="date" />
@@ -427,11 +436,19 @@ const QuantityAdjustments = () => {
             />
           </View>
         </View>
+        <PopUpDialog
+            visible={confirmAdjust}
+            setVisible={setConfirmAdjust}
+            handleCancel={() => setConfirmAdjust(false)}
+            handleOk={handleAdjust}
+            title="Adjust Stock Quantity"
+            message={'Are you sure you want to change the stock quantity?'}
+          />
       </ScrollView>
       <TouchableOpacity
         // disabled={_.isEmpty(form) || _.isEmpty(POData)}
         style={styles.receiveButton}
-        onPress={handleAdjust}
+        onPress={() => setConfirmAdjust(true)}
       >
         <Text style={styles.receiveButtonText}>Adjust</Text>
       </TouchableOpacity>

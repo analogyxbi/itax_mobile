@@ -38,6 +38,7 @@ import Transferbackdrop from "../components/Loaders/Transferbackdrop";
 import SuccessBackdrop from "../components/Loaders/SuccessBackdrop";
 import ErrorBackdrop from "../components/Loaders/ErrorBackdrop";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
+import PopUpDialog from "../components/PopUpDialog";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -47,20 +48,22 @@ const MiscellaneousMaterial = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [partNum, setPartNum] = useState("");
-  const [date, setDate] = useState(new Date().toISOString());
+  const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [binwithPart, setBinwithpart] = useState([]);
   const [formData, setFormData] = useState({});
   const [partDetails, setPartdetails] = useState();
   const [partSpecification, setPartSpecification] = useState();
   const [selectedBin, setSelectedBin] = useState({});
+  const [confirmAdjust, setConfirmAdjust] = useState(false)
   const [reasons, setReasons] = useState([]);
   const { globalReasons, getNewPartNum } = useSelector(
     (state) => state.material
   );
+
   const onChangeDate = (event) => {
     setShowPicker(false);
-    const pickedDate = new Date(event?.nativeEvent?.timestamp).toISOString();
+    const pickedDate = new Date(event?.nativeEvent?.timestamp);
     setDate(pickedDate);
   };
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
@@ -161,8 +164,30 @@ const MiscellaneousMaterial = () => {
     }
   };
 
+  function setAdjustStateQuantity(qty){
+    if(qty){
+        const id = selectedBin.SysRowId
+        setSelectedBin((prev) => ({...prev , QuantityOnHand: prev.QuantityOnHand + qty}))
+        setBinwithpart((prev)=> prev.map((data)=> {
+            if(data.SysRowId === id){
+                return {
+                    ...data,
+                    QuantityOnHand: data.QuantityOnHand + qty
+                }
+            }
+            return data
+        }))
+    }
+  }
+
   const handleAdjust = async () => {
-    if (formData?.QuantityOnHand && formData?.QuantityOnHand.length>0  && partNum) {
+    setConfirmAdjust(false)
+    if (formData?.QuantityAdjust && partNum && partNum.length>0) {
+      if(typeof formData?.QuantityAdjust === 'string' && formData?.QuantityAdjust.length === 0){
+        return dispatch(showSnackbar("Invalid Quantity"));
+      }else if(typeof formData?.QuantityAdjust ==='number' && typeof formData?.QuantityOnHand === 0){
+        return dispatch(showSnackbar("Invalid Quantity"));
+      }
      try{
         dispatch(
             setIsLoading({
@@ -179,6 +204,7 @@ const MiscellaneousMaterial = () => {
       let arrData = Object.assign({}, newIssue[0]);
       arrData.ReasonCode = formData.reasonCode;
       arrData.ReasonType = formData.reasonType;
+      arrData.TranDate = date.toISOString()
       arrData.ReasonCodeDescription = formData.reasonValue;
       let payload = {
         pdTranQty: formData.QuantityAdjust,
@@ -192,6 +218,7 @@ const MiscellaneousMaterial = () => {
       dispatch(
         setOnSuccess({ value: true, message: 'Part issued.' })
       );
+      setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
      }catch(err){
         err.json().then((res) => {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
@@ -300,7 +327,7 @@ const MiscellaneousMaterial = () => {
           ]}
           onPress={() => setShowPicker(true)}
         >
-          <Text>{date ? date : "Select Date"}</Text>
+          <Text>{date ? date?.toISOString() : "Select Date"}</Text>
         </TouchableOpacity>
         {showPicker && (
           <RNDateTimePicker value={date} onChange={onChangeDate} mode="date" />
@@ -458,11 +485,19 @@ const MiscellaneousMaterial = () => {
             />
           </View>
         </View>
+        <PopUpDialog
+            visible={confirmAdjust}
+            setVisible={setConfirmAdjust}
+            handleCancel={() => setConfirmAdjust(false)}
+            handleOk={handleAdjust}
+            title="Issue Stock Quantity"
+            message={'Are you sure you want to change the stock quantity?'}
+          />
       </ScrollView>
       <TouchableOpacity
         // disabled={_.isEmpty(form) || _.isEmpty(POData)}
         style={styles.receiveButton}
-        onPress={handleAdjust}
+        onPress={() => setConfirmAdjust(true)}
       >
         <Text style={styles.receiveButtonText}>Issue</Text>
       </TouchableOpacity>

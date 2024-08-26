@@ -157,9 +157,18 @@ const CountingScreen = ({
     setLoading(false);
   }
 
-  async function setBlankFalse(values) {
-    let data = values;
-    const epicor_endpoint = `/Erp.BO.CountTagSvc/CountTags`;
+  async function setBlankFalse(values, qty) {
+    let tagData = values
+    let data = {
+      pQty: qty,
+      ds: {
+        CCTag: [{
+          ...tagData,
+          RowMod: "U"
+        }]
+      }
+    };
+    const epicor_endpoint = `/Erp.BO.CountTagSvc/OnChangeCountedQty`;
     try {
       const response = await AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -220,13 +229,13 @@ const CountingScreen = ({
           PartNum: part,
           TagNote: notes,
           CountedBy: "App User",
-          CountedQty: countedQty,
           UOM: selectedPart.IUM,
           TagReturned: true,
           PartNumIUM: selectedPart.IUM,
         };
         delete values.SysRevID;
         const epicor_endpoint = "/Erp.BO.CountTagSvc/CountTags";
+        const qty = countedQty
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
           postPayload: {
@@ -244,11 +253,13 @@ const CountingScreen = ({
             //     message: `Data added on Tag ${tag.TagNum}`,
             //   })
             // );
+            let newPayload = json.data;
+            delete newPayload['odata.metadata']
             dispatch(removeTag(tag.TagNum));
             findAndRemovePart(cycleData.part);
             // const unPart = getUnusedPart()
             // setCycleDetailsToCount(unPart, 'MfgSys')
-            await setBlankFalse({ ...values, BlankTag: false });
+            await setBlankFalse({ ...newPayload, BlankTag: false }, qty);
           })
           .catch((err) => {
             err

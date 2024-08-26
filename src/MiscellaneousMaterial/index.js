@@ -1,6 +1,6 @@
 import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, TextInput, TouchableOpacity } from 'react-native';
 import { Text, View, ScrollView, StyleSheet, Linking, SafeAreaView, Dimensions } from 'react-native';
 import { globalStyles } from '../style/globalStyles';
@@ -9,9 +9,10 @@ import RNPickerSelect from 'react-native-picker-select';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { useDispatch, useSelector } from 'react-redux';
 import SelectInput from '../components/SelectInput';
-import { fetchOnePartDetailsApi, fetchPartDetailsApi } from '../QuantityAdjustments/utils';
+import { fetchOnePartDetailsApi, fetchPartDetailsApi, fetchReasons } from '../QuantityAdjustments/utils';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import SelectInputValue from '../components/SelectInputValue';
+import { setGlobalReasons } from '../QuantityAdjustments/materialSlice';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -29,7 +30,7 @@ const MiscellaneousMaterial = () => {
     const [partSpecification, setPartSpecification] = useState();
     const [selectedBin, setSelectedBin] = useState({});
     const [reasons, setReasons] = useState([]);
-
+    const {globalReasons }  = useSelector((state) => state.material)
     const onChangeDate = (event) => {
         setShowPicker(false); 
         const pickedDate = new Date(event?.nativeEvent?.timestamp)
@@ -89,21 +90,26 @@ const MiscellaneousMaterial = () => {
             return;
         }
     }
-
+    
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const reasons = await fetchReasons();
+            const typeMFilters = reasons?.data?.value?.filter(da => da?.ReasonType == "M")
+            dispatch(setGlobalReasons(reasons.data.value))
+            setReasons(typeMFilters);
+        } catch (error) {
+            dispatch(showSnackbar("Error fetching reason codes"));
+        } finally {
+            setLoading(false);
+        }
+    };
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                const reasons = await fetchReasons();
-                const typeMFilters = reasons?.data?.value?.filter(da => da?.ReasonType == "M")
-                setReasons(typeMFilters);
-            } catch (error) {
-                dispatch(showSnackbar("Error fetching reason codes"));
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+        if(globalReasons && globalReasons.length>0){
+            setReasons(()=> globalReasons.filter(da => da?.ReasonType == "M"));
+        }else{
+            fetchData();
+        }
     }, []);
 
     return (
@@ -201,19 +207,22 @@ const MiscellaneousMaterial = () => {
                 >
                     {
                         binwithPart?.length > 0 &&
-                        <View
-                            style={[
-                                globalStyles.dFlexR,
-                                globalStyles.justifySB,
-                                styles.poModalHeader,
-                            ]}
-                        >
-                            <Text style={{ color: 'white' }}>BinNum</Text>
-                            <Text style={{ color: 'white' }}>OnHand Qty</Text>
-                            <Text style={{ color: 'white' }}>
-                                Bin Description
-                            </Text>
-                        </View>
+                        <>     
+                            <Text style={{ paddingVertical: 5, color: 'black', textAlign:'center' }}>Please select the Bin</Text>
+                            <View
+                                style={[
+                                    globalStyles.dFlexR,
+                                    globalStyles.justifySB,
+                                    styles.poModalHeader,
+                                ]}
+                            >
+                                <Text style={{ color: 'white' }}>BinNum</Text>
+                                <Text style={{ color: 'white' }}>OnHand Qty</Text>
+                                <Text style={{ color: 'white' }}>
+                                    Bin Description
+                                </Text>
+                            </View>
+                        </>
                     }
                     <ScrollView style={{ maxHeight: 200, padding: 5 }}>
                         {binwithPart?.length > 0 ? (

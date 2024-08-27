@@ -120,8 +120,6 @@ async function createMultiPartPayload(cycle, part) {
     FullPhysical: cycle.FullPhysical,
     CycleSeq: cycle.CycleSeq,
     PartNum: data.PartNum,
-    TotFrozenQOH: data.QtyOnHand,
-    TotFrozenVal:data.QtyOnHand,
     RowMod: 'A',
   }));
   
@@ -301,5 +299,47 @@ export async function fetchCountPartDetails(part, plant="MfgSys", warehouseCode)
         console.error(`Error fetching Parts for warehouse ${data.whseCode} and bin ${data.binNum}:`, err);
         throw err; // Optionally rethrow to handle it where this function is called
     }
+  }
+}
+
+
+export async function fetchXrefPart(partDtls){
+  
+  const str = `Company = '${partDtls.Company}' And PartNum = '${partDtls.PartNum}' And WareHouseCode = '${partDtls.WarehouseCode}' And BinNum = '${partDtls.BinNum}' And InvtyUOM = '${partDtls.IUM}' And LotNum = '' BY PartNum`
+  const data =    {
+    "whereClause": str,
+    "pageSize": 0,
+    "absolutePage": 0
+  }
+  
+  const epicor_endpoint = `/Erp.BO.PartTranSvc/GetList`;
+  const postPayload = {
+      epicor_endpoint,
+      request_type: 'POST',
+      data: JSON.stringify(data),
+  };
+
+  try {
+      const response = await AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload,
+          stringify: false,
+      });
+      const { json } = response;
+      console.log({xpart: json})
+      return json
+      // const onHandbinsArray = json.data.returnObj.PartOnHandBin;
+      // const found = onHandbinsArray.find((data) => data.WarehouseCode === warehouseCode)
+      // if(found){
+      //   return {...found, PrimaryBinNum:found.BinNum, IUM: found.UnitOfMeasure }
+      // }else{
+      //   return {
+      //     PartNum: part
+      //   }
+      // }
+
+  } catch (err) {
+      console.error(`Error fetching Parts for warehouse ${data.whseCode} and bin ${data.binNum}:`, err);
+      throw err; // Optionally rethrow to handle it where this function is called
   }
 }

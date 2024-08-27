@@ -91,7 +91,7 @@ const inventorySlice = createSlice({
       if (action.payload && Array.isArray(action.payload)) {
         const remainingTags = action.payload.filter(
           (tag) =>
-            tag.PartNum === '' && tag.BinNum === ''
+            tag.TagReturned === false
         );
         state.tagsData = remainingTags;
       }

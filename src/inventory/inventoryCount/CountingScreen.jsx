@@ -29,6 +29,7 @@ import { globalStyles } from "../../style/globalStyles";
 import {
   createDsPayload,
   fetchCountPartDetails,
+  fetchXrefPart,
   updatePartToDataset,
 } from "../Utils/InventoryUtils";
 import {
@@ -69,8 +70,9 @@ const CountingScreen = ({
   const [addPart, setAddPart] = useState(false);
   const [selectedTag, setSelectedTag] = useState({});
   const [existingPartsOnTag, setExistingPartsOnTag] = useState(
-    cycleTags.filter((data) => data.PartNum != "").map((data) => data.PartNum)
+    cycleTags.filter((data) => data.TagReturned == false).map((data) => data.PartNum)
   );
+  const [tagIndex, setTagIndex] = useState(0)
   const [CCPartsOnTag, setCCPartsOnTag] = useState(
     selectedCycleDetails[0].CCDtls.filter((data) => data.PartNum != "").map(
       (data) => data.PartNum
@@ -140,42 +142,49 @@ const CountingScreen = ({
 
   async function setCycleDetailsToCount(part, plant) {
     setLoading(true);
-    const partDtls = await fetchCountPartDetails(
-      part,
-      plant,
-      currentCycle.WarehouseCode
-    );
-    setSelectedPart(partDtls);
-
-    setBin(partDtls?.PrimaryBinNum);
-    setPart(partDtls?.PartNum);
-    setCountedQty(`${partDtls?.QuantityOnHand}`);
-    setNotes("");
+    // const partDtls = await fetchCountPartDetails(
+    //   part,
+    //   plant,
+    //   currentCycle.WarehouseCode
+    // );
+    // setSelectedPart(partDtls);
+    // const xRefDetails = await fetchXrefPart(partDtls)
+    // console.log({xRefDetails})
+    // /Erp.BO.PartTranSvc/GetList
+    // Company = 'WOOD01' And PartNum = 'E137' And WareHouseCode = 'PORTNA' And BinNum = 'J02D02' And InvtyUOM = 'M' And LotNum = '' And ( SysDate > 08/21/2024 Or (SysDate = 08/21/2024 And SysTime >= 46157)) BY PartNum
     const tag = tagsData[0];
+    setBin(tag?.BinNum);
+    setPart(tag?.PartNum);
+    setCountedQty(tag?.FrozenQOH);
+    setNotes(tag?.TagNote);
     setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
+    // setSelectePart({ ...tag, label: tag.TagNum, value: tag.TagNum });
     setNextConfirm(false);
     setLoading(false);
   }
 
-  async function setBlankFalse(values, qty) {
-    let tagData = values
-    let data = {
-      pQty: qty,
-      ds: {
-        CCTag: [{
-          ...tagData,
-          RowMod: "U"
-        }]
-      }
-    };
-    const epicor_endpoint = `/Erp.BO.CountTagSvc/OnChangeCountedQty`;
+  async function setBlankFalse(values, tag) {
+    // let tagData = values
+    // let data = {
+    //   pQty: qty,
+    //   ds: {
+    //     CCTag: [{
+    //       ...tagData,
+    //       RowMod: "U"
+    //     }]
+    //   }
+    // };
+    // let data = values;
+    // console.log('NEW DATA')
+    // console.log({values})
+    const epicor_endpoint = `/Erp.BO.CountTagSvc/CountTags`;
     try {
       const response = await AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
         postPayload: {
           epicor_endpoint,
           request_type: "POST",
-          data: JSON.stringify(data),
+          data: JSON.stringify(values),
         },
         stringify: false,
       });
@@ -184,7 +193,7 @@ const CountingScreen = ({
       dispatch(
         setOnSuccess({
           value: true,
-          message: `Data added on Tag ${values.TagNum}`,
+          message: `Data added on Tag ${tag}`,
         })
       );
     } catch (err) {
@@ -218,7 +227,7 @@ const CountingScreen = ({
     try {
       const details = selectedCycleDetails[0].CCDtls;
       const cycleData = details.find((data) => data.PartNum == part);
-
+      // console.log({cycleData})
       if (cycleData) {
         let tag = selectedTag;
         delete tag.label;
@@ -228,12 +237,18 @@ const CountingScreen = ({
           BinNum: bin,
           PartNum: part,
           TagNote: notes,
-          CountedBy: "App User",
-          UOM: selectedPart.IUM,
+          CountedBy: "Warehouse App",
+          CountedQty: countedQty,
           TagReturned: true,
-          PartNumIUM: selectedPart.IUM,
+          CountedDate: new Date().toISOString(),
+          RowMod: "U"
         };
         delete values.SysRevID;
+        // const dataset = {
+        //   ds: {
+        //     CCTag:[values]
+        //   }
+        // }
         const epicor_endpoint = "/Erp.BO.CountTagSvc/CountTags";
         const qty = countedQty
         AnalogyxBIClient.post({
@@ -253,15 +268,22 @@ const CountingScreen = ({
             //     message: `Data added on Tag ${tag.TagNum}`,
             //   })
             // );
-            let newPayload = json.data;
-            delete newPayload['odata.metadata']
+            // let newPayload = json.data.parameters;
+            // let tags = newPayload.ds.CCTag[0]
+            // tags.BlankTag = false
+            // tags.RowMod = "U"
+            // await setBlankFalse({ds: {
+            //   CCTag:[tags]
+            // }}, tag.TagNum);
+            // delete newPayload['odata.metadata']
             dispatch(removeTag(tag.TagNum));
             findAndRemovePart(cycleData.part);
             // const unPart = getUnusedPart()
             // setCycleDetailsToCount(unPart, 'MfgSys')
-            await setBlankFalse({ ...newPayload, BlankTag: false }, qty);
+            await setBlankFalse({ ...values, BlankTag: false }, tag.TagNum);
           })
           .catch((err) => {
+            console.log({err})
             err
               .json()
               .then((res) => {
@@ -297,8 +319,8 @@ const CountingScreen = ({
   }
 
   useEffect(() => {
-    const unPart = getUnusedPart();
-    setCycleDetailsToCount(unPart, "MfgSys");
+    // const unPart = getUnusedPart();
+    setCycleDetailsToCount();
   }, []);
 
   useEffect(() => {
@@ -576,9 +598,16 @@ const CountingScreen = ({
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ flex: 1, width: 300 }}>
+          <Text style={{paddingHorizontal: 8}}>Tag Num</Text>
             <SelectInputValue
               value={selectedTag.TagNum}
-              onChange={(itemValue) => setSelectedTag(itemValue)}
+              onChange={(tag) => {
+                setBin(tag?.BinNum);
+                setPart(tag?.PartNum);
+                setCountedQty(tag?.FrozenQOH);
+                setNotes(tag?.TagNote);
+                setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
+              }}
               options={tagsData.map((data) => ({
                 ...data,
                 label: data.TagNum,
@@ -591,13 +620,14 @@ const CountingScreen = ({
             />
           </View>
           <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Part Number </Text>
             <TextInput
               style={styles.input}
               placeholder="Part (Scanning / Enter)"
               value={part}
               onChangeText={setPart}
             />
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.icon}
               onPress={() => {
                 setCameraState("part");
@@ -605,16 +635,17 @@ const CountingScreen = ({
               }}
             >
               <Ionicons name="scan-outline" size={24} color="#333" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <View style={styles.inputContainer}>
+          <Text style={{paddingHorizontal: 8}}>Bin Num</Text>
             <TextInput
               style={styles.input}
               placeholder="Bin (Scanning / Enter)"
               value={bin}
               onChangeText={setBin}
             />
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.icon}
               onPress={() => {
                 setCameraState("bin");
@@ -622,31 +653,39 @@ const CountingScreen = ({
               }}
             >
               <Ionicons name="scan-outline" size={24} color="#333" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
-          <TextInput
-            style={styles.inputNoIcon}
-            placeholder="Counted Qty (Manual Input)"
-            value={countedQty}
-            onChangeText={setCountedQty}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.inputNoIcon}
-            placeholder="IUM"
-            value={selectedPart?.IUM}
-            onChangeText={(text) => {
-              setSelectedPart((prev) => ({ ...prev, IUM: text }));
-            }}
-          />
-          <TextInput
-            style={styles.inputNoIcon}
-            placeholder="Notes (Manual Input - If any)"
-            value={notes}
-            onChangeText={setNotes}
-          />
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Counted QTY</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Counted Qty (Manual Input)"
+              value={countedQty}
+              onChangeText={setCountedQty}
+              keyboardType="numeric"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>UOM</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="UOM"
+              value={selectedTag?.UOM}
+              onChangeText={(text) => {
+                setSelectedTag((prev) => ({ ...prev, UOM: text }));
+              }}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Notes</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Notes (Manual Input - If any)"
+              value={notes}
+              onChangeText={setNotes}
+            />
+            </View>
         </ScrollView>
-
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.footerButton}

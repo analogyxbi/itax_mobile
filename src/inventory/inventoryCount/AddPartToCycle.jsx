@@ -32,7 +32,7 @@ const AddPartToCycle = ({
   const [confirmAdd, setConfirmAdd] = useState(false);
   const [formData, setFormData] = useState({bins:[]})
   const dispatch = useDispatch()
-  console.log({selectedCycleDetails})
+
   async function startAddProcess(bins){
     dispatch(
       setIsLoading({

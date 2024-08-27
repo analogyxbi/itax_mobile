@@ -43,9 +43,9 @@ export default function CycleApp() {
       );
     }
     const filters = encodeURI(
-      `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCYear eq ${currentCycle.CCYear} and CCMonth eq ${currentCycle.CCMonth})`
+      `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCYear eq ${currentCycle.CCYear} and CCMonth eq ${currentCycle.CCMonth}) and TagReturned eq false`
     );
-    let endpoint = `/Erp.BO.CountTagSvc/CountTags?$filter=${filters}&top=10000`;
+    let endpoint = `/Erp.BO.CountTagSvc/CountTags?$filter=${filters}&top=1000`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
@@ -55,6 +55,12 @@ export default function CycleApp() {
       stringify: false,
     })
       .then(({ json }) => {
+        // console.log({json})
+        // console.log("TAGS FETCHEDDDDDDDDDDDD")
+        // console.log("TAGS FETCHEDDDDDDDDDDDD")
+        // console.log({json})
+        // console.log("TAGS FETCHEDDDDDDDDDDDD")
+        // console.log("TAGS FETCHEDDDDDDDDDDDD")
         dispatch(setTagsData(json.data.value));
         dispatch(setCycleTags(json.data.value));
         // if (isCount || showLoading) {
@@ -85,10 +91,11 @@ export default function CycleApp() {
       })
     );
     try {
+      let CCDtls = selectedCycleDetails[0].CCDtls 
       const tags = !startCount
-        ? parseInt(currentCycle.TotalParts) + tagNum
-        : parseInt(currentCycle.TotalParts) + 30;
-
+        ? parseInt(currentCycle.TotalParts)
+        : parseInt(CCDtls.length);
+      // const dtl = CCDtls.map((data)=> ({...data,  "PostAdjustment": 2, "PartNumSellingFactor": 1,"PartNumPricePerCode": "E"}))
       let values = {
         ds: {
           CCHdr: [
@@ -99,13 +106,24 @@ export default function CycleApp() {
               EnableStartCountSeq: true,
               EnableVoidBlankTags: false,
               EnableVoidTagsByPart: false,
-              BlankTagsOnly: true,
+              BlankTagsOnly: false,
               NumOfBlankTags: tags,
+              TotalParts: tags,
               RowMod: 'U',
             },
           ],
+          CCDtl: CCDtls
         },
       };
+
+      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
+      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
+      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
+      // console.log({values})
+      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
+      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
+      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
+
       const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -134,18 +152,27 @@ export default function CycleApp() {
               ...newData,
             })
           );
+          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
+          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
+          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
+          // console.log({json})
+          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
+          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
+          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
           if (startCount) {
-            startCountProcess(newData);
+            startCountProcess(json.data.parameters);
           } else {
             fetchAllTags(true);
           }
         })
         .catch((err) => {
           err.json().then((res) => {
+            console.log({res})
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });
     } catch (err) {
+      console.log({err})
       dispatch(showSnackbar('Error Occured while generating tags'));
       dispatch(
         setOnError({
@@ -178,6 +205,17 @@ export default function CycleApp() {
           ],
         },
       };
+      // const values = {
+      //   "numBlankTags": tags,
+      //   "numBlankPCIDTags": 0,
+      //   "company": currentCycle.Company,
+      //   "plant": currentCycle.Plant,
+      //   "whseCode": currentCycle.WarehouseCode,
+      //   "ccYear": currentCycle.CCYear,
+      //   "ccMonth": currentCycle.CCMonth,
+      //   "cycleSeq": currentCycle.cycleSeq,
+      //   "fullPhysical": currentCycle.FullPhysical
+      // }
       const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -218,15 +256,33 @@ export default function CycleApp() {
   }
 
   function startCountProcess(newData) {
+    const details = newData.ds.CCDtl;
     let values = {
       ds: {
         CCHdr: [
           {
-            ...newData,
+            ...currentCycle,
+            CycleStatus: 1,
+            EnablePrintTags: true,
+            EnableReprintTags: true,
+            EnableStartCountSeq: true,
+            EnableVoidBlankTags: false,
+            EnableVoidTagsByPart: false,
+            BlankTagsOnly: false,
+            RowMod: 'U',
           },
         ],
+        CCDtl: [...details]
       },
     };
+
+    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
+    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
+    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
+    // console.log({values})
+    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
+    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
+    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
     const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/StartCountSequence';
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
@@ -238,7 +294,15 @@ export default function CycleApp() {
       stringify: false,
     })
       .then(({ json }) => {
-        dispatch(setCurrentCycle({ ...newData, CycleStatus: 2 }));
+        dispatch(setCurrentCycle({ ...currentCycle, CycleStatus: 2 }));
+    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
+    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
+    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
+    // console.log({json})
+    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
+    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
+    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
+
         fetchAllTags(false);
       })
       .catch((err) => {
@@ -292,6 +356,7 @@ export default function CycleApp() {
             NumOfBlankTags: tags,
             RowMod: 'U',
           };
+  
           dispatch(
             setCurrentCycle({
               ...newData,

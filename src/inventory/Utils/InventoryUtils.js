@@ -62,6 +62,42 @@ export const generateTags = {
   },
 };
 
+
+export function CntVarReportDataset(data, cycle){
+  const dataset =[{
+    ...data,
+		"Warehouse": cycle.WarehouseCode,
+		"Month": cycle.CCMonth,
+		"Year": cycle.CCYear,
+		"Cycle": cycle.CycleSeq,
+		"FullPhysical": cycle.FullPhysical,
+		"PartDetailType": "1",
+		"WhseDesc": cycle.WarehouseCode,
+		"Plant": cycle.Plant,
+		"SysRowID": "00000000-0000-0000-0000-000000000000",
+		"AutoAction": "SSRSPREVIEW",
+		"PrinterName": "",
+		"AgentSchedNum": "0",
+		"AgentID": "SystemTaskAgent",
+		"AgentTaskNum": "0",
+		"RecurringTask": "false",
+		"ReportStyleNum": "2",
+		"WorkstationID": "WLSRV04 3",
+		"TaskNote": "",
+		"ArchiveCode": "0",
+		"DateFormat": "dd/mm/yyyy",
+		"NumericFormat": ",.",
+		"ReportCurrencyCode": "GBP",
+		"ReportCultureCode": "en-GB",
+		"SSRSRenderFormat": "PDF",
+		"PrintReportParameters": "false",
+		"SSRSEnableRouting": "false",
+		"DesignMode": "false",
+		"RowMod": "A"
+	}]
+  return dataset
+}
+
 export function validateVariable(variable) {
   // Check if variable is null or undefined
   if (variable === null || variable === undefined) {
@@ -341,6 +377,96 @@ export async function fetchXrefPart(partDtls){
 
   } catch (err) {
       console.error(`Error fetching Parts for warehouse ${data.whseCode} and bin ${data.binNum}:`, err);
+      throw err; // Optionally rethrow to handle it where this function is called
+  }
+}
+
+
+async function submitToAgent(data, cycle){
+  const dataset = CntVarReportDataset(data.CntVarReport[0], cycle)
+  const payloadData = {
+    ds: {
+      CntVarReport : dataset,
+      ReportStyle:[{
+        "Company": "",
+        "ReportID": "CntVar",
+        "StyleNum": "2",
+        "StyleDescription": "Standard - SSRS",
+        "RptTypeID": "SSRS",
+        "PrintProgram": "reports/CountVarianceReport/CntVar",
+        "PrintProgramOptions": "",
+        "RptDefID": "CntVar",
+        "CompanyList": "",
+        "ServerNum": "0",
+        "OutputLocation": "Database",
+        "OutputEDI": "",
+        "SystemFlag": "true",
+        "CGCCode": "",
+        "SysRevID": "198468085",
+        "SysRowID": "3288bb53-900f-4bec-bc08-9f9d0117a043",
+        "StructuredOutputEnabled": "false",
+        "RequireSubmissionID": "false",
+        "AllowResetAfterSubmit": "false",
+        "HasBAQOrEI": "false",
+        "BitFlag": "0",
+        "ReportRptDescription": "",
+        "RptDefRptDescription": "",
+        "RptTypeRptTypeDescription": "",
+        "RowMod": ""
+      }]
+    },
+    agentID: "SystemTaskAgent",
+    agentSchedNum: '0',
+    agentTaskNum: '0',
+    maintProgram: 'Erp.UIRpt.CntVarReport'
+  }
+
+  const epicor_endpoint = '/Erp.Rpt.CntVarReportSvc/SubmitToAgent';
+  const postPayload = {
+    epicor_endpoint,
+    request_type: 'POST',
+    data: JSON.stringify(payloadData),
+};
+
+try {
+    const response = await AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+    });
+    const { json } = response;
+    return json
+
+} catch (err) {
+  err.json().then((res)=>{
+    console.error({res})
+  }).catch((err)=>console.log(err))
+    // console.error(`Error fetching report params`, err);
+    throw err; // Optionally rethrow to handle it where this function is called
+}
+}
+
+export async function getReportParameters(cycle){
+    const epicor_endpoint = '/Erp.Rpt.CntVarReportSvc/GetNewParameters';
+    const postPayload = {
+      epicor_endpoint,
+      request_type: 'POST',
+      data: JSON.stringify({}),
+  };
+
+  try {
+      const response = await AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload,
+          stringify: false,
+      });
+      const { json } = response;
+      console.log("GOT REPORT PARAMSSSSSSSSS", json)
+      const d = await submitToAgent(json.data.returnObj, cycle)
+      return d
+
+  } catch (err) {
+      console.error(`Error fetching report params`, err);
       throw err; // Optionally rethrow to handle it where this function is called
   }
 }

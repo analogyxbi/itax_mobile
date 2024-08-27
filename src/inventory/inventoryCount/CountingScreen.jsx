@@ -162,7 +162,7 @@ const CountingScreen = ({
       setNotes(tag?.TagNote);
       setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
     }else{
-      fetchAllTags(false, true)
+      await fetchAllTags(false, true)
       dispatch(showSnackbar('No tags found, Please refresh to get new tags'))
       setTimeout(()=> {
         setCycleDetailsToCount(true)

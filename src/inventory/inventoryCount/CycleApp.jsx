@@ -34,7 +34,7 @@ export default function CycleApp() {
   const [notes, setNotes] = useState('');
   const dispatch = useDispatch();
   
-  function fetchAllTags(isCount = true, showLoading = false) {
+  async function fetchAllTags(isCount = true, showLoading = false) {
     if (showLoading) {
       dispatch(
         setIsLoading({
@@ -405,14 +405,15 @@ export default function CycleApp() {
                 ds: {
                   CCHdr: [
                     {
-                      ...currentCycle,
+                      ...selectedData,
                       BlankTagsOnly: false,
                       RowMod: 'U',
                     },
                   ],
-                  CCDtl: details.map((data)=> ({...data, PostStatus: 1})),
+                  CCDtl: details.map((data)=> ({...data, PostStatus: 1, PostAdjustment:2})),
                 },
               };
+
               const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
               AnalogyxBIClient.post({
                 endpoint: `/erp_woodland/resolve_api`,
@@ -434,7 +435,6 @@ export default function CycleApp() {
                   );
                 })
                 .catch((err) => {
-                  
                   err.json().then((res) => {
                     dispatch(setOnError({ value: true, message: res.ErrorMessage }));
                     // console.log({ res });

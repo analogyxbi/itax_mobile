@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import { globalStyles } from '../style/globalStyles';
 import { setIsLoading } from './Loaders/toastReducers';
+import { getReportParameters } from '../inventory/Utils/InventoryUtils';
 
 function parseAndFormatFloat(floatString, decimalPlaces) {
   // Parse the float from the string
@@ -48,6 +49,7 @@ export default function VarianceReport() {
   const fetchReportData = async () => {
     if (currentCycle != {}) {
       dispatch(setIsLoading({ value: true, message: 'Fetching Report Data...' }));
+      await getReportParameters(currentCycle)
       const filters = encodeURI(
         `(CCTag_WarehouseCode eq '${currentCycle.WarehouseCode}' and CCTag_CycleSeq eq ${currentCycle.CycleSeq} and CCTag_CCYear eq ${currentCycle.CCYear} and CCTag_CCMonth eq ${currentCycle.CCMonth})`
       );
@@ -60,7 +62,7 @@ export default function VarianceReport() {
         },
         stringify: false,
       })
-        .then(({ json }) => {
+        .then(async ({ json }) => {
           setReportData(json.data.value)
           printToFile(json.data.value)
           dispatch(setIsLoading({ value: false, message: '' }));

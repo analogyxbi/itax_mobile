@@ -33,6 +33,7 @@ export default function CycleApp() {
   const [countedQty, setCountedQty] = useState('');
   const [notes, setNotes] = useState('');
   const dispatch = useDispatch();
+  
   function fetchAllTags(isCount = true, showLoading = false) {
     if (showLoading) {
       dispatch(
@@ -45,7 +46,7 @@ export default function CycleApp() {
     const filters = encodeURI(
       `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCYear eq ${currentCycle.CCYear} and CCMonth eq ${currentCycle.CCMonth}) and TagReturned eq false`
     );
-    let endpoint = `/Erp.BO.CountTagSvc/CountTags?$filter=${filters}&top=1000`;
+    let endpoint = `/Erp.BO.CountTagSvc/CountTags?top=300&$filter=${filters}&$skip=0`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
@@ -61,19 +62,19 @@ export default function CycleApp() {
         // console.log({json})
         // console.log("TAGS FETCHEDDDDDDDDDDDD")
         // console.log("TAGS FETCHEDDDDDDDDDDDD")
+        dispatch(
+          setOnSuccess({
+            value: true,
+            message: showLoading
+              ? 'Tags fetched successfully'
+              : isCount
+                ? 'Count Started Successfully.'
+                : 'Cycle Started Successfully.',
+          })
+        );
         dispatch(setTagsData(json.data.value));
         dispatch(setCycleTags(json.data.value));
         // if (isCount || showLoading) {
-          dispatch(
-            setOnSuccess({
-              value: true,
-              message: showLoading
-                ? 'Tags fetched successfully'
-                : isCount
-                  ? 'Count Started Successfully.'
-                  : 'Cycle Started Successfully.',
-            })
-          );
         // }
       })
       .catch((err) => {
@@ -205,17 +206,6 @@ export default function CycleApp() {
           ],
         },
       };
-      // const values = {
-      //   "numBlankTags": tags,
-      //   "numBlankPCIDTags": 0,
-      //   "company": currentCycle.Company,
-      //   "plant": currentCycle.Plant,
-      //   "whseCode": currentCycle.WarehouseCode,
-      //   "ccYear": currentCycle.CCYear,
-      //   "ccMonth": currentCycle.CCMonth,
-      //   "cycleSeq": currentCycle.cycleSeq,
-      //   "fullPhysical": currentCycle.FullPhysical
-      // }
       const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -527,6 +517,7 @@ export default function CycleApp() {
           tagsData={tagsData}
           generateNewTags={generateNewTags}
           generateNewCCDtls={generateNewCCDtls}
+          fetchAllTags={fetchAllTags}
         />
       )}
     </SafeAreaView>

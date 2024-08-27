@@ -54,6 +54,7 @@ const CountingScreen = ({
   currentCycle,
   tagsData,
   generateNewTags,
+  fetchAllTags,
   generateNewCCDtls,
 }) => {
   const navigation = useNavigation();
@@ -140,7 +141,8 @@ const CountingScreen = ({
     closeScanner();
   }
 
-  async function setCycleDetailsToCount(part, plant) {
+  async function setCycleDetailsToCount(finish) {
+    if(finish) return dispatch(showSnackbar("No more tags with part available."))
     setLoading(true);
     // const partDtls = await fetchCountPartDetails(
     //   part,
@@ -153,11 +155,19 @@ const CountingScreen = ({
     // /Erp.BO.PartTranSvc/GetList
     // Company = 'WOOD01' And PartNum = 'E137' And WareHouseCode = 'PORTNA' And BinNum = 'J02D02' And InvtyUOM = 'M' And LotNum = '' And ( SysDate > 08/21/2024 Or (SysDate = 08/21/2024 And SysTime >= 46157)) BY PartNum
     const tag = tagsData[0];
-    setBin(tag?.BinNum);
-    setPart(tag?.PartNum);
-    setCountedQty(tag?.FrozenQOH);
-    setNotes(tag?.TagNote);
-    setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
+    if(tag){
+      setBin(tag?.BinNum);
+      setPart(tag?.PartNum);
+      setCountedQty(tag?.FrozenQOH);
+      setNotes(tag?.TagNote);
+      setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
+    }else{
+      fetchAllTags(false, true)
+      dispatch(showSnackbar('No tags found, Please refresh to get new tags'))
+      setTimeout(()=> {
+        setCycleDetailsToCount(true)
+      },2000)
+    }
     // setSelectePart({ ...tag, label: tag.TagNum, value: tag.TagNum });
     setNextConfirm(false);
     setLoading(false);
@@ -715,12 +725,11 @@ const CountingScreen = ({
         setVisible={setNextConfirm}
         handleCancel={() => setNextConfirm(false)}
         handleOk={() => {
-          const unPart = getUnusedPart();
-          if (unPart) {
-            setCycleDetailsToCount(unPart, "MfgSys");
-          } else {
-            dispatch(showSnackbar("No More parts available for the cycle."));
-          }
+          setCycleDetailsToCount(false);
+          // if (unPart) {
+          // } else {
+          //   dispatch(showSnackbar("No More parts available for the cycle."));
+          // }
         }}
         title="Move to next Part"
         message={"Are you sure to change the tag?"}

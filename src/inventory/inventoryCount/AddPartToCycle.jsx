@@ -73,7 +73,9 @@ const AddPartToCycle = ({
         // }
         // All API calls have completed, and partBins is now populated
         await addPartsDetailsToCycle(currentCycle, filterParts, dispatch)
-      
+        navigation.goBack()
+        // // test Code
+        // console.log({filterParts})
         // dispatch(setOnSuccess({ value: true, message: "Parts Added to the Cycle." }));
         // You can use the partBins object here as needed
     }

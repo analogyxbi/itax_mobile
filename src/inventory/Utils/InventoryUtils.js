@@ -114,6 +114,7 @@ async function createMultiPartPayload(cycle, part) {
   const partData = part.map((data) => ({
     Company: cycle.Company,
     WarehouseCode: cycle.WarehouseCode,
+    BinNum: data.BinNum,
     Plant: cycle.Plant,
     CCYear: cycle.CCYear,
     CCMonth: cycle.CCMonth,

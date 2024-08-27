@@ -49,6 +49,7 @@ import { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
 import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
+import { convertQuantity } from '../../utils/uomconversion';
 
 const initialFormdata = {
   poNum: '',
@@ -58,6 +59,7 @@ const initialFormdata = {
   rel: '',
   order_qty: '',
   arrived_qty: '',
+  qty_type: 'Supplier',
   input: '',
   note: '',
   WareHouseCode: '',
@@ -103,6 +105,7 @@ const POReceipt = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [packslipButtonCliked, setPackslipButtonClicked] = useState(false);
   const [createPackslipResponse, setCreatePackslipResponse] = useState();
+  const [currentPacklines, setCurrentPacklines] = useState([]);
 
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
@@ -206,6 +209,37 @@ const POReceipt = () => {
     }
   };
 
+
+  const fetchCurrentPacklines = ()=>{
+    if (poNum && packSLipNUm) {
+      setPackslipLoading(true);
+      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum} and PackSlip eq '${packSLipNUm}'&$expand=RcvDtls&$select=PONum,PackSlip,SysRowID,RcvDtls`;
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: { epicor_endpoint, request_type: 'GET' },
+          stringify: false,
+        })
+          .then(( {json} ) => {
+            setSelectedPackslip(json?.data?.value ? json.data.value[0] : {})
+            setPackslipLoading(false);
+          })
+          .catch((err) => {
+            setPackslipLoading(false);
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          });
+      } catch (err) {
+        setPackslipLoading(false);
+        dispatch(showSnackbar('Something went wrong'));
+      }
+    } else {
+      dispatch(showSnackbar('PO and Packslip is required'));
+      setPackslipLoading(false);
+    }
+  }
+
   const fetchPackslips = () => {
     setPackslipLoading(true);
     if (poNum) {
@@ -238,6 +272,8 @@ const POReceipt = () => {
   useEffect(() => {
     if (tabValue === '2' && isNewPackSlip) {
       fetchPackslips();
+    }else if(tabValue === '2' && !isNewPackSlip){
+      fetchCurrentPacklines();
     }
   }, [tabValue]);
 
@@ -417,9 +453,6 @@ const POReceipt = () => {
 
   const onSelectPackslip = (po) => {
     setPackSlipNUm(po?.PackSlip);
-    if (!isNewPackSlip) {
-      setSelectedPackslip(po);
-    }
   };
 
   const onSelectLine = (po) => {
@@ -443,6 +476,8 @@ const POReceipt = () => {
     dispatch(
       setIsLoading({ value: true, message: 'Saving the Receipt. Please wait' })
     );
+    const ourQty = formData?.qty_type === 'Supplier' ? convertQuantity(formData?.input, currentLine?.IUM,currentLine?.PUM).toString() : formData.input;
+    const supplierQty = formData?.qty_type === 'Our' ? convertQuantity(formData?.input,currentLine?.PUM, currentLine?.IUM).toString() : formData.input;
     const today = new Date();
     let receipt = {
       // ...currentLine,
@@ -459,28 +494,27 @@ const POReceipt = () => {
       ReceivedTo: currentLine?.TranType,
       ReceivedComplete: false,
       ArrivedDate: today.toISOString(),
-      VendorQty: formData.input,
       PORelArrivedQty: formData?.input,
       POLine: currentLine?.POLine,
       PORelNum: currentLine?.PORelNum,
       PartNum: currentLine?.POLinePartNum,
-      DocVendorUnitCost: currentLine.DocUnitCost
-        ? currentLine.DocUnitCost
-        : '0',
+      DocVendorUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       DocUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       VendorUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
       WareHouseCode: formData?.WareHouseCode || currentLine?.WarehouseCode,
-      OurQty: formData.input,
-      InputOurQty: formData.input,
+      OurQty: ourQty,
+      InputOurQty: supplierQty,
+      VendorQty: supplierQty,
       IUM: currentLine?.IUM,
       PUM: currentLine?.PUM,
       RowMod: !reverse ? 'U' : 'A',
       JobNum: currentLine?.JobNum,
       JobSeq: currentLine?.JobSeq,
       JobSeqType: currentLine?.JobSeqType,
+      QtyOption: formData?.qty_type || currentLine?.QtyOption,
     };
     if (currentLine.PackLine) {
       receipt.PackLine = currentLine.PackLine;
@@ -499,6 +533,7 @@ const POReceipt = () => {
       ReceivePerson: 'analogyx1',
       RcvDtls: [receipt],
     };
+    // console.log("postpayload", postPayload, currentLine)
 
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     AnalogyxBIClient.post({
@@ -1003,11 +1038,11 @@ const POReceipt = () => {
 
                 {!_.isEmpty(selectedPackSlip) ? (
                   <View style={{ height: '100%', marginTop: 5 }}>
-                    {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchExistingPackslips} >
+                    <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchCurrentPacklines} >
                       <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>Refresh</Text>
-                    </TouchableOpacity> */}
+                    </TouchableOpacity>
                     <ScrollView>
-                      {existingPackslipLoading && (
+                      {packslipLoading && (
                         <ActivityIndicator
                           animating={true}
                           color={MD2Colors.red800}

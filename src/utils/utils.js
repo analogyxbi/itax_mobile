@@ -167,3 +167,17 @@ export async function fetchBinfromPartWhse(part, warehouse){
     // setRefreshing(false);
   }
 }
+
+
+
+function convertDate(timestamp){
+// Convert timestamp to Date object
+const date = new Date(timestamp * 1000);
+
+// Format Date object to "DD-MM-YYYY"
+const day = String(date.getDate()).padStart(2, '0');
+const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+}

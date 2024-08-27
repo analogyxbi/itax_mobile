@@ -33,6 +33,8 @@ import Colors from './utils/Colors';
 import CustomDrawer from './utils/CustomDrawer';
 import PrivacyPolicy from './src/profile/PrivacyPolicy';
 import AddPartToCycle from './src/inventory/inventoryCount/AddPartToCycle';
+import QuantityAdjustments from './src/QuantityAdjustments';
+import MiscellaneousMaterial from './src/MiscellaneousMaterial';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -125,6 +127,8 @@ const MainStack = ({ isAuthenticated, setIsAuthenticated }) => {
       <Stack.Screen name="cycle_details" component={CycleApp} />
       <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="UserInfo" component={UserInfo} />
+      <Stack.Screen name="quantity_adjustments" component={QuantityAdjustments} />
+      <Stack.Screen name="miscellaneous_material" component={MiscellaneousMaterial} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
       <Stack.Screen name="add_part_to_cycle" component={AddPartToCycle} />
 

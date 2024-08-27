@@ -5,6 +5,7 @@ import inventoryReducer from './inventory/reducer/inventory';
 import poReceiptsReducer from './receiving/reducer/poReceipts';
 import toastReducers from './components/Loaders/toastReducers';
 import userReducer from './profile/userReducer';
+import materialSlice from './QuantityAdjustments/materialSlice';
 
 const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ const store = configureStore({
     poReceipts: poReceiptsReducer,
     toast: toastReducers,
     user: userReducer,
+    material: materialSlice,
   },
 });
 export default store;

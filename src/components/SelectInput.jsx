@@ -18,6 +18,7 @@ const SelectInput = ({
   isLoading,
   handleRefresh,
   placeholder,
+  containerStyle
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -69,7 +70,7 @@ const SelectInput = ({
   ));
 
   return (
-    <View style={styles.container}>
+    <View style={containerStyle ? containerStyle : styles.container}>
       <TouchableOpacity
         style={styles.inputContainer}
         onPress={() => setModalVisible(true)}

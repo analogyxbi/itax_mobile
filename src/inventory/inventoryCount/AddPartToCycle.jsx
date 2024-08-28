@@ -14,7 +14,7 @@ import { globalStyles } from '../../style/globalStyles';
 import { useDispatch, useSelector } from 'react-redux';
 import { getBinsData } from '../../utils/utils';
 import MultiSelectAsync from '../../components/MultiSelectAsync';
-import { addPartsDetailsToCycle, createMultiPartPayload, fetchPartByWhseBin } from '../Utils/InventoryUtils';
+import { addPartsDetailsToCycle, createMultiPartPayload, fetchPartByWhseBin, getCycleScheduleDesc } from '../Utils/InventoryUtils';
 import { setIsLoading, setOnError, setOnSuccess } from '../../components/Loaders/toastReducers';
 import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
 import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
@@ -165,7 +165,7 @@ function filterOutparts(parts){
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
+            <Text style={styles.value}>{getCycleScheduleDesc(currentCycle.CycleStatus)}</Text>
           </View>
         </View>
       </View>

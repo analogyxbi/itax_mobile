@@ -168,7 +168,6 @@ export default function CycleApp() {
         })
         .catch((err) => {
           err.json().then((res) => {
-            console.log({res})
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });

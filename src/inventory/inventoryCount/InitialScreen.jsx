@@ -15,6 +15,7 @@ import VarianceReport from '../../components/VarianceReport';
 import { globalStyles } from '../../style/globalStyles';
 import { showSnackbar } from '../../Snackbar/messageSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import { getCycleScheduleDesc } from '../Utils/InventoryUtils';
 
 const InitialScreen = ({
   setScreen,
@@ -70,7 +71,7 @@ const InitialScreen = ({
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
+            <Text style={styles.value}>{getCycleScheduleDesc(currentCycle.CycleStatus)}</Text>
           </View>
         </View>
       </View>
@@ -78,12 +79,18 @@ const InitialScreen = ({
       <TouchableOpacity
           style={{
             ...styles.button,
-            // backgroundColor:
-            //   currentCycle.CycleStatus > 1
-            //     ? 'grey'
-            //     : globalStyles.colors.success,
+            backgroundColor:
+              currentCycle.CycleStatus > 0
+                ? 'grey'
+                : globalStyles.colors.success,
           }}
-          onPress={() => navigation.navigate('add_part_to_cycle')}
+          onPress={() => {
+            if(currentCycle.CycleStatus <= 0){
+              navigation.navigate('add_part_to_cycle')
+            }else{
+              dispatch(showSnackbar("Parts can only be added on a Scheduled Cycle Status."))
+            }
+          }}
         >
           <Text style={styles.buttonText}>Add Parts By BinNum</Text>
         </TouchableOpacity>
@@ -103,7 +110,14 @@ const InitialScreen = ({
           <Text style={styles.buttonText}>Initiate Counting Process</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.button}
+          style={{
+            ...styles.button,
+            backgroundColor:
+              currentCycle.CycleStatus == 6
+                ? 'grey'
+                : globalStyles.colors.success,
+          }}
+          disabled={currentCycle.CycleStatus === 6}
           onPress={() => {
             if(tagsData.length>0){
               setScreen('counting')
@@ -118,7 +132,14 @@ const InitialScreen = ({
         <VarianceReport />
         <TouchableOpacity
           onPress={() => setPostCountData(true)}
-          style={styles.button}
+          style={{
+            ...styles.button,
+            backgroundColor:
+              currentCycle.CycleStatus == 6
+                ? 'grey'
+                : globalStyles.colors.success,
+          }}
+          disabled={currentCycle.CycleStatus === 6}
         >
           <Text style={styles.buttonText}>Post</Text>
         </TouchableOpacity>
@@ -150,7 +171,6 @@ const InitialScreen = ({
   );
 };
 
-// generateTagsAndStartCount
 
 const styles = StyleSheet.create({
   container: {

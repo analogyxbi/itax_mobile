@@ -30,6 +30,7 @@ import {
   createDsPayload,
   fetchCountPartDetails,
   fetchXrefPart,
+  getCycleScheduleDesc,
   updatePartToDataset,
 } from "../Utils/InventoryUtils";
 import {
@@ -293,7 +294,6 @@ const CountingScreen = ({
             await setBlankFalse({ ...values, BlankTag: false }, tag.TagNum);
           })
           .catch((err) => {
-            console.log({err})
             err
               .json()
               .then((res) => {
@@ -594,7 +594,7 @@ const CountingScreen = ({
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
+            <Text style={styles.value}>{getCycleScheduleDesc(currentCycle.CycleStatus)}</Text>
           </View>
         </View>
       </View>

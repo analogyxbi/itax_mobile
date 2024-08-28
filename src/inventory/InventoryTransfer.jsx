@@ -19,7 +19,7 @@ import {
   Modal, FlatList,
   Button as RNButton
 } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, Chip } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
@@ -571,45 +571,8 @@ const InventoryTransfer = () => {
                 handleRefresh={handleOptionsRefresh}
               />
             </View>
-            {/* <View style={{ flex: 1 }}>
-              <View style={globalStyles.dFlexR}>
-                <Text style={styles.inputLabel}>Current Bin </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setCameraState('current_bin');
-                    openScanner();
-                  }}
-                >
-                  <AntDesign
-                    name="scan1"
-                    size={24}
-                    color={globalStyles.colors.darkGrey}
-                  />
-                </TouchableOpacity>
-              </View>
-              <SelectAsync
-                value={formData.current_bin}
-                onChange={(itemValue) => {
-                  formData.current_part = '';
-                  setSelectedPart({})
-                  onSelectBins('current_bin', itemValue);
-                }}
-                options={
-                  binsData[formData?.current_whse]?.map((data) => ({
-                    ...data,
-                    label: data.BinNum,
-                    value: data.BinNum,
-                  })) || []
-                }
-                isLoading={refreshing}
-                handleRefresh={handleOptionsRefresh}
-                label="current_bin"
-                fetchOptions={getBinsData}
-                warehouse={formData.current_whse}
-              />
-            </View> */}
           </View>
-          <View>
+          <View style={{display:"flex", justifyContent:"space-between", flex:1}}>
             <View style={globalStyles.dFlexR}>
               <Text style={styles.inputLabel}>Select Part </Text>
               <TouchableOpacity
@@ -624,6 +587,13 @@ const InventoryTransfer = () => {
                   color={globalStyles.colors.darkGrey}
                 />
               </TouchableOpacity>
+              <View>
+              {selectedPart.BinNum && <View style={{marginLeft: 14}}>
+              <Chip icon="information" >BinNum: {selectedPart.BinNum}</Chip>
+            </View>}
+          </View>
+              
+              
             </View>
             <SelectPartWhse
               value={formData.current_part}

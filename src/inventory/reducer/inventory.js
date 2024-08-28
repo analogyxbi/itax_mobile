@@ -105,6 +105,9 @@ const inventorySlice = createSlice({
       let tags = state.tagsData.filter((tag) => tag.TagNum != action.payload);
       state.tagsData = tags;
     },
+    changeCurrentCycleStatus:(state, action)=>{
+      state.currentCycle.CycleStatus = action.payload
+    } 
   },
 });
 
@@ -120,7 +123,8 @@ export const {
   removeTag,
   setCycleTags,
   setSelectedCycleCCDtls,
-  setScreenLayout
+  setScreenLayout,
+  changeCurrentCycleStatus
 } = inventorySlice.actions;
 
 export default inventorySlice.reducer;

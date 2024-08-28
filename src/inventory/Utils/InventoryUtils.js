@@ -2,6 +2,22 @@ import { AnalogyxBIClient } from "@analogyxbi/connection";
 import { setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
 import { setSelectedCycleCCDtls, setSelectedCycleDetails } from "../reducer/inventory";
 
+const cycleState = {
+  0: "Scheduled",
+  1: "Tags Generated",
+  2: "Count Started",
+  3: 'Count Entered',
+  4: 'Recount tags generated',
+  5: "Not Found",
+  6: 'Completed',
+  7: 'Cancelled'
+}
+
+export const getCycleScheduleDesc = (state)=>{
+  return cycleState[state]
+}
+
+
 export const generateTags = {
   ds: {
     CCHdr: [

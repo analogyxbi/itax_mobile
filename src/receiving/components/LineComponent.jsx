@@ -11,7 +11,18 @@ import { globalStyles } from "../../style/globalStyles";
 import { getBinsData } from "../../utils/utils";
 import SelectAsync from "../../components/SelectAsync";
 
-const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved, warehouse, convertQuantity }) => {
+const LineComponent = ({ currentLine, 
+    styles, 
+    formData, 
+    setFormdata, 
+    onChangeText, 
+    isNewPackSlip, 
+    handleSave, 
+    isSaved, setIsSaved, 
+    warehouse, convertQuantity,
+    supplierQty, setSupplierQty,
+    ourQty, setOurQty
+ }) => {
     const dispatch = useDispatch();
     const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);
@@ -19,8 +30,6 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
         from: [],
         to: [],
     });
-    const [supplierQty, setSupplierQty] = useState('');
-    const [ourQty, setOurQty] = useState('');
 
     const handleSupplierQtyChange = (text) => {
         setFormdata(prev => ({ ...prev, input: text }));

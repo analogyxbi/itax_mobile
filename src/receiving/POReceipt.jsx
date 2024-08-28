@@ -49,7 +49,6 @@ import { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
 import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
-import { convertQuantity } from '../../utils/uomconversion';
 
 const initialFormdata = {
   poNum: '',
@@ -106,7 +105,8 @@ const POReceipt = () => {
   const [packslipButtonCliked, setPackslipButtonClicked] = useState(false);
   const [createPackslipResponse, setCreatePackslipResponse] = useState();
   const [currentPacklines, setCurrentPacklines] = useState([]);
-
+  const [uoms, setUoms] = useState([]);
+  const [uomMap, setUomMap] = useState({})
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
   };
@@ -472,12 +472,61 @@ const POReceipt = () => {
     setIsSaved(false);
   };
 
+  const fetchUoms = () => {
+    const epicor_endpoint = `/BaqSvc/UOMCOV/`;
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'GET',
+      },
+      stringify: false,
+    })
+      .then(({ json }) => {
+        setUoms(json?.data?.value);
+        saveToState(json?.data?.value)
+      })
+      .catch(err => console.log(err))
+  }
+  useEffect(() => {
+    fetchUoms()
+  }, [])
+ 
+  function saveToState(data) {
+    // Create conversion map
+    const conversionMap = data.reduce((map, item) => {
+      map[item.UOMConv_UOMCode] = {
+        factor: parseFloat(item.UOMConv_ConvFactor),
+        baseUOM: item.UOMClass_BaseUOMCode
+      };
+      return map;
+    }, {});
+    setUomMap(()=> conversionMap)
+  }
+ 
+  // Function to convert from one UOM to another
+  function convertQuantity(value, fromUOM, toUOM) {
+    if (fromUOM === toUOM) return value;
+    const fromConv = uomMap[fromUOM];
+    const toConv = uomMap[toUOM];
+    if (!fromConv || !toConv) {
+      throw new Error('Conversion factor not found for the given UOM codes');
+    }
+    // Convert from 'fromUOM' to base UOM
+    const valueInBaseUOM = value * fromConv.factor;
+    // Convert from base UOM to 'toUOM'
+    const result = valueInBaseUOM / toConv.factor;
+    
+    // Return the result rounded to two decimal places
+    return result.toFixed(2);
+  }
+
   const handleSave = (reverse) => {
     dispatch(
       setIsLoading({ value: true, message: 'Saving the Receipt. Please wait' })
     );
-    const ourQty = formData?.qty_type === 'Supplier' ? convertQuantity(formData?.input, currentLine?.IUM,currentLine?.PUM).toString() : formData.input;
-    const supplierQty = formData?.qty_type === 'Our' ? convertQuantity(formData?.input,currentLine?.PUM, currentLine?.IUM).toString() : formData.input;
+    const ourQty = formData?.qty_type === 'Supplier' ? convertQuantity(formData?.input, currentLine?.PUM, currentLine?.IUM ).toString() : formData.input;
+    const supplierQty = formData?.qty_type === 'Our' ? convertQuantity(formData?.input, currentLine?.IUM,currentLine?.PUM).toString() : formData.input;
     const today = new Date();
     let receipt = {
       // ...currentLine,
@@ -506,7 +555,7 @@ const POReceipt = () => {
       EnableBin: true,
       WareHouseCode: formData?.WareHouseCode || currentLine?.WarehouseCode,
       OurQty: ourQty,
-      InputOurQty: supplierQty,
+      InputOurQty: ourQty,
       VendorQty: supplierQty,
       IUM: currentLine?.IUM,
       PUM: currentLine?.PUM,
@@ -1125,7 +1174,8 @@ const POReceipt = () => {
                     setIsSaved,
                     isSaved,
                     packSLipNUm,
-                    setFormdata
+                    setFormdata,
+                    convertQuantity
                   }}
                   warehouse={formData?.WareHouseCode || currentLine?.WarehouseCode}
                 />

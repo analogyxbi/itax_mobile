@@ -10,9 +10,8 @@ import { showSnackbar } from "../../Snackbar/messageSlice";
 import { globalStyles } from "../../style/globalStyles";
 import { getBinsData } from "../../utils/utils";
 import SelectAsync from "../../components/SelectAsync";
-import { convertQuantity } from "../../../utils/uomconversion";
 
-const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved, warehouse }) => {
+const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, setIsSaved, warehouse, convertQuantity }) => {
     const dispatch = useDispatch();
     const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);

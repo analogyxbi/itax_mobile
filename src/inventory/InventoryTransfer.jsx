@@ -438,6 +438,7 @@ const InventoryTransfer = () => {
       if (parts.length === 1) {
         // Only one part, set it as the selected part
         setSelectedPart(parts[0]);
+        setPartsOptions(parts)
       } else {
         // More than one part, show a modal to let the user select
         setPartsOptions(parts);
@@ -589,7 +590,7 @@ const InventoryTransfer = () => {
               </TouchableOpacity>
               <View>
               {selectedPart.BinNum && <View style={{marginLeft: 14}}>
-              <Chip icon="information" >BinNum: {selectedPart.BinNum}</Chip>
+              <Chip icon="information" onPress={()=> setIsModalVisible(true)}>BinNum: {selectedPart.BinNum}</Chip>
             </View>}
           </View>
               

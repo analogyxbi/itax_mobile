@@ -30,10 +30,10 @@ const AddPartToCycle = ({
 
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [confirmAdd, setConfirmAdd] = useState(false);
-  const [formData, setFormData] = useState({bins:[]})
+  const [formData, setFormData] = useState({ bins: [] })
   const dispatch = useDispatch()
 
-  async function startAddProcess(bins){
+  async function startAddProcess(bins) {
     dispatch(
       setIsLoading({
         value: true,
@@ -43,92 +43,92 @@ const AddPartToCycle = ({
     let partBins = [];
     let partBinObject = {}
     if (bins.length > 0) {
-        // Create an array of promises
-        const promises = bins.map(async (bin) => {
-            // Fetch part information
-            const part = await fetchPartByWhseBin(currentCycle.WarehouseCode, bin);
-            // Store the result in partBins object
-            partBins.push(part);
-            partBinObject[bin] = part;
-        });
+      // Create an array of promises
+      const promises = bins.map(async (bin) => {
+        // Fetch part information
+        const part = await fetchPartByWhseBin(currentCycle.WarehouseCode, bin);
+        // Store the result in partBins object
+        partBins.push(part);
+        partBinObject[bin] = part;
+      });
 
-        // Wait for all promises to complete
-        await Promise.all(promises);
-        const flattenedBins = partBins.flat();
-        const filterParts = filterOutparts(flattenedBins)
-        // Chunk the flattened array into batches
-        const batches = chunkArray(filterParts, 500);
+      // Wait for all promises to complete
+      await Promise.all(promises);
+      const flattenedBins = partBins.flat();
+      const filterParts = filterOutparts(flattenedBins)
+      // Chunk the flattened array into batches
+      const batches = chunkArray(filterParts, 500);
 
-        // Process each batch sequentially
-        // for (const batch of batches) {
-        //     try {
-        //         // Call addPartsDetailsToCycle for the current batch
-        //         await addPartsDetailsToCycle(currentCycle, batch, dispatch);
-        //         console.log('Batch processed successfully:', batch);
-        //     } catch (error) {
-        //         console.error('Error processing batch:', batch, error);
-        //         // Optionally handle errors, e.g., stop processing further batches
-        //         break; // If you want to stop processing on error
-        //     }
-        // }
-        // All API calls have completed, and partBins is now populated
-        await addPartsDetailsToCycle(currentCycle, filterParts, dispatch)
-        navigation.goBack()
-        // // test Code
-        // console.log({filterParts})
-        // dispatch(setOnSuccess({ value: true, message: "Parts Added to the Cycle." }));
-        // You can use the partBins object here as needed
+      // Process each batch sequentially
+      // for (const batch of batches) {
+      //     try {
+      //         // Call addPartsDetailsToCycle for the current batch
+      //         await addPartsDetailsToCycle(currentCycle, batch, dispatch);
+      //         console.log('Batch processed successfully:', batch);
+      //     } catch (error) {
+      //         console.error('Error processing batch:', batch, error);
+      //         // Optionally handle errors, e.g., stop processing further batches
+      //         break; // If you want to stop processing on error
+      //     }
+      // }
+      // All API calls have completed, and partBins is now populated
+      await addPartsDetailsToCycle(currentCycle, filterParts, dispatch)
+      navigation.goBack()
+      // // test Code
+      // console.log({filterParts})
+      // dispatch(setOnSuccess({ value: true, message: "Parts Added to the Cycle." }));
+      // You can use the partBins object here as needed
     }
   }
 
   function chunkArray(array, size) {
     const result = [];
     for (let i = 0; i < array.length; i += size) {
-        result.push(array.slice(i, i + size));
+      result.push(array.slice(i, i + size));
     }
     return result;
-}
+  }
 
-function filterOutparts(parts){
-  const existingCCDtls = selectedCycleDetails[0].CCDtls.map((data) => data.PartNum)
-  let fltParts = []
-  let fltBlank = []
-  parts.forEach(o => {
-      if(!existingCCDtls.includes(o.PartNum) && !fltBlank.includes(o.PartNum) ){
+  function filterOutparts(parts) {
+    const existingCCDtls = selectedCycleDetails[0].CCDtls.map((data) => data.PartNum)
+    let fltParts = []
+    let fltBlank = []
+    parts.forEach(o => {
+      if (!existingCCDtls.includes(o.PartNum) && !fltBlank.includes(o.PartNum)) {
         fltParts.push(o)
         fltBlank.push(o.PartNum)
       }
-  });
-  return fltParts
-}
+    });
+    return fltParts
+  }
 
 
   return (
     <SafeAreaView style={styles.container}>
       <Transferbackdrop
-            loading={isLoading && !onSuccess}
-            setLoading={(value) =>
-              dispatch(setIsLoading({ value, message: '' }))
-            }
-          />
-          <SuccessBackdrop
-            visible={onSuccess}
-            onDismiss={() => {
-              setTimeout(() => {
-                dispatch(setOnSuccess({ value: false, message: '' }));
-                dispatch(setIsLoading({ value: false, message: '' }));
-              }, 500);
-            }}
-          />
-          <ErrorBackdrop
-            visible={onError}
-            onDismiss={() => {
-              setTimeout(() => {
-                dispatch(setOnError({ value: false, message: '' }));
-                dispatch(setIsLoading({ value: false, message: '' }));
-              }, 500);
-            }}
-          />
+        loading={isLoading && !onSuccess}
+        setLoading={(value) =>
+          dispatch(setIsLoading({ value, message: '' }))
+        }
+      />
+      <SuccessBackdrop
+        visible={onSuccess}
+        onDismiss={() => {
+          setTimeout(() => {
+            dispatch(setOnSuccess({ value: false, message: '' }));
+            dispatch(setIsLoading({ value: false, message: '' }));
+          }, 500);
+        }}
+      />
+      <ErrorBackdrop
+        visible={onError}
+        onDismiss={() => {
+          setTimeout(() => {
+            dispatch(setOnError({ value: false, message: '' }));
+            dispatch(setIsLoading({ value: false, message: '' }));
+          }, 500);
+        }}
+      />
       <View style={styles.header}>
         <Pressable
           onPress={() => {
@@ -169,22 +169,22 @@ function filterOutparts(parts){
           </View>
         </View>
       </View>
-      <View style={{ flex: 1, paddingLeft:5, paddingRight:5 }}>
-      <MultiSelectAsync
-        value={formData?.bins}
-        onChange={(itemValue) => {
-            setFormData({'bins': itemValue});
-        }}
-        isLoading={false}
-        label="cycleBin"
-        handleRefresh={()=> {}}
-        fetchOptions={getBinsData}
-        warehouse={currentCycle.WarehouseCode}
-        multi={true}
-        placeholder={'Select Bins to add its parts to the current cycle.'}
+      <View style={{ flex: 1, paddingLeft: 5, paddingRight: 5 }}>
+        <MultiSelectAsync
+          value={formData?.bins}
+          onChange={(itemValue) => {
+            setFormData({ 'bins': itemValue });
+          }}
+          isLoading={false}
+          label="cycleBin"
+          handleRefresh={() => { }}
+          fetchOptions={getBinsData}
+          warehouse={currentCycle.WarehouseCode}
+          multi={true}
+          placeholder={'Select Bins to add its parts to the current cycle.'}
         />
       </View>
-       <PopUpDialog
+      <PopUpDialog
         visible={confirmAdd}
         setVisible={setConfirmAdd}
         handleCancel={() => setConfirmAdd(false)}
@@ -195,16 +195,14 @@ function filterOutparts(parts){
         title={`Add parts to Cycle Sequence ${currentCycle.CycleSeq}`}
         message={'Are you sure you want to Add all parts of the selected bins to the current cycle?'}
       />
-      <View>
       <TouchableOpacity
         style={styles.receiveButton}
-        onPress={() => formData.bins.length > 0 ? setConfirmAdd(true)  : dispatch(showSnackbar('Please select the cycle to proceed further'))}
+        onPress={() => formData.bins.length > 0 ? setConfirmAdd(true) : dispatch(showSnackbar('Please select the cycle to proceed further'))}
       >
         <Text style={styles.receiveButtonText}>Next</Text>
       </TouchableOpacity>
-      </View>
     </SafeAreaView>
-   
+
   );
 };
 
@@ -227,9 +225,9 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     position: 'absolute',
     bottom: 40,
-    width: 365,
+    width: '100%',
     zIndex: 10,
-    marginHorizontal: 15,
+    marginHorizontal: 'auto',
   },
   receiveButtonText: {
     color: 'white',

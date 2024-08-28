@@ -321,9 +321,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     position: 'absolute',
     bottom: 40,
-    width: 365,
+    width: "100%",
     zIndex: 10,
-    marginHorizontal: 15,
   },
   receiveButtonText: {
     color: 'white',

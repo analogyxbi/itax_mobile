@@ -322,7 +322,7 @@ const MiscellaneousMaterial = () => {
                 placeholder="Part Num"
               />
               <Pressable onPress={()=>{
-                // fetchPartDetails(partNum)
+                fetchPartDetails(partNum)
                 }}>
                 {!loading ? (
                   <Feather
@@ -337,7 +337,7 @@ const MiscellaneousMaterial = () => {
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => {
-                  // openScanner();
+                  openScanner();
                 }}
               >
                 <Text style={styles.closeButtonText}>

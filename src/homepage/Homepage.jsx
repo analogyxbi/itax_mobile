@@ -79,7 +79,7 @@ export default function Homepage() {
           onPress={() => navigation.navigate('po_reciept')}
           icon={<FontAwesome5 name="receipt" style={styles.iconImage} />}
         />
-        <HomepageIcon
+        {/* <HomepageIcon
           name="Quantity Adjustments"
           onPress={() => navigation.navigate('quantity_adjustments')}
           icon={<MaterialCommunityIcons name="counter" style={styles.iconImage} />}
@@ -88,7 +88,7 @@ export default function Homepage() {
           name="Miscellaneous Material"
           onPress={() => navigation.navigate('miscellaneous_material')}
           icon={<MaterialIcons name="miscellaneous-services" style={styles.iconImage} />}
-        />
+        /> */}
         {/* <HomepageIcon
           name="Job Receipt"
           icon={<Ionicons name="receipt" style={styles.iconImage} />}

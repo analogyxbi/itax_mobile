@@ -274,7 +274,9 @@ const QuantityAdjustments = () => {
             // editable={!loading}
             placeholder="Part Num"
           />
-          <Pressable onPress={()=>fetchPartDetails(partNum)}>
+          <Pressable onPress={()=> {
+            // fetchPartDetails(partNum)
+          }}>
             {!loading ? (
               <Feather
                 name="search"

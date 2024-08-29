@@ -321,7 +321,9 @@ const MiscellaneousMaterial = () => {
                 // editable={!loading}
                 placeholder="Part Num"
               />
-              <Pressable onPress={()=>fetchPartDetails(partNum)}>
+              <Pressable onPress={()=>{
+                // fetchPartDetails(partNum)
+                }}>
                 {!loading ? (
                   <Feather
                     name="search"
@@ -335,7 +337,7 @@ const MiscellaneousMaterial = () => {
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => {
-                  openScanner();
+                  // openScanner();
                 }}
               >
                 <Text style={styles.closeButtonText}>

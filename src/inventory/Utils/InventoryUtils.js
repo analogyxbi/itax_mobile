@@ -477,7 +477,6 @@ export async function getReportParameters(cycle){
           stringify: false,
       });
       const { json } = response;
-      console.log("GOT REPORT PARAMSSSSSSSSS", json)
       const d = await submitToAgent(json.data.returnObj, cycle)
       return d
 

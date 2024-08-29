@@ -143,51 +143,45 @@ const CountingScreen = ({
   }
 
   async function setCycleDetailsToCount(finish) {
-    if(finish) return dispatch(showSnackbar("No more tags with part available."))
+    if (finish) {
+      return dispatch(showSnackbar("No more tags with part available."));
+    }
+  
     setLoading(true);
-    // const partDtls = await fetchCountPartDetails(
-    //   part,
-    //   plant,
-    //   currentCycle.WarehouseCode
-    // );
-    // setSelectedPart(partDtls);
-    // const xRefDetails = await fetchXrefPart(partDtls)
-    // console.log({xRefDetails})
-    // /Erp.BO.PartTranSvc/GetList
-    // Company = 'WOOD01' And PartNum = 'E137' And WareHouseCode = 'PORTNA' And BinNum = 'J02D02' And InvtyUOM = 'M' And LotNum = '' And ( SysDate > 08/21/2024 Or (SysDate = 08/21/2024 And SysTime >= 46157)) BY PartNum
-    const tag = tagsData[0];
-    if(tag){
+  
+    // Find the current tag
+    const currentTagNum = selectedTag?.TagNum;
+    const currentIndex = tagsData.findIndex(tag => tag.TagNum === currentTagNum);
+    let nextTagIndex = currentIndex + 1;
+  
+    // Check if currentTagNum exists and if nextTagIndex is within bounds
+    if (currentIndex === -1 || (nextTagIndex >= tagsData.length && currentIndex !== tagsData.length - 1)) {
+      // If no tag is selected or we're at the end of the list, use the first tag
+      nextTagIndex = 0;
+    }
+  
+    // Get the tag based on the computed index
+    const tag = tagsData[nextTagIndex];
+    if (tag) {
+      const qty = tag.FrozenQOH ? `${parseFloat(tag.FrozenQOH).toFixed(3)}` : tag.FrozenQOH
       setBin(tag?.BinNum);
       setPart(tag?.PartNum);
-      setCountedQty(tag?.FrozenQOH);
+      setCountedQty(qty);
       setNotes(tag?.TagNote);
       setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
-    }else{
-      await fetchAllTags(false, true)
-      dispatch(showSnackbar('No tags found, Please refresh to get new tags'))
-      setTimeout(()=> {
-        setCycleDetailsToCount(true)
-      },2000)
+    } else {
+      await fetchAllTags(false, true);
+      dispatch(showSnackbar('No tags found, Please refresh to get new tags'));
+      setTimeout(() => {
+        setCycleDetailsToCount(true);
+      }, 2000);
     }
-    // setSelectePart({ ...tag, label: tag.TagNum, value: tag.TagNum });
+  
     setNextConfirm(false);
     setLoading(false);
   }
 
   async function setBlankFalse(values, tag) {
-    // let tagData = values
-    // let data = {
-    //   pQty: qty,
-    //   ds: {
-    //     CCTag: [{
-    //       ...tagData,
-    //       RowMod: "U"
-    //     }]
-    //   }
-    // };
-    // let data = values;
-    // console.log('NEW DATA')
-    // console.log({values})
     const epicor_endpoint = `/Erp.BO.CountTagSvc/CountTags`;
     try {
       const response = await AnalogyxBIClient.post({
@@ -238,7 +232,6 @@ const CountingScreen = ({
     try {
       const details = selectedCycleDetails[0].CCDtls;
       const cycleData = details.find((data) => data.PartNum == part);
-      // console.log({cycleData})
       if (cycleData) {
         let tag = selectedTag;
         delete tag.label;
@@ -612,9 +605,10 @@ const CountingScreen = ({
             <SelectInputValue
               value={selectedTag.TagNum}
               onChange={(tag) => {
+                const qty = tag.FrozenQOH ? `${parseFloat(tag.FrozenQOH).toFixed(3)}` : tag.FrozenQOH
                 setBin(tag?.BinNum);
                 setPart(tag?.PartNum);
-                setCountedQty(tag?.FrozenQOH);
+                setCountedQty(qty);
                 setNotes(tag?.TagNote);
                 setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
               }}

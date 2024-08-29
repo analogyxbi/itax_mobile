@@ -39,6 +39,7 @@ import SuccessBackdrop from "../components/Loaders/SuccessBackdrop";
 import ErrorBackdrop from "../components/Loaders/ErrorBackdrop";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
 import PopUpDialog from "../components/PopUpDialog";
+import BarcodeScannerComponent from "../components/BarcodeScannerComponent";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -51,6 +52,7 @@ const MiscellaneousMaterial = () => {
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [binwithPart, setBinwithpart] = useState([]);
+  const [scannerVisible, setScannerVisible] = useState(false);
   const [formData, setFormData] = useState({});
   const [partDetails, setPartdetails] = useState();
   const [partSpecification, setPartSpecification] = useState();
@@ -61,13 +63,20 @@ const MiscellaneousMaterial = () => {
     (state) => state.material
   );
 
+  const openScanner = () => {
+    setScannerVisible(true);
+  };
+  const closeScanner = () => {
+    setScannerVisible(false);
+  };
+
   const onChangeDate = (event) => {
     setShowPicker(false);
     const pickedDate = new Date(event?.nativeEvent?.timestamp);
     setDate(pickedDate);
   };
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
-  const fetchPartDetails = async () => {
+  const fetchPartDetails = async (partNum) => {
     setFormData({});
     setPartdetails({});
     setSelectedBin({});
@@ -112,32 +121,42 @@ const MiscellaneousMaterial = () => {
     setFormData((prev) => ({ ...prev, [name]: val }));
   };
 
+  function captureDetails(details, state) {
+    if (details) {
+      setPartNum(details);
+      fetchPartDetails(details);
+    } else {
+      dispatch(showSnackbar('Error fetching Part number'));
+    }
+    closeScanner();
+  }
+
   const perFromMeaterialMovement = async (payload) => {
-    try{
-        const epicor_endpoint = `/Erp.BO.IssueReturnSvc/PerformMaterialMovement`;
-        const postPayload = {
-            epicor_endpoint,
-            request_type: 'POST',
-            data: JSON.stringify({
-                plNegQtyAction:false,
-                ds: {
-                    IssueReturn: payload.ds.IssueReturn
-                }
-            })
-        }
-        const response = await AnalogyxBIClient.post({
-            endpoint: `/erp_woodland/resolve_api`,
-            postPayload,
-            stringify: false,
-          })
-          const {json} = response;
-    
-        return response.json
-    }catch(err) {
-        err.json().then((res) => {
-            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
-          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+    try {
+      const epicor_endpoint = `/Erp.BO.IssueReturnSvc/PerformMaterialMovement`;
+      const postPayload = {
+        epicor_endpoint,
+        request_type: 'POST',
+        data: JSON.stringify({
+          plNegQtyAction: false,
+          ds: {
+            IssueReturn: payload.ds.IssueReturn
+          }
+        })
+      }
+      const response = await AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+      })
+      const { json } = response;
+
+      return response.json
+    } catch (err) {
+      err.json().then((res) => {
+        dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+        // console.log({ res });
+      }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
     }
   }
 
@@ -164,74 +183,74 @@ const MiscellaneousMaterial = () => {
     }
   };
 
-  function setAdjustStateQuantity(qty){
-    if(qty){
-        const id = selectedBin.SysRowId
-        setSelectedBin((prev) => ({...prev , QuantityOnHand: prev.QuantityOnHand + qty}))
-        setBinwithpart((prev)=> prev.map((data)=> {
-            if(data.SysRowId === id){
-                return {
-                    ...data,
-                    QuantityOnHand: data.QuantityOnHand + qty
-                }
-            }
-            return data
-        }))
+  function setAdjustStateQuantity(qty) {
+    if (qty) {
+      const id = selectedBin.SysRowId
+      setSelectedBin((prev) => ({ ...prev, QuantityOnHand: prev.QuantityOnHand + qty }))
+      setBinwithpart((prev) => prev.map((data) => {
+        if (data.SysRowId === id) {
+          return {
+            ...data,
+            QuantityOnHand: data.QuantityOnHand + qty
+          }
+        }
+        return data
+      }))
     }
   }
 
   const handleAdjust = async () => {
     setConfirmAdjust(false)
-    if (formData?.QuantityAdjust && partNum && partNum.length>0) {
-      if(typeof formData?.QuantityAdjust === 'string' && formData?.QuantityAdjust.length === 0){
+    if (formData?.QuantityAdjust && partNum && partNum.length > 0) {
+      if (typeof formData?.QuantityAdjust === 'string' && formData?.QuantityAdjust.length === 0) {
         return dispatch(showSnackbar("Invalid Quantity"));
-      }else if(typeof formData?.QuantityAdjust ==='number' && typeof formData?.QuantityOnHand === 0){
+      } else if (typeof formData?.QuantityAdjust === 'number' && typeof formData?.QuantityOnHand === 0) {
         return dispatch(showSnackbar("Invalid Quantity"));
       }
-     try{
+      try {
         dispatch(
-            setIsLoading({
-              value: true,
-              message: 'Making Adjustments. Please wait',
-            })
-          );
-      let postData = Object.assign({}, formData);
-      delete postData.SysRowID;
-      let newPartjson = getNewPartNum;
-      let newIssue = newPartjson.ds.IssueReturn.filter(
-        (data) => data.FromWarehouseCode == formData.WareHouseCode
-      );
-      let arrData = Object.assign({}, newIssue[0]);
-      arrData.ReasonCode = formData.reasonCode;
-      arrData.ReasonType = formData.reasonType;
-      arrData.TranDate = date.toISOString()
-      arrData.ReasonCodeDescription = formData.reasonValue;
-      let payload = {
-        pdTranQty: formData.QuantityAdjust,
-        ds: {
-          ...newPartjson.ds,
-          IssueReturn: [arrData],
-        },
-      };
-      const transQty = await saveIssueQuantity(payload);
-      const { json } = transQty;
-      dispatch(
-        setOnSuccess({ value: true, message: 'Part issued.' })
-      );
-      setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
-     }catch(err){
+          setIsLoading({
+            value: true,
+            message: 'Making Adjustments. Please wait',
+          })
+        );
+        let postData = Object.assign({}, formData);
+        delete postData.SysRowID;
+        let newPartjson = getNewPartNum;
+        let newIssue = newPartjson.ds.IssueReturn.filter(
+          (data) => data.FromWarehouseCode == formData.WareHouseCode
+        );
+        let arrData = Object.assign({}, newIssue[0]);
+        arrData.ReasonCode = formData.reasonCode;
+        arrData.ReasonType = formData.reasonType;
+        arrData.TranDate = new Date(date)?.toLocaleDateString(),
+        arrData.ReasonCodeDescription = formData.reasonValue;
+        let payload = {
+          pdTranQty: formData.QuantityAdjust,
+          ds: {
+            ...newPartjson.ds,
+            IssueReturn: [arrData],
+          },
+        };
+        const transQty = await saveIssueQuantity(payload);
+        const { json } = transQty;
+        dispatch(
+          setOnSuccess({ value: true, message: 'Part issued.' })
+        );
+        setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
+      } catch (err) {
         err.json().then((res) => {
-            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
-          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-     }
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          // console.log({ res });
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+      }
     } else {
       dispatch(showSnackbar("Enter the Qty first"));
       return;
     }
   };
 
-  
+
 
   useEffect(() => {
     setReasons(() => globalReasons.filter((da) => da?.ReasonType == "M"));
@@ -246,261 +265,272 @@ const MiscellaneousMaterial = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Ionicons
-            name="chevron-back-outline"
-            size={24}
-            color={globalStyles.colors.darkGrey}
+  <SafeAreaView style={styles.container}>
+      {scannerVisible ? (
+        <View style={{ flex: 1 }}>
+          <BarcodeScannerComponent
+            closeScanner={closeScanner}
+            captureDetails={captureDetails}
+          // cameraState={cameraState}
           />
-        </Pressable>
-        <Text style={styles.heading}>Issue Miscellaneous Material</Text>
-      </View>
-      <ScrollView style={styles.body}>
-        <Transferbackdrop
-          loading={isLoading && !onSuccess}
-          setLoading={(value) => dispatch(setIsLoading({ value, message: "" }))}
-        />
-        <SuccessBackdrop
-          visible={onSuccess}
-          onDismiss={() => {
-            setTimeout(() => {
-              dispatch(setOnSuccess({ value: false, message: "" }));
-              dispatch(setIsLoading({ value: false, message: "" }));
-            }, 500);
-          }}
-        />
-        <ErrorBackdrop
-          visible={onError}
-          onDismiss={() => {
-            setTimeout(() => {
-              dispatch(setOnError({ value: false, message: "" }));
-              dispatch(setIsLoading({ value: false, message: "" }));
-            }, 500);
-          }}
-        />
-        <Text
-          style={{ fontSize: 18, paddingHorizontal: 13, fontWeight: "600" }}
-        >
-          From
-        </Text>
-        <View style={globalStyles.dFlexR}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            onChangeText={(val) => setPartNum(val)}
-            value={partNum}
-            // editable={!loading}
-            placeholder="Part Num"
-          />
-          <Pressable onPress={()=> {}}>
-            {!loading ? (
-              <Feather
-                name="search"
+        </View>) :
+        <View style={{height:windowHeight - 20}}>
+          <View style={styles.header}>
+            <Pressable onPress={() => navigation.goBack()}>
+              <Ionicons
+                name="chevron-back-outline"
                 size={24}
                 color={globalStyles.colors.darkGrey}
               />
-            ) : (
-              <ActivityIndicator animating={true} color={MD2Colors.red800} />
-            )}
-          </Pressable>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => {
-              // openScanner();
-            }}
-          >
-            <Text style={styles.closeButtonText}>
-              <AntDesign
-                name="scan1"
-                size={24}
-                color={globalStyles.colors.darkGrey}
-              />
+            </Pressable>
+            <Text style={styles.heading}>Issue Miscellaneous Material</Text>
+          </View>
+          <ScrollView style={styles.body}>
+            <Transferbackdrop
+              loading={isLoading && !onSuccess}
+              setLoading={(value) => dispatch(setIsLoading({ value, message: "" }))}
+            />
+            <SuccessBackdrop
+              visible={onSuccess}
+              onDismiss={() => {
+                setTimeout(() => {
+                  dispatch(setOnSuccess({ value: false, message: "" }));
+                  dispatch(setIsLoading({ value: false, message: "" }));
+                }, 500);
+              }}
+            />
+            <ErrorBackdrop
+              visible={onError}
+              onDismiss={() => {
+                setTimeout(() => {
+                  dispatch(setOnError({ value: false, message: "" }));
+                  dispatch(setIsLoading({ value: false, message: "" }));
+                }, 500);
+              }}
+            />
+            <Text
+              style={{ fontSize: 18, paddingHorizontal: 13, fontWeight: "600" }}
+            >
+              From
             </Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.datepicker,
-            globalStyles.dFlexR,
-            globalStyles.justifySB,
-          ]}
-          onPress={() => setShowPicker(true)}
-        >
-          <Text>{date ? date?.toISOString() : "Select Date"}</Text>
-        </TouchableOpacity>
-        {showPicker && (
-          <RNDateTimePicker value={date} onChange={onChangeDate} mode="date" />
-        )}
-
-        <View style={{ flex: 1, paddingHorizontal: 12 }}>
-          <SelectInput
-            containerStyle={{
-              marginTop: 12,
-              flexDirection: "row",
-              alignItems: "center",
-              borderColor: "#ccc",
-              borderRadius: 5,
-            }}
-            value={formData.WareHouseCode || null}
-            onChange={(itemValue) => {
-              handleSelectWarehouse(itemValue);
-            }}
-            options={partDetails?.data?.returnObj?.PartOnHandWhse?.map(
-              (data) => ({
-                ...data,
-                label: data.WarehouseCode,
-                value: data.WarehouseCode,
-              })
-            )}
-            placeholder="Warehouse"
-            isLoading={loading}
-            label="WarehouseCode"
-            // handleRefresh={handleOptionsRefresh}
-          />
-        </View>
-        {partSpecification?.PartDescription ? (
-          <Text
-            style={{
-              paddingHorizontal: 13,
-              marginTop: 10,
-              color: globalStyles?.colors.darkGrey,
-            }}
-          >
-            Description: {partSpecification?.PartDescription}
-          </Text>
-        ) : null}
-        <View
-          style={{
-            margin: 12,
-            borderColor: globalStyles.colors.success,
-            borderWidth: 1,
-          }}
-        >
-          {binwithPart?.length > 0 && (
-            <>
-              <Text
-                style={{
-                  paddingVertical: 5,
-                  color: "black",
-                  textAlign: "center",
+            <View style={globalStyles.dFlexR}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                onChangeText={(val) => setPartNum(val)}
+                value={partNum}
+                // editable={!loading}
+                placeholder="Part Num"
+              />
+              <Pressable onPress={()=>fetchPartDetails(partNum)}>
+                {!loading ? (
+                  <Feather
+                    name="search"
+                    size={24}
+                    color={globalStyles.colors.darkGrey}
+                  />
+                ) : (
+                  <ActivityIndicator animating={true} color={MD2Colors.red800} />
+                )}
+              </Pressable>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  openScanner();
                 }}
               >
-                Please select the Bin
-              </Text>
-              <View
-                style={[
-                  globalStyles.dFlexR,
-                  globalStyles.justifySB,
-                  styles.poModalHeader,
-                ]}
+                <Text style={styles.closeButtonText}>
+                  <AntDesign
+                    name="scan1"
+                    size={24}
+                    color={globalStyles.colors.darkGrey}
+                  />
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.datepicker,
+                globalStyles.dFlexR,
+                globalStyles.justifySB,
+              ]}
+              onPress={() => setShowPicker(true)}
+            >
+              <Text>{date ? date?.toLocaleDateString() : "Select Date"}</Text>
+            </TouchableOpacity>
+            {showPicker && (
+              <RNDateTimePicker value={date} onChange={onChangeDate} mode="date" />
+            )}
+
+            <View style={{ flex: 1, paddingHorizontal: 12 }}>
+              <SelectInput
+                containerStyle={{
+                  marginTop: 12,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderColor: "#ccc",
+                  borderRadius: 5,
+                }}
+                value={formData.WareHouseCode || null}
+                onChange={(itemValue) => {
+                  handleSelectWarehouse(itemValue);
+                }}
+                options={partDetails?.data?.returnObj?.PartOnHandWhse?.map(
+                  (data) => ({
+                    ...data,
+                    label: data.WarehouseCode,
+                    value: data.WarehouseCode,
+                  })
+                )}
+                placeholder="Warehouse"
+                isLoading={loading}
+                label="WarehouseCode"
+              // handleRefresh={handleOptionsRefresh}
+              />
+            </View>
+            {partSpecification?.PartDescription ? (
+              <Text
+                style={{
+                  paddingHorizontal: 13,
+                  marginTop: 10,
+                  color: globalStyles?.colors.darkGrey,
+                }}
               >
-                <Text style={{ color: "white" }}>BinNum</Text>
-                <Text style={{ color: "white" }}>OnHand Qty</Text>
-                <Text style={{ color: "white" }}>Bin Description</Text>
-              </View>
-            </>
-          )}
-          <ScrollView style={{ maxHeight: 200, padding: 5 }}>
-            {binwithPart?.length > 0 ? (
-              binwithPart?.map((bin, id) => (
-                <View
-                  key={id}
+                Description: {partSpecification?.PartDescription}
+              </Text>
+            ) : null}
+            <View
+              style={{
+                margin: 12,
+                borderColor: globalStyles.colors.success,
+                borderWidth: 1,
+              }}
+            >
+              {binwithPart?.length > 0 && (
+                <>
+                  <Text
+                    style={{
+                      paddingVertical: 5,
+                      color: "black",
+                      textAlign: "center",
+                    }}
+                  >
+                    Please select the Bin
+                  </Text>
+                  <View
+                    style={[
+                      globalStyles.dFlexR,
+                      globalStyles.justifySB,
+                      styles.poModalHeader,
+                    ]}
+                  >
+                    <Text style={{ color: "white" }}>BinNum</Text>
+                    <Text style={{ color: "white" }}>OnHand Qty</Text>
+                    <Text style={{ color: "white" }}>Bin Description</Text>
+                  </View>
+                </>
+              )}
+              <ScrollView style={{ maxHeight: 200, padding: 5 }}>
+                {binwithPart?.length > 0 ? (
+                  binwithPart?.map((bin, id) => (
+                    <View
+                      key={id}
+                      style={{
+                        padding: 2,
+                        backgroundColor:
+                          bin.BinNum == selectedBin?.BinNum ? "#d9d9d9" : "white",
+                      }}
+                    >
+                      <TouchableOpacity onPress={() => onSelectBin(bin)}>
+                        <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
+                          <Text>{bin.BinNum}</Text>
+                          <Text>
+                            {bin.QuantityOnHand} {selectedBin?.UnitOfMeasure}
+                          </Text>
+                          <Text>{bin?.BinDescription}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ textAlign: "center", marginVertical: 10 }}>
+                    No Data Found
+                  </Text>
+                )}
+              </ScrollView>
+            </View>
+            <Divider bold />
+            <View style={{ marginTop: 10 }}>
+              <View>
+                <Text
                   style={{
-                    padding: 2,
-                    backgroundColor:
-                      bin.BinNum == selectedBin?.BinNum ? "#d9d9d9" : "white",
+                    paddingHorizontal: 13,
+                    color: globalStyles?.colors.darkGrey,
                   }}
                 >
-                  <TouchableOpacity onPress={() => onSelectBin(bin)}>
-                    <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                      <Text>{bin.BinNum}</Text>
-                      <Text>
-                        {bin.QuantityOnHand} {selectedBin?.UnitOfMeasure}
-                      </Text>
-                      <Text>{bin?.BinDescription}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))
-            ) : (
-              <Text style={{ textAlign: "center", marginVertical: 10 }}>
-                No Data Found
-              </Text>
-            )}
+                  Bin
+                </Text>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginVertical: 5 }]}
+                  // onChangeText={(val) => setPartNum(val)}
+                  value={selectedBin?.BinNum}
+                  editable={false}
+                  placeholder="Bin"
+                />
+              </View>
+              <View>
+                <Text
+                  style={{
+                    paddingHorizontal: 13,
+                    color: globalStyles?.colors.darkGrey,
+                  }}
+                >
+                  Quantity ({selectedBin?.UnitOfMeasure})
+                </Text>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginVertical: 5 }]}
+                  onChangeText={(val) => handleChange(val, "QuantityAdjust")}
+                  value={formData?.QuantityAdjust?.toString()}
+                  keyboardType="numeric"
+                  placeholder="Quantity"
+                />
+              </View>
+              <View style={{ flex: 1, paddingHorizontal: 12 }}>
+                <Text style={{ color: globalStyles?.colors.darkGrey }}>Reason</Text>
+                <SelectInputValue
+                  value={formData?.reasonValue || null}
+                  onChange={(itemValue) => {
+                    handleSelectReason(itemValue);
+                  }}
+                  options={reasons?.map((data) => ({
+                    ...data,
+                    label: data.Description,
+                    value: data.Description,
+                  }))}
+                  placeholder="Reason"
+                  isLoading={loading}
+                  label="Reason"
+                // handleRefresh={handleOptionsRefresh}
+                />
+              </View>
+            </View>
+            <PopUpDialog
+              visible={confirmAdjust}
+              setVisible={setConfirmAdjust}
+              handleCancel={() => setConfirmAdjust(false)}
+              handleOk={handleAdjust}
+              title="Issue Stock Quantity"
+              message={'Are you sure you want to change the stock quantity?'}
+            />
           </ScrollView>
+          <TouchableOpacity
+            // disabled={_.isEmpty(form) || _.isEmpty(POData)}
+            style={styles.receiveButton}
+            onPress={() => setConfirmAdjust(true)}
+          >
+            <Text style={styles.receiveButtonText}>Issue</Text>
+          </TouchableOpacity>
         </View>
-        <Divider bold />
-        <View style={{ marginTop: 10 }}>
-          <View>
-            <Text
-              style={{
-                paddingHorizontal: 13,
-                color: globalStyles?.colors.darkGrey,
-              }}
-            >
-              Bin
-            </Text>
-            <TextInput
-              style={[styles.input, { flex: 1, marginVertical: 5 }]}
-              // onChangeText={(val) => setPartNum(val)}
-              value={selectedBin?.BinNum}
-              editable={false}
-              placeholder="Bin"
-            />
-          </View>
-          <View>
-            <Text
-              style={{
-                paddingHorizontal: 13,
-                color: globalStyles?.colors.darkGrey,
-              }}
-            >
-              Quantity ({selectedBin?.UnitOfMeasure})
-            </Text>
-            <TextInput
-              style={[styles.input, { flex: 1, marginVertical: 5 }]}
-              onChangeText={(val) => handleChange(val, "QuantityAdjust")}
-              value={formData?.QuantityAdjust?.toString()}
-              keyboardType="numeric"
-              placeholder="Quantity"
-            />
-          </View>
-          <View style={{ flex: 1, paddingHorizontal: 12 }}>
-            <Text style={{ color: globalStyles?.colors.darkGrey }}>Reason</Text>
-            <SelectInputValue
-              value={formData?.reasonValue || null}
-              onChange={(itemValue) => {
-                handleSelectReason(itemValue);
-              }}
-              options={reasons?.map((data) => ({
-                ...data,
-                label: data.Description,
-                value: data.Description,
-              }))}
-              placeholder="Reason"
-              isLoading={loading}
-              label="Reason"
-              // handleRefresh={handleOptionsRefresh}
-            />
-          </View>
-        </View>
-        <PopUpDialog
-            visible={confirmAdjust}
-            setVisible={setConfirmAdjust}
-            handleCancel={() => setConfirmAdjust(false)}
-            handleOk={handleAdjust}
-            title="Issue Stock Quantity"
-            message={'Are you sure you want to change the stock quantity?'}
-          />
-      </ScrollView>
-      <TouchableOpacity
-        // disabled={_.isEmpty(form) || _.isEmpty(POData)}
-        style={styles.receiveButton}
-        onPress={() => setConfirmAdjust(true)}
-      >
-        <Text style={styles.receiveButtonText}>Issue</Text>
-      </TouchableOpacity>
+      }
     </SafeAreaView>
   );
 };

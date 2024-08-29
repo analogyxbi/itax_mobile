@@ -107,6 +107,9 @@ const POReceipt = () => {
   const [currentPacklines, setCurrentPacklines] = useState([]);
   const [uoms, setUoms] = useState([]);
   const [uomMap, setUomMap] = useState({})
+  const [supplierQty, setSupplierQty] = useState('');
+  const [ourQty, setOurQty] = useState('');
+
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
   };
@@ -525,8 +528,6 @@ const POReceipt = () => {
     dispatch(
       setIsLoading({ value: true, message: 'Saving the Receipt. Please wait' })
     );
-    const ourQty = formData?.qty_type === 'Supplier' ? convertQuantity(formData?.input, currentLine?.PUM, currentLine?.IUM ).toString() : formData.input;
-    const supplierQty = formData?.qty_type === 'Our' ? convertQuantity(formData?.input, currentLine?.IUM,currentLine?.PUM).toString() : formData.input;
     const today = new Date();
     let receipt = {
       // ...currentLine,
@@ -582,7 +583,7 @@ const POReceipt = () => {
       ReceivePerson: 'analogyx1',
       RcvDtls: [receipt],
     };
-    // console.log("postpayload", postPayload, currentLine)
+    // console.log("postpayload", postPayload)
 
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     AnalogyxBIClient.post({
@@ -1175,7 +1176,11 @@ const POReceipt = () => {
                     isSaved,
                     packSLipNUm,
                     setFormdata,
-                    convertQuantity
+                    convertQuantity,
+                    supplierQty, 
+                    setSupplierQty, 
+                    ourQty, 
+                    setOurQty
                   }}
                   warehouse={formData?.WareHouseCode || currentLine?.WarehouseCode}
                 />

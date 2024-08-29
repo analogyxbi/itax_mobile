@@ -31,6 +31,9 @@ import Transferbackdrop from "../components/Loaders/Transferbackdrop";
 import SuccessBackdrop from "../components/Loaders/SuccessBackdrop";
 import ErrorBackdrop from "../components/Loaders/ErrorBackdrop";
 import PopUpDialog from "../components/PopUpDialog";
+import SelectAsync from "../components/SelectAsync";
+import { getBinsData } from "../utils/utils";
+import BarcodeScannerComponent from "../components/BarcodeScannerComponent";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -45,6 +48,7 @@ const QuantityAdjustments = () => {
   const [binwithPart, setBinwithpart] = useState([]);
   const [formData, setFormData] = useState({});
   const [partDetails, setPartdetails] = useState();
+  const [scannerVisible, setScannerVisible] = useState(false);
   const [partSpecification, setPartSpecification] = useState();
   const [selectedBin, setSelectedBin] = useState({});
   const [reasons, setReasons] = useState([]);
@@ -52,13 +56,20 @@ const QuantityAdjustments = () => {
   const { globalReasons } = useSelector((state) => state.material);
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
 
+  const openScanner = () => {
+    setScannerVisible(true);
+  };
+  const closeScanner = () => {
+    setScannerVisible(false);
+  };
+
   const onChangeDate = (event) => {
     setShowPicker(false);
     const pickedDate = new Date(event?.nativeEvent?.timestamp);
     setDate(pickedDate);
   };
 
-  const fetchPartDetails = async () => {
+  const fetchPartDetails = async (partNum) => {
     setFormData({});
     setPartdetails({});
     setSelectedBin({});
@@ -119,45 +130,47 @@ const QuantityAdjustments = () => {
 
   const handleAdjust = async () => {
     setConfirmAdjust(false)
-    if (formData?.QuantityAdjust && formData?.QuantityAdjust.length>0  && partNum) {
-      if(typeof formData?.QuantityAdjust === 'string' && formData?.QuantityAdjust.length === 0){
+    if (formData?.QuantityAdjust && formData?.QuantityAdjust.length > 0 && partNum) {
+      if (typeof formData?.QuantityAdjust === 'string' && formData?.QuantityAdjust.length === 0) {
         return dispatch(showSnackbar("Invalid Quantity"));
-      }else if(typeof formData?.QuantityAdjust ==='number' && typeof formData?.QuantityAdjust === 0){
+      } else if (typeof formData?.QuantityAdjust === 'number' && typeof formData?.QuantityAdjust === 0) {
         return dispatch(showSnackbar("Invalid Quantity"));
       }
-        dispatch(
-            setIsLoading({
-                value: true,
-                message: 'Making Adjustments. Please wait',
-            })
-            );
-        const postdata = {
-            ds: {
-            InventoryQtyAdj: [
-                {
-                Company: formData?.Company,
-                PartNum: formData?.PartNum,
-                WareHseCode: formData?.WareHouseCode,
-                OnHandQty: formData?.OnHandQty,
-                BinNum: formData?.BinNum,
-                AdjustQuantity: formData?.QuantityAdjust,
-                ReasonCode: formData?.reasonCode,
-                UnitOfMeasure: formData?.DimCode,
-                TransDate: date,
-                ReasonType: formData?.reasonType,
-                OnHandUOM: formData?.DimCode,
-                ReasonCodeDescription: formData?.reasonValue,
-                RowMod: "U",
-                },
-            ],
+      dispatch(
+        setIsLoading({
+          value: true,
+          message: 'Making Adjustments. Please wait',
+        })
+      );
+      const postdata = {
+        ds: {
+          InventoryQtyAdj: [
+            {
+              Company: formData?.Company || partSpecification?.Company,
+              PartNum: formData?.PartNum || partNum,
+              WareHseCode: formData?.WareHouseCode,
+              OnHandQty: binwithPart?.length == 0 ? "0" :(formData?.OnHandQty || formData?.QuantityOnHand)?.toString(),
+              BinNum: binwithPart?.length == 0 ? formData?.bin : formData?.BinNum,
+              AdjustQuantity: formData?.QuantityAdjust,
+              ReasonCode: formData?.reasonCode,
+              UnitOfMeasure: formData?.DimCode || partSpecification?.IUM,
+              TransDate: new Date(date)?.toLocaleDateString(),
+              ReasonType: formData?.reasonType,
+              OnHandUOM: formData?.DimCode || partSpecification?.IUM,
+              ReasonCodeDescription: formData?.reasonValue,
+              RowMod: "U",
             },
-        };
+          ],
+        },
+      };
+
+      const postString = JSON.stringify(postdata);
 
       const epicor_endpoint = `/Erp.BO.InventoryQtyAdjSvc/SetInventoryQtyAdj`;
       const postPayload = {
         epicor_endpoint,
         request_type: "POST",
-        data: JSON.stringify(postdata),
+        data: postString,
       };
       try {
         const response = await AnalogyxBIClient.post({
@@ -169,9 +182,10 @@ const QuantityAdjustments = () => {
         setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
       } catch (err) {
         err.json().then((res) => {
-            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          }).catch((error) => {
-            dispatch(setOnError({ value: true, message: 'An Error Occured' }))}
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+        }).catch((error) => {
+          dispatch(setOnError({ value: true, message: 'An Error Occured' }))
+        }
         )
       }
     } else {
@@ -179,6 +193,16 @@ const QuantityAdjustments = () => {
       return;
     }
   };
+
+  function captureDetails(details, state) {
+    if (details) {
+      setPartNum(details);
+      fetchPartDetails(details);
+    } else {
+      dispatch(showSnackbar('Error fetching Part number'));
+    }
+    closeScanner();
+  }
 
   useEffect(() => {
     setReasons(() => globalReasons.filter((da) => da?.ReasonType == "M"));
@@ -194,7 +218,17 @@ const QuantityAdjustments = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      {scannerVisible ? (
+        <View style={{ flex: 1 }}>
+          <BarcodeScannerComponent
+            closeScanner={closeScanner}
+            captureDetails={captureDetails}
+          // cameraState={cameraState}
+          />
+        </View>)
+        : 
+        <View style={{height: windowHeight - 20}}>
+          <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons
             name="chevron-back-outline"
@@ -205,7 +239,7 @@ const QuantityAdjustments = () => {
         <Text style={styles.heading}>Quantity Adjustments</Text>
       </View>
       <ScrollView style={styles.body}>
-      <Transferbackdrop
+        <Transferbackdrop
           loading={isLoading && !onSuccess}
           setLoading={(value) => dispatch(setIsLoading({ value, message: "" }))}
         />
@@ -240,7 +274,7 @@ const QuantityAdjustments = () => {
             // editable={!loading}
             placeholder="Part Num"
           />
-          <Pressable onPress={()=>{}}>
+          <Pressable onPress={()=>fetchPartDetails(partNum)}>
             {!loading ? (
               <Feather
                 name="search"
@@ -274,7 +308,7 @@ const QuantityAdjustments = () => {
           ]}
           onPress={() => setShowPicker(true)}
         >
-          <Text>{date ? date.toISOString() : "Select Date"}</Text>
+          <Text>{date ? date?.toLocaleDateString() : "Select Date"}</Text>
         </TouchableOpacity>
         {showPicker && (
           <RNDateTimePicker value={date} onChange={onChangeDate} mode="date" />
@@ -303,7 +337,7 @@ const QuantityAdjustments = () => {
             placeholder="Warehouse"
             isLoading={loading}
             label="WarehouseCode"
-            // handleRefresh={handleOptionsRefresh}
+          // handleRefresh={handleOptionsRefresh}
           />
         </View>
         {partSpecification?.PartDescription ? (
@@ -383,6 +417,22 @@ const QuantityAdjustments = () => {
           Adjustment
         </Text>
         <View style={{ marginTop: 10 }}>
+          {
+            binwithPart?.length == 0 &&
+            <View style={{ marginHorizontal: 13 }}>
+              <Text style={{ color: globalStyles?.colors.darkGrey }}>Select Bin</Text>
+              <SelectAsync
+                style={[styles.input, { flex: 1, marginVertical: 5 }]}
+                value={formData?.bin}
+                onChange={(itemValue) => {
+                  console.log("itemValue", itemValue)
+                  setFormData(prev => ({ ...prev, bin: itemValue }));
+                }}
+                fetchOptions={getBinsData}
+                warehouse={formData.WareHouseCode}
+              />
+            </View>
+          }
           <View>
             <Text
               style={{
@@ -395,7 +445,7 @@ const QuantityAdjustments = () => {
             <TextInput
               style={[styles.input, { flex: 1, marginVertical: 5 }]}
               // onChangeText={(val) => setPartNum(val)}
-              value={selectedBin?.BinNum}
+              value={formData?.bin || selectedBin?.BinNum}
               editable={false}
               placeholder="Bin"
             />
@@ -432,18 +482,18 @@ const QuantityAdjustments = () => {
               placeholder="Reason"
               isLoading={loading}
               label="Reason"
-              // handleRefresh={handleOptionsRefresh}
+            // handleRefresh={handleOptionsRefresh}
             />
           </View>
         </View>
         <PopUpDialog
-            visible={confirmAdjust}
-            setVisible={setConfirmAdjust}
-            handleCancel={() => setConfirmAdjust(false)}
-            handleOk={handleAdjust}
-            title="Adjust Stock Quantity"
-            message={'Are you sure you want to change the stock quantity?'}
-          />
+          visible={confirmAdjust}
+          setVisible={setConfirmAdjust}
+          handleCancel={() => setConfirmAdjust(false)}
+          handleOk={handleAdjust}
+          title="Adjust Stock Quantity"
+          message={'Are you sure you want to change the stock quantity?'}
+        />
       </ScrollView>
       <TouchableOpacity
         // disabled={_.isEmpty(form) || _.isEmpty(POData)}
@@ -452,6 +502,8 @@ const QuantityAdjustments = () => {
       >
         <Text style={styles.receiveButtonText}>Adjust</Text>
       </TouchableOpacity>
+        </View>
+      }
     </SafeAreaView>
   );
 };

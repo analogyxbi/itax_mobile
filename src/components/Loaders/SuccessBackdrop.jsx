@@ -24,6 +24,7 @@ const SuccessBackdrop = ({ visible, onDismiss }) => {
     <Modal transparent={true} animationType="fade" visible={visible}>
       <View style={styles.container}>
         <LottieView
+          speed={2}
           ref={animationRef}
           style={styles.animation}
           source={SuccessAnimation}

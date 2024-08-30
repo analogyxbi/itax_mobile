@@ -265,7 +265,7 @@ const MiscellaneousMaterial = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+  <SafeAreaView style={styles.container}>
       {scannerVisible ? (
         <View style={{ flex: 1 }}>
           <BarcodeScannerComponent

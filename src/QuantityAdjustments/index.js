@@ -288,7 +288,7 @@ const QuantityAdjustments = () => {
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => {
-              openScanner();
+              // openScanner();
             }}
           >
             <Text style={styles.closeButtonText}>

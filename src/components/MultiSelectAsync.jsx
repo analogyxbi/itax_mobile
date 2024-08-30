@@ -22,7 +22,8 @@ const MultiSelectAsync = ({
     placeholder,
     fetchOptions, // Function to fetch options from the server
     warehouse,
-    multi = false // Prop to determine if multi-select is enabled
+    multi = false, // Prop to determine if multi-select is enabled
+    apiLimit = 100,
 }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -36,17 +37,17 @@ const MultiSelectAsync = ({
     // Debounced search handler
     const handleSearch = useCallback(
         debounce(async (text) => {
-            if (text.trim() === '') {
-                setPage(-1)
-                return
-            }; // Avoid unnecessary API calls for empty searches
+            // if (text.trim() === '') {
+            //     setPage(-1)
+            //     return
+            // }; // Avoid unnecessary API calls for empty searches
 
             setLoading(true);
             setPage(-1); // Reset to first page on new search
             setHasMore(true);
 
             try {
-                const result = await fetchOptions(text, 0, warehouse); // Fetch first page
+                const result = await fetchOptions(text, 0, warehouse, apiLimit); // Fetch first page
                 setOptions(result.data);
                 setFilteredOptions(result.data);
                 setHasMore(result.hasMore);
@@ -57,20 +58,13 @@ const MultiSelectAsync = ({
                 setLoading(false);
             }
         }, 300),
-        [fetchOptions, warehouse]
+        [fetchOptions, warehouse, searchText]
     );
 
     // Handle search input change
     const onSearchChange = (text) => {
         setSearchText(text);
-        if(text.length>0){
-            handleSearch(text);
-        }else{
-            setPage(-1)
-            setTimeout(()=>{
-                loadMoreData()
-            })
-        }
+        handleSearch(text);
     };
 
     const loadMoreData = async () => {
@@ -79,7 +73,7 @@ const MultiSelectAsync = ({
         setLoading(true);
 
         try {
-            const result = await fetchOptions(searchText, page + 1, warehouse);
+            const result = await fetchOptions(searchText, page + 1, warehouse, apiLimit);
 
             if (result.data.length === 0) {
                 setHasMore(false);
@@ -94,6 +88,19 @@ const MultiSelectAsync = ({
             setLoading(false);
         }
     };
+
+
+    const handleSelectAll = () => {
+        if (multi) {
+            const allOptions = filteredOptions.map(option => option.BinNum);
+            onChange([...new Set([...value, ...allOptions])]);
+        }
+    };
+
+    const handleClearAll = () => {
+        onChange([]);
+    };
+
 
     useEffect(() => {
         if (modalVisible) {
@@ -137,22 +144,57 @@ const MultiSelectAsync = ({
             )}
         </TouchableOpacity>
     ));
+    
+    const renderSelectedOptions = () => {
+        const maxVisible = 15;
+        const visibleOptions = value.slice(0, maxVisible);
+        const moreCount = value.length - maxVisible;
+
+        return (
+            <View style={styles.selectedOptionsContainer}>
+                {visibleOptions.map((option) => (
+               
+                        <View key={option} style={styles.selectedChip}>
+                            <Text style={styles.selectedChipText}>{option}</Text>
+                        </View>
+                   
+                ))}
+                {moreCount > 0 && (
+        
+                        <View style={styles.selectedChip}>
+                            <Text style={styles.selectedChipText}>
+                                +{moreCount} more
+                            </Text>
+                        </View>
+             
+                )}
+            </View>
+        );
+    };
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity
+              <TouchableOpacity
                 style={styles.inputContainer}
                 onPress={() => setModalVisible(true)}
             >
-                <Text style={[styles.input, !value?.length && styles.placeholder]}>
-                    {value.length ? value.join(', ') : placeholder}
-                </Text>
-                <Ionicons
-                    name="chevron-down"
-                    size={20}
-                    color="#000"
-                    style={styles.dropdownIcon}
-                />
+                {renderSelectedOptions()}
+                <View style={styles.iconContainer}>
+                    {value.length > 0 ? (
+                        <Ionicons
+                            name="close-circle"
+                            size={24}
+                            color="#FF0000"
+                            onPress={handleClearAll}
+                        />
+                    ) : (
+                        <Ionicons
+                            name="chevron-down"
+                            size={24}
+                            color="#000"
+                        />
+                    )}
+                </View>
             </TouchableOpacity>
             <Modal
                 animationType="slide"
@@ -174,6 +216,12 @@ const MultiSelectAsync = ({
                             onChangeText={onSearchChange}
                             value={searchText}
                         />
+                        <TouchableOpacity
+                            style={styles.selectAllButton}
+                            onPress={handleSelectAll}
+                        >
+                            <Text style={styles.selectAllText}>Select All</Text>
+                        </TouchableOpacity>
                         {loading && page === -1 ? (
                             <ActivityIndicator size="large" color="#0000ff" />
                         ) : (
@@ -214,8 +262,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         paddingVertical: 10,
-        paddingHorizontal: 15,
+        paddingHorizontal:15,
         borderRadius: 5,
+        display:"flex",
+        justifyContent:'space-between'
     },
     input: {
         fontSize: 16,
@@ -270,6 +320,37 @@ const styles = StyleSheet.create({
     },
     selectedOption: {
         backgroundColor: '#f0f8ff',
+    },
+    selectAllButton: {
+        paddingVertical: 10,
+    },
+    selectAllText: {
+        fontSize: 16,
+        color: '#007BFF',
+        textAlign: 'center',
+    },
+    showMoreButton: {
+        paddingVertical: 10,
+        alignItems: 'center',
+    },
+    showMoreText: {
+        fontSize: 16,
+        color: '#007BFF',
+    },
+      selectedOptionsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        flex:1
+    },
+    selectedChip: {
+        backgroundColor: '#f0f8ff',
+        padding: 5,
+        margin: 2,
+        borderRadius: 15,
+    },
+    selectedChipText: {
+        fontSize: 14,
+        color: '#007BFF',
     },
 });
 

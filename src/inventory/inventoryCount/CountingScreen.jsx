@@ -207,6 +207,7 @@ const CountingScreen = ({
         dispatch(
           setOnError({ value: true, message: errorResponse?.ErrorMessage })
         );
+        
       } catch (error) {
         dispatch(setOnError({ value: true, message: "An Error Occurred" }));
       }
@@ -285,6 +286,7 @@ const CountingScreen = ({
             // const unPart = getUnusedPart()
             // setCycleDetailsToCount(unPart, 'MfgSys')
             await setBlankFalse({ ...values, BlankTag: false }, tag.TagNum);
+            setCycleDetailsToCount(false);
           })
           .catch((err) => {
             err
@@ -631,6 +633,32 @@ const CountingScreen = ({
               value={part}
               onChangeText={setPart}
             />
+         
+            {/* <TouchableOpacity
+              style={styles.icon}
+              onPress={() => {
+                setCameraState("part");
+                setScannerVisible(true);
+              }}
+            >
+              <Ionicons name="scan-outline" size={24} color="#333" />
+            </TouchableOpacity> */}
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Description </Text>
+            <TextInput
+              style={{...styles.input, color:'black'}}
+              placeholder="Part Description"
+              value={selectedTag?.PartNumPartDescription}
+              onChangeText={(text)=>{
+                setSelectedTag((prev)=>({...prev, PartNumPartDescription: text}))
+              }}
+                multiline={true}
+                numberOfLines={5}
+                textAlignVertical="center"
+                editable={false}
+              
+            />
             {/* <TouchableOpacity
               style={styles.icon}
               onPress={() => {
@@ -697,12 +725,12 @@ const CountingScreen = ({
           >
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.footerButton}
             onPress={() => setNextConfirm(true)}
           >
             <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </KeyboardAvoidingView>
 
@@ -712,7 +740,7 @@ const CountingScreen = ({
         handleCancel={() => setSubmitConfirm(false)}
         handleOk={postTag}
         title="Save Changes"
-        message={"Are you sure you want Save details on tag?"}
+        message={"Are you sure you want Save details on tag to proceed to next tag?"}
       />
       <PopUpDialog
         visible={nextConfirm}
@@ -757,6 +785,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  textArea: {
+    height: 150, // Adjust height as needed
+    padding: 10,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    textAlignVertical: 'top', // Align text to the top of the TextInput
+    backgroundColor: '#f5f5f5', // Optional: to give a distinct background
+},
   header: {
     padding: 15,
     flexDirection: "row",
@@ -848,7 +885,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   footerButton: {
-    width: 150,
+    width: 300,
     height: 50,
     backgroundColor: globalStyles.colors.success,
     justifyContent: "center",

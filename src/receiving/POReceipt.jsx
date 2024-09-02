@@ -50,6 +50,7 @@ import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
 import PopUpDialog from '../components/PopUpDialog';
+import { createMassReceipts, onChangeDTLPOSelected, receiveAllLines } from './utils';
 
 const initialFormdata = {
   poNum: '',
@@ -676,134 +677,42 @@ const POReceipt = () => {
         setAttachments([]);
       }));
   }
+  // dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
 
-  const receiveAllLines = () => {
+
+  const receivedAllLines = async () => {
     if (createPackslipResponse) {
-      dispatch(setIsLoading({ value: true, message: 'Creating Mass Receipts' }));
-      const postPayload = {
-        vendorNum: POData[0]?.VendorNum,
-        purPoint: '',
-        packSlip: packSLipNUm,
-        intQueId: 0,
-        poNum: POData[0]?.PONum,
-        ds: {
-          RcvHead: [createPackslipResponse]
+      try{
+        dispatch(setIsLoading({ value: true, message: 'Creating Mass Receipts' }));
+        const postPayload = {
+          vendorNum: POData[0]?.VendorNum,
+          purPoint: '',
+          packSlip: packSLipNUm,
+          intQueId: 0,
+          poNum: POData[0]?.PONum,
+          ReceiveAllLines: true,
+          ipReceived:true,
+          ds: {
+            RcvHead: [createPackslipResponse]
+          }
         }
+        const epicor_endpoint = `/Erp.BO.ReceiptSvc/CreateMassReceipts`;
+        const response = await createMassReceipts(epicor_endpoint, postPayload, dispatch);
+        const onChange = await onChangeDTLPOSelected({...response, poNum:POData[0]?.PONum })
+        const commitPayload = await receiveAllLines(onChange, POData, packSLipNUm, dispatch);
+        await commitReceivedData(commitPayload, dispatch);
+        dispatch(setIsLoading({ value: false, message: '' }));
+        dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
+      }catch(error){
+        console.log({error})
+        error.json().then((res) => {
+          console.log("error", res)
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       }
-
-      console.log("1st payload", postPayload)
-      const epicor_endpoint = `/Erp.BO.ReceiptSvc/CreateMassReceipts`;
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload: {
-          epicor_endpoint,
-          request_type: 'POST',
-          data: JSON.stringify(postPayload),
-        },
-        stringify: false,
-      })
-        .then(async ({ json }) => {
-          console.log("1st res", json);
-          const response = json?.data?.parameters;
-          response.ipReceived = true;
-          const modifiedResponse = { ...response, 
-            ds: { ...response?.ds, 
-              RcvDtl: response?.ds?.RcvDtl.map(dt => ({ ...dt, 
-                Selected: true, 
-                OurQty: dt.OrderQty - dt.ArrivedQty, 
-                InputOurQty: dt.OrderQty,
-                VendorQty: convertQuantity(dt.OrderQty, dt.IUM, dt.PUM),
-                ReceivedComplete: true,
-                ReceivedQty: dt.OrderQty,
-                Received: true,
-                EnableSupplierXRef: false,
-                EnableLot: false,
-                PartNumTrackLots: false,
-                LotNum: "0"
-               })),
-              RcvHead: response?.ds?.RcvHead.map(dt => ({ ...dt, 
-                eshReceived: false, 
-                PartialReceipt: false,
-               }))} }
-          console.log("2nd payload", modifiedResponse)
-          const epicor_endpoint = `/Erp.BO.ReceiptSvc/ReceiveAllLines`;
-          await AnalogyxBIClient.post({
-            endpoint: `/erp_woodland/resolve_api`,
-            postPayload: {
-              epicor_endpoint,
-              request_type: 'POST',
-              data: JSON.stringify(modifiedResponse),
-            },
-            stringify: false,
-          }).then(async ({ json }) => {
-            let commitPayload = json.data.parameters;
-            console.log("2nd response", json)
-            commitPayload.vendorNum = POData[0]?.VendorNum;
-            commitPayload.purPoint = '';
-            commitPayload.packSlip = packSLipNUm;
-            console.log("3rd payload", commitPayload)
-            const epicor_endpoint = `/Erp.BO.ReceiptSvc/CommitRcvDtl`;
-            await AnalogyxBIClient.post({
-              endpoint: `/erp_woodland/resolve_api`,
-              postPayload: {
-                epicor_endpoint,
-                request_type: 'POST',
-                data: JSON.stringify(commitPayload),
-              },
-              stringify: false,
-            }).then(res => console.log("3rd res", res))
-          })
-          dispatch(setIsLoading({ value: false, message: '' }));
-          dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
-        })
-        .catch((err) => {
-          dispatch(setIsLoading({ value: false, message: '' }));
-          err.json().then((res) => {
-            console.log("res.ErrorMessage", res.ErrorMessage)
-            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          }).catch((error) =>{ dispatch(setOnError({ value: true, message: 'An Error Occured' })); console.log(error)})
-        });
     } else {
       dispatch(showSnackbar("Something went wrong!"))
     }
-    // const today = new Date();
-    // const postReceiveAllData = packslipData?.map(packslip =>({
-    //   Company: POData[0]?.Company,
-    //   VendorNum: POData[0]?.VendorNum,
-    //   PurPoint: '',
-    //   PackSlip: packSLipNUm,
-    //   ReceiptDate: today.toISOString(),
-    //   Invoiced: false,
-    //   PONum: POData[0]?.PONum,
-    //   AutoReceipt: false,
-    //   POType: POData[0]?.POType,
-    //   Received: true,
-    //   ReceivedTo: packslip?.TranType,
-    //   ReceivedComplete: false,
-    //   ArrivedDate: today.toISOString(),
-    //   PORelArrivedQty: Number(packslip?.XRelQty) - Number(packslip?.ArrivedQty),
-    //   POLine: packslip?.POLine,
-    //   PORelNum: packslip?.PORelNum,
-    //   PartNum: packslip?.POLinePartNum,
-    //   DocVendorUnitCost: packslip.DocUnitCost ? packslip.DocUnitCost : '0',
-    //   DocUnitCost: packslip.DocUnitCost ? packslip.DocUnitCost : '0',
-    //   VendorUnitCost: packslip.UnitCost ? packslip.UnitCost : '0',
-    //   OurUnitCost: packslip.UnitCost ? packslip.UnitCost : '0',
-    //   BinNum: formData?.BinNum,
-    //   EnableBin: true,
-    //   WareHouseCode: packslip?.WarehouseCode,
-    //   OurQty: Number(packslip?.XRelQty) - Number(packslip?.ArrivedQty),
-    //   InputOurQty: Number(packslip?.XRelQty) - Number(packslip?.ArrivedQty),
-    //   VendorQty: convertQuantity(Number(packslip?.XRelQty) - Number(packslip?.ArrivedQty), packslip?.IUM, packslip?.PUM),
-    //   IUM: packslip?.IUM,
-    //   PUM: packslip?.PUM,
-    //   RowMod: 'A',
-    //   JobNum: packslip?.JobNum,
-    //   JobSeq: packslip?.JobSeq,
-    //   JobSeqType: packslip?.JobSeqType,
-    //   QtyOption: 'Our',
-    // }))
-    // console.log("postReceiveAllData", postReceiveAllData)
   }
 
 
@@ -851,7 +760,7 @@ const POReceipt = () => {
             visible={openConfirmModal}
             handleOk={() => {
               setOpenConfirmModal(false);
-              receiveAllLines();
+              receivedAllLines();
             }}
             handleCancel={() => setOpenConfirmModal(false)} />
 

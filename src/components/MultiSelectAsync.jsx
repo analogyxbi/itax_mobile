@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import debounce from 'lodash.debounce';
 import { useDispatch } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
+import useSearch from '../utils/useSearch';
 
 const MultiSelectAsync = ({
     label,
@@ -26,46 +27,55 @@ const MultiSelectAsync = ({
     apiLimit = 100,
 }) => {
     const [modalVisible, setModalVisible] = useState(false);
-    const [searchText, setSearchText] = useState('');
-    const [options, setOptions] = useState([]);
-    const [filteredOptions, setFilteredOptions] = useState([]);
+    // const [searchText, setSearchText] = useState('');
+    // const [options, setOptions] = useState([]);
+    // const [filteredOptions, setFilteredOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(-1);
     const [hasMore, setHasMore] = useState(true);
     const dispatch = useDispatch();
+        // Use the custom hook
+        const {
+            options,
+            filteredOptions,
+            onSearchChange,
+            searchText,
+            setOptions,
+            setSearchText,
+            setFilteredOptions
+        } = useSearch(fetchOptions, warehouse, apiLimit, setPage, setLoading, setHasMore);
 
-    // Debounced search handler
-    const handleSearch = useCallback(
-        debounce(async (text) => {
-            // if (text.trim() === '') {
-            //     setPage(-1)
-            //     return
-            // }; // Avoid unnecessary API calls for empty searches
+    // // Debounced search handler
+    // const handleSearch = useCallback(
+    //     debounce(async (text) => {
+    //         // if (text.trim() === '') {
+    //         //     setPage(-1)
+    //         //     return
+    //         // }; // Avoid unnecessary API calls for empty searches
 
-            setLoading(true);
-            setPage(-1); // Reset to first page on new search
-            setHasMore(true);
+    //         setLoading(true);
+    //         setPage(-1); // Reset to first page on new search
+    //         setHasMore(true)
+    //         try {
+    //             const result = await fetchOptions(text, 0, warehouse, apiLimit); // Fetch first page
+    //             setOptions(result.data);
+    //             setFilteredOptions(result.data);
+    //             setHasMore(result.hasMore);
+    //         } catch (error) {
+    //             dispatch(showSnackbar('Failed to fetch options.'))
+    //             // Alert.alert('Error', 'Failed to fetch options');
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     }, 300),
+    //     [fetchOptions, warehouse, searchText]
+    // );
 
-            try {
-                const result = await fetchOptions(text, 0, warehouse, apiLimit); // Fetch first page
-                setOptions(result.data);
-                setFilteredOptions(result.data);
-                setHasMore(result.hasMore);
-            } catch (error) {
-                dispatch(showSnackbar('Failed to fetch options.'))
-                // Alert.alert('Error', 'Failed to fetch options');
-            } finally {
-                setLoading(false);
-            }
-        }, 300),
-        [fetchOptions, warehouse, searchText]
-    );
-
-    // Handle search input change
-    const onSearchChange = (text) => {
-        setSearchText(text);
-        handleSearch(text);
-    };
+    // // Handle search input change
+    // const onSearchChange = (text) => {
+    //     setSearchText(text);
+    //     handleSearch(text);
+    // };
 
     const loadMoreData = async () => {
         if (!hasMore || loading) return;

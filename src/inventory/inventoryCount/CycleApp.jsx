@@ -56,26 +56,20 @@ export default function CycleApp() {
       stringify: false,
     })
       .then(({ json }) => {
-        // console.log({json})
-        // console.log("TAGS FETCHEDDDDDDDDDDDD")
-        // console.log("TAGS FETCHEDDDDDDDDDDDD")
-        // console.log({json})
-        // console.log("TAGS FETCHEDDDDDDDDDDDD")
-        // console.log("TAGS FETCHEDDDDDDDDDDDD")
-        dispatch(
-          setOnSuccess({
-            value: true,
-            message: showLoading
-              ? 'Tags fetched successfully'
-              : isCount
-                ? 'Count Started Successfully.'
-                : 'Cycle Started Successfully.',
-          })
-        );
         dispatch(setTagsData(json.data.value));
         dispatch(setCycleTags(json.data.value));
-        // if (isCount || showLoading) {
-        // }
+        if (isCount || showLoading) {
+          dispatch(
+            setOnSuccess({
+              value: true,
+              message: showLoading
+                ? 'Tags fetched successfully'
+                : isCount
+                  ? 'Count Started Successfully.'
+                  : 'Cycle Started Successfully.',
+            })
+          );
+        }
       })
       .catch((err) => {
         err.json().then((res) => {
@@ -117,13 +111,6 @@ export default function CycleApp() {
         },
       };
 
-      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
-      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
-      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
-      // console.log({values})
-      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
-      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
-      // console.log("VALUES POSTING TO GEN TAGSSSSSSSS")
 
       const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
@@ -153,13 +140,6 @@ export default function CycleApp() {
               ...newData,
             })
           );
-          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
-          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
-          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
-          // console.log({json})
-          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
-          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
-          // console.log("TAGS GEN JSONNNNNNNNNNNNNNNNNN")
           if (startCount) {
             startCountProcess(json.data.parameters);
           } else {
@@ -265,13 +245,6 @@ export default function CycleApp() {
       },
     };
 
-    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
-    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
-    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
-    // console.log({values})
-    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
-    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
-    // console.log("START COUNT SEQQQQQQQQQQQQQQQQQQ")
     const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/StartCountSequence';
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
@@ -284,14 +257,6 @@ export default function CycleApp() {
     })
       .then(({ json }) => {
         dispatch(setCurrentCycle({ ...currentCycle, CycleStatus: 2 }));
-    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
-    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
-    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
-    // console.log({json})
-    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
-    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
-    // console.log("START COUNT Responseeeeeeeeeeeeeeee")
-
         fetchAllTags(false);
       })
       .catch((err) => {

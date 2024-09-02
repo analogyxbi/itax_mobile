@@ -32,8 +32,8 @@ export const drawerMenu = [
     menuList: [
       { title: 'Inventory Transfer', screen: 'inventory_transfer' },
       { title: 'Inventory Count', screen: 'inventory_count' },
-      { title: 'Quantity Adjustments', screen: 'quantity_adjustments'},
-      { title: 'Miscellaneous Material', screen: 'miscellaneous_material'}
+      // { title: 'Quantity Adjustments', screen: 'quantity_adjustments'},
+      // { title: 'Miscellaneous Material', screen: 'miscellaneous_material'}
       // { title: 'Tracker', screen: 'po_reciept' },
       // { title: 'Empty BIN', screen: 'po_reciept' },
     ]

@@ -1,11 +1,8 @@
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import {
-  AntDesign,
-  Ionicons
-} from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import React, { useEffect, useRef, useState } from 'react';
+import { AnalogyxBIClient } from "@analogyxbi/connection";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { BarCodeScanner } from "expo-barcode-scanner";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -16,33 +13,39 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  Modal, FlatList,
-  Button as RNButton
-} from 'react-native';
-import { Button, Chip } from 'react-native-paper';
-import { useDispatch, useSelector } from 'react-redux';
-import { showSnackbar } from '../Snackbar/messageSlice';
-import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
-import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
-import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
-import Transferbackdrop from '../components/Loaders/Transferbackdrop';
+  Modal,
+  FlatList,
+  Button as RNButton,
+} from "react-native";
+import { Button, Chip } from "react-native-paper";
+import { useDispatch, useSelector } from "react-redux";
+import { showSnackbar } from "../Snackbar/messageSlice";
+import BarcodeScannerComponent from "../components/BarcodeScannerComponent";
+import ErrorBackdrop from "../components/Loaders/ErrorBackdrop";
+import SuccessBackdrop from "../components/Loaders/SuccessBackdrop";
+import Transferbackdrop from "../components/Loaders/Transferbackdrop";
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
-} from '../components/Loaders/toastReducers';
-import PopUpDialog from '../components/PopUpDialog';
-import SelectInput from '../components/SelectInput';
-import { globalStyles } from '../style/globalStyles';
-import { generatTransferPDF } from '../utils/PDFGenerator';
+} from "../components/Loaders/toastReducers";
+import PopUpDialog from "../components/PopUpDialog";
+import SelectInput from "../components/SelectInput";
+import { globalStyles } from "../style/globalStyles";
+import { generatTransferPDF } from "../utils/PDFGenerator";
 import {
   setInitialState,
   setWarehouses,
-  setWhseBins
-} from './reducer/inventory';
-import { fetchBinfromPartWhse, getBinsData, getPartWhseInfo, isEmpty } from '../utils/utils';
-import SelectAsync from '../components/SelectAsync';
-import SelectPartWhse from '../components/SelectPartWhse';
+  setWhseBins,
+} from "./reducer/inventory";
+import {
+  fetchBinfromPartWhse,
+  getBinsData,
+  getPartWhseInfo,
+  isEmpty,
+} from "../utils/utils";
+import SelectAsync from "../components/SelectAsync";
+import SelectPartWhse from "../components/SelectPartWhse";
 
 const initForm = {
   current_whse: null,
@@ -95,7 +98,7 @@ const InventoryTransfer = () => {
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
+      setHasPermission(status === "granted");
     };
     getBarCodeScannerPermissions();
   }, []);
@@ -118,14 +121,14 @@ const InventoryTransfer = () => {
         TransferQtyUOM: selectedPart.IUM,
         ToOnHandUOM: selectedPart.IUM,
         TrackingUOM: selectedPart.IUM,
-        RowMod: 'A',
+        RowMod: "A",
       },
     ];
     const Parts = [
       {
         Company: selectedPart.Company,
         PartNum: selectedPart.PartNum,
-        RowMod: 'U',
+        RowMod: "U",
       },
     ];
 
@@ -140,27 +143,31 @@ const InventoryTransfer = () => {
   function initiateTransfer() {
     setSubmitConfirm(false);
     if (formData.quantity <= 0 || selectedPart.QtyOnHand < formData.quantity) {
-      return dispatch(showSnackbar('Error setting Quantity'));
+      return dispatch(showSnackbar("Error setting Quantity"));
     }
 
-    if(isEmpty(selectedPart)){
-      return dispatch(showSnackbar(`Part not found in any bins of Warehouse: ${formData.current_whse}`));
+    if (isEmpty(selectedPart)) {
+      return dispatch(
+        showSnackbar(
+          `Part not found in any bins of Warehouse: ${formData.current_whse}`
+        )
+      );
     }
 
     dispatch(
       setIsLoading({
         value: true,
-        message: 'Stock Transfer in Progess. Please wait',
+        message: "Stock Transfer in Progess. Please wait",
       })
     );
     const data = createPayload();
     const epicor_endpoint = `/Erp.BO.InvTransferSvc/CommitTransfer`;
     const postPayload = {
       epicor_endpoint,
-      request_type: 'POST',
+      request_type: "POST",
       data: JSON.stringify(data),
     };
-  
+
     try {
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -169,7 +176,7 @@ const InventoryTransfer = () => {
       })
         .then(({ json }) => {
           dispatch(
-            setOnSuccess({ value: true, message: 'Stock Transfer Success' })
+            setOnSuccess({ value: true, message: "Stock Transfer Success" })
           );
           setSelectedPart((prev) => ({
             ...prev,
@@ -179,13 +186,18 @@ const InventoryTransfer = () => {
           setEnablePrint(true);
         })
         .catch((err) => {
-          err.json().then((res) => {
-            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
-          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          err
+            .json()
+            .then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+              // console.log({ res });
+            })
+            .catch((error) =>
+              dispatch(setOnError({ value: true, message: "An Error Occured" }))
+            );
         });
     } catch (err) {
-      dispatch(setOnError({ value: true, message: '✗ An Error Occured' }));
+      dispatch(setOnError({ value: true, message: "✗ An Error Occured" }));
     }
   }
 
@@ -194,7 +206,7 @@ const InventoryTransfer = () => {
     const epicor_endpoint = `/Erp.BO.PartBinSearchSvc/GetBinContents`;
     const postPayload = {
       epicor_endpoint,
-      request_type: 'POST',
+      request_type: "POST",
       data: JSON.stringify(data),
     };
 
@@ -245,14 +257,14 @@ const InventoryTransfer = () => {
   function getBins(to, warehouse) {
     setRefreshing(true);
     const warehouseFilter = encodeURI(`WarehouseCode eq '${warehouse}'`);
-    const inactiveFilter = encodeURI('InActive eq false');
+    const inactiveFilter = encodeURI("InActive eq false");
 
     // Combine the filters using the `and` operator
     const combinedFilter = `${warehouseFilter} and ${inactiveFilter}`;
     const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${combinedFilter}&$top=10000`;
     const postPayload = {
       epicor_endpoint,
-      request_type: 'GET',
+      request_type: "GET",
     };
 
     try {
@@ -272,7 +284,7 @@ const InventoryTransfer = () => {
           setRefreshing(false);
           dispatch(
             showSnackbar(
-              'Error getting the list of warehouses',
+              "Error getting the list of warehouses",
               JSON.stringify(err)
             )
           );
@@ -281,7 +293,7 @@ const InventoryTransfer = () => {
     } catch (err) {
       dispatch(
         showSnackbar(
-          'Error getting the list of warehouses',
+          "Error getting the list of warehouses",
           JSON.stringify(err)
         )
       );
@@ -293,8 +305,8 @@ const InventoryTransfer = () => {
 
     const postPayload = {
       epicor_endpoint:
-        '/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description',
-      request_type: 'GET',
+        "/Erp.BO.WarehseSvc/Warehses?$select=WarehouseCode,Name,Description",
+      request_type: "GET",
     };
     try {
       AnalogyxBIClient.post({
@@ -305,14 +317,14 @@ const InventoryTransfer = () => {
         .then(({ json }) => {
           dispatch(setWarehouses(json.data.value));
           setRefreshing(false);
-          dispatch(showSnackbar('Warehouse List refreshed'));
+          dispatch(showSnackbar("Warehouse List refreshed"));
         })
         .catch((err) => {
           // setLoading(false);
           setRefreshing(false);
           dispatch(
             showSnackbar(
-              'Error getting the list of warehouses',
+              "Error getting the list of warehouses",
               JSON.stringify(err)
             )
           );
@@ -320,7 +332,7 @@ const InventoryTransfer = () => {
     } catch (err) {
       dispatch(
         showSnackbar(
-          'Error getting the list of warehouses',
+          "Error getting the list of warehouses",
           JSON.stringify(err)
         )
       );
@@ -345,33 +357,32 @@ const InventoryTransfer = () => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   }
 
-
   function captureDetails(details, state) {
     let validDetail = details?.trim(); // Trim any leading/trailing whitespace
-    validDetail = validDetail.replace(/^JTC_/, '').replace(/\.bpp$/, '');
+    validDetail = validDetail.replace(/^JTC_/, "").replace(/\.bpp$/, "");
     if (
-      cameraState === 'current_part' &&
+      cameraState === "current_part" &&
       (!formData.current_whse ||
         !formData.current_bin ||
-        formData.current_whse === '' ||
-        formData.current_bin === '')
+        formData.current_whse === "" ||
+        formData.current_bin === "")
     ) {
       setCameraState(null);
       closeScanner();
       return dispatch(
-        showSnackbar('Warehouse or bin not found for the part number')
+        showSnackbar("Warehouse or bin not found for the part number")
       );
     }
-    if (validDetail.includes('\\')) {
-      const data = validDetail.split(' \\ ');
+    if (validDetail.includes("\\")) {
+      const data = validDetail.split(" \\ ");
       if (data.length > 0 && data.length <= 3) {
-        if (state.startsWith('current')) {
+        if (state.startsWith("current")) {
           setFormData((prev) => ({
             ...prev,
             current_whse: data[0],
             current_bin: data[1],
           }));
-        } else if (state.startsWith('to')) {
+        } else if (state.startsWith("to")) {
           setFormData((prev) => ({
             ...prev,
             to_whse: data[0],
@@ -379,7 +390,7 @@ const InventoryTransfer = () => {
           }));
         }
       }
-      dispatch(showSnackbar('Mismatch data type'));
+      dispatch(showSnackbar("Mismatch data type"));
     } else {
       setFormData((prev) => ({ ...prev, [state]: validDetail }));
     }
@@ -389,23 +400,23 @@ const InventoryTransfer = () => {
 
   function handleOptionsRefresh(name) {
     switch (name) {
-      case 'current_whse':
+      case "current_whse":
         getWarehouse();
         break;
-      case 'current_bin':
+      case "current_bin":
         if (formData.current_whse) {
-          getBins('from', formData.current_whse);
+          getBins("from", formData.current_whse);
         }
         break;
-      case 'to_whse':
+      case "to_whse":
         getWarehouse();
         break;
-      case 'to_bin':
+      case "to_bin":
         if (formData.to_whse) {
-          getBins('to', formData.to_whse);
+          getBins("to", formData.to_whse);
         }
         break;
-      case 'current_part':
+      case "current_part":
         if (formData.current_whse && formData.current_bin) {
           fetchPartDetails({
             whseCode: formData.current_whse,
@@ -418,37 +429,49 @@ const InventoryTransfer = () => {
   }
 
   const generateQRCodeAndPrintPDF = async (formData, currentParts) => {
-    AnalogyxBIClient.post({endpoint:`/erp_woodland/resolve_api`, postPayload:{
-      text_qr:`${formData?.to_whse} \\ ${formData?.to_bin} \\ ${formData?.current_part}`
-    }}).then(({json})=>{
-      generatTransferPDF(formData, currentParts, json.image)
-    }).catch((err)=>{
-      alert("FAILED: QR Code generation error")
-      alert(JSON.stringify(err))
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        text_qr: `${formData?.to_whse} \\ ${formData?.to_bin} \\ ${formData?.current_part}`,
+      },
     })
+      .then(({ json }) => {
+        generatTransferPDF(formData, currentParts, json.image);
+      })
+      .catch((err) => {
+        alert("FAILED: QR Code generation error");
+        alert(JSON.stringify(err));
+      });
   };
 
-
   const handleSelectPart = async (itemValue) => {
-    onSelectBins('current_part', itemValue.PartNum);
-    const partsData = await fetchBinfromPartWhse(itemValue.PartNum, formData.current_whse)
+    onSelectBins("current_part", itemValue.PartNum);
+    const partsData = await fetchBinfromPartWhse(
+      itemValue.PartNum,
+      formData.current_whse
+    );
     const parts = partsData.data?.returnObj?.PartBinSearch;
 
     if (parts && parts.length > 0) {
       if (parts.length === 1) {
         // Only one part, set it as the selected part
         setSelectedPart(parts[0]);
-        setPartsOptions(parts)
+        setPartsOptions(parts);
       } else {
         // More than one part, show a modal to let the user select
         setPartsOptions(parts);
         setIsModalVisible(true);
       }
     } else {
-      dispatch(showSnackbar(`Part not found in any bin for the warehouse: ${formData.current_whse}`))
+      dispatch(
+        showSnackbar(
+          `Part not found in any bin for the warehouse: ${formData.current_whse}`
+        )
+      );
       setSelectedPart({});
     }
   };
+
 
   const handlePartSelection = (part) => {
     setSelectedPart(part);
@@ -456,11 +479,15 @@ const InventoryTransfer = () => {
   };
 
   const renderPartItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handlePartSelection(item)} style={styles.item}>
-      <Text style={styles.itemText}>{item.PartNum} (Bin: {item.BinNum}) </Text>
+    <TouchableOpacity
+      onPress={() => handlePartSelection(item)}
+      style={styles.item}
+    >
+      <Text style={styles.itemText}>
+        {item.PartNum} (Bin: {item.BinNum}){" "}
+      </Text>
     </TouchableOpacity>
   );
-
 
   if (scannerVisible) {
     return (
@@ -489,7 +516,7 @@ const InventoryTransfer = () => {
         contentContainerStyle={styles.scrollView}
         refreshControl={
           <RefreshControl
-            title={'Please wait'}
+            title={"Please wait"}
             refreshing={refreshing}
             onRefresh={() => {
               setFormData({});
@@ -504,15 +531,15 @@ const InventoryTransfer = () => {
           <Transferbackdrop
             loading={isLoading && !onSuccess}
             setLoading={(value) =>
-              dispatch(setIsLoading({ value, message: '' }))
+              dispatch(setIsLoading({ value, message: "" }))
             }
           />
           <SuccessBackdrop
             visible={onSuccess}
             onDismiss={() => {
               setTimeout(() => {
-                dispatch(setOnSuccess({ value: false, message: '' }));
-                dispatch(setIsLoading({ value: false, message: '' }));
+                dispatch(setOnSuccess({ value: false, message: "" }));
+                dispatch(setIsLoading({ value: false, message: "" }));
               }, 500);
             }}
           />
@@ -520,8 +547,8 @@ const InventoryTransfer = () => {
             visible={onError}
             onDismiss={() => {
               setTimeout(() => {
-                dispatch(setOnError({ value: false, message: '' }));
-                dispatch(setIsLoading({ value: false, message: '' }));
+                dispatch(setOnError({ value: false, message: "" }));
+                dispatch(setIsLoading({ value: false, message: "" }));
               }, 500);
             }}
           />
@@ -540,7 +567,7 @@ const InventoryTransfer = () => {
                 <Text style={styles.inputLabel}>Current Warehouse </Text>
                 <TouchableOpacity
                   onPress={() => {
-                    setCameraState('current_whse');
+                    setCameraState("current_whse");
                     openScanner();
                   }}
                 >
@@ -554,10 +581,10 @@ const InventoryTransfer = () => {
               <SelectInput
                 value={formData.current_whse || null}
                 onChange={(itemValue) => {
-                  formData.current_bin = '';
-                  formData.current_part = '';
-                  setSelectedPart({})
-                  onSelectBins('current_whse', itemValue);
+                  formData.current_bin = "";
+                  formData.current_part = "";
+                  setSelectedPart({});
+                  onSelectBins("current_whse", itemValue);
                   // if (!binsData[itemValue]) {
                   //   getBins('from', itemValue);
                   // }
@@ -573,12 +600,18 @@ const InventoryTransfer = () => {
               />
             </View>
           </View>
-          <View style={{display:"flex", justifyContent:"space-between", flex:1}}>
+          <View
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              flex: 1,
+            }}
+          >
             <View style={globalStyles.dFlexR}>
               <Text style={styles.inputLabel}>Select Part </Text>
               <TouchableOpacity
                 onPress={() => {
-                  setCameraState('current_part');
+                  setCameraState("current_part");
                   openScanner();
                 }}
               >
@@ -589,12 +622,17 @@ const InventoryTransfer = () => {
                 />
               </TouchableOpacity>
               <View>
-              {selectedPart.BinNum && <View style={{marginLeft: 14}}>
-              <Chip icon="information" onPress={()=> setIsModalVisible(true)}>BinNum: {selectedPart.BinNum}</Chip>
-            </View>}
-          </View>
-              
-              
+                {selectedPart.BinNum && (
+                  <View style={{ marginLeft: 14 }}>
+                    <Chip
+                      icon="information"
+                      onPress={() => setIsModalVisible(true)}
+                    >
+                      BinNum: {selectedPart.BinNum}
+                    </Chip>
+                  </View>
+                )}
+              </View>
             </View>
             <SelectPartWhse
               value={formData.current_part}
@@ -610,34 +648,48 @@ const InventoryTransfer = () => {
               fetchOptions={getPartWhseInfo}
               warehouse={formData.current_whse}
             />
-             <Modal
-                transparent={true}
-                visible={isModalVisible}
-                onRequestClose={() => {
-                  // if(isEmpty(selectedPart)){
-                    setSelectedPart(partsOptions[0])
-                  // }
-                  setIsModalVisible(false)
-                }}
-                animationType="slide"
-              >
-                <View style={styles.modalBackground}>
-                  <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>Please select a Bin</Text>
-                    <FlatList
-                      data={partsOptions}
-                      renderItem={renderPartItem}
-                      keyExtractor={item => item.PartNum}
-                    />
-                    <RNButton style={styles.button} title="Close" onPress={() => {
-                  // if(isEmpty(selectedPart)){
-                    setSelectedPart(partsOptions[0])
-                  // }
-                  setIsModalVisible(false)
-                }} />
-                  </View>
+            <Modal
+              transparent={true}
+              visible={isModalVisible}
+              onRequestClose={() => {
+                // if(isEmpty(selectedPart)){
+                setSelectedPart(partsOptions[0]);
+                // }
+                setIsModalVisible(false);
+              }}
+              animationType="slide"
+            >
+              <View style={styles.modalBackground}>
+                <View style={styles.modalContainer}>
+                  <Text style={styles.modalTitle}>Please select a Bin</Text>
+                  <FlatList
+                    data={partsOptions}
+                    renderItem={renderPartItem}
+                    keyExtractor={(item) => item.PartNum}
+                  />
+                  <RNButton
+                    style={styles.button}
+                    title="Close"
+                    onPress={() => {
+                      // if(isEmpty(selectedPart)){
+                      setSelectedPart(partsOptions[0]);
+                      // }
+                      setIsModalVisible(false);
+                    }}
+                  />
                 </View>
-              </Modal>
+              </View>
+            </Modal>
+          </View>
+          <View>
+            <Text style={styles.inputLabel}>Part Description</Text>
+            <TextInput
+              style={{...styles.input, color: 'black'}}
+              editable={false}
+              value={selectedPart?.PartDesc}
+              placeholder="Part Description"
+            />
+          
           </View>
           <Text
             style={{
@@ -646,7 +698,7 @@ const InventoryTransfer = () => {
               color: globalStyles.colors.darkGrey,
             }}
           >
-            Stock: # {selectedPart ? selectedPart.QtyOnHand : ''}
+            Stock: # {selectedPart ? selectedPart.QtyOnHand : ""}
           </Text>
           <View>
             <Text style={styles.inputLabel}>Quantity</Text>
@@ -654,23 +706,23 @@ const InventoryTransfer = () => {
               style={styles.input}
               keyboardType="numeric"
               onChangeText={(text) => {
-                onSelectBins('quantity', text);
+                onSelectBins("quantity", text);
                 if (selectedPart && selectedPart.QtyOnHand < parseInt(text)) {
                   setError((prev) => ({
                     ...prev,
                     quantity:
-                      'Quantity Must be less than or equal to the QtyOnHand',
+                      "Quantity Must be less than or equal to the QtyOnHand",
                   }));
                 } else {
                   setError((prev) => ({
                     ...prev,
-                    quantity: '',
+                    quantity: "",
                   }));
                 }
                 if (!selectedPart) {
                   setError((prev) => ({
                     ...prev,
-                    quantity: 'Part Not Found',
+                    quantity: "Part Not Found",
                   }));
                 }
               }}
@@ -687,7 +739,7 @@ const InventoryTransfer = () => {
                 <Text style={styles.inputLabel}>To Warehouse</Text>
                 <TouchableOpacity
                   onPress={() => {
-                    setCameraState('to_whse');
+                    setCameraState("to_whse");
                     openScanner();
                   }}
                 >
@@ -702,8 +754,8 @@ const InventoryTransfer = () => {
               <SelectInput
                 value={formData.to_whse}
                 onChange={(itemValue) => {
-                  onSelectBins('to_whse', itemValue);
-                  setFormData(prev => ({ ...prev, to_bin: '' }))
+                  onSelectBins("to_whse", itemValue);
+                  setFormData((prev) => ({ ...prev, to_bin: "" }));
                   // if (!binsData[itemValue]) {
                   //   getBins('to', itemValue);
                   // }
@@ -723,7 +775,7 @@ const InventoryTransfer = () => {
                 <Text style={styles.inputLabel}>To Bin</Text>
                 <TouchableOpacity
                   onPress={() => {
-                    setCameraState('to_bin');
+                    setCameraState("to_bin");
                     openScanner();
                   }}
                 >
@@ -737,7 +789,7 @@ const InventoryTransfer = () => {
               <SelectAsync
                 value={formData.to_bin}
                 onChange={(itemValue) => {
-                  onSelectBins('to_bin', itemValue);
+                  onSelectBins("to_bin", itemValue);
                 }}
                 options={
                   binsData[formData?.to_whse]?.map((data) => ({
@@ -760,7 +812,7 @@ const InventoryTransfer = () => {
             handleCancel={() => setSubmitConfirm(false)}
             handleOk={initiateTransfer}
             title="Transfer Stock"
-            message={'Are you sure you want to tranfer the stock?'}
+            message={"Are you sure you want to tranfer the stock?"}
           />
         </View>
       </ScrollView>
@@ -770,7 +822,7 @@ const InventoryTransfer = () => {
           icon="transfer"
           mode="contained"
           onPress={() => setSubmitConfirm(true)}
-          disabled={selectedPart.length>0 && quantity.length<=0}
+          disabled={selectedPart.length > 0 && quantity.length <= 0}
         >
           Transfer
         </Button>
@@ -797,13 +849,13 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 15,
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
   },
   heading: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: "600",
     color: globalStyles.colors.darkGrey,
     marginLeft: 20,
   },
@@ -817,7 +869,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     color: globalStyles.colors.darkGrey,
-    fontWeight: '500',
+    fontWeight: "500",
     paddingLeft: 10,
     fontSize: 15,
   },
@@ -829,27 +881,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   receiveButtonText: {
-    color: 'white',
-    textAlign: 'center',
+    color: "white",
+    textAlign: "center",
   },
   inputError: {
-    borderColor: 'red',
+    borderColor: "red",
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 12,
     marginLeft: 5,
     marginBottom: 7,
   },
   footer: {
-    width: '100%',
+    width: "100%",
     padding: 10,
-    backgroundColor: '#fff',
-    display: 'flex',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    flexDirection: 'row',
-    position: 'absolute',
+    backgroundColor: "#fff",
+    display: "flex",
+    justifyContent: "space-around",
+    alignItems: "center",
+    flexDirection: "row",
+    position: "absolute",
     bottom: 0,
   },
   closeButton: {
@@ -858,42 +910,42 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   bottomButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginTop: 'auto',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginTop: "auto",
   },
   closeButtonText: {
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   modalBackground: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContainer: {
-    width: '80%',
+    width: "80%",
     padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 10,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   item: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: "#ccc",
   },
   itemText: {
     fontSize: 16,
   },
-  button:{
-    color: globalStyles.colors.success
-  }
+  button: {
+    color: globalStyles.colors.success,
+  },
 });

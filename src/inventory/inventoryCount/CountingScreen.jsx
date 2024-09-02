@@ -143,51 +143,45 @@ const CountingScreen = ({
   }
 
   async function setCycleDetailsToCount(finish) {
-    if(finish) return dispatch(showSnackbar("No more tags with part available."))
+    if (finish) {
+      return dispatch(showSnackbar("No more tags with part available."));
+    }
+  
     setLoading(true);
-    // const partDtls = await fetchCountPartDetails(
-    //   part,
-    //   plant,
-    //   currentCycle.WarehouseCode
-    // );
-    // setSelectedPart(partDtls);
-    // const xRefDetails = await fetchXrefPart(partDtls)
-    // console.log({xRefDetails})
-    // /Erp.BO.PartTranSvc/GetList
-    // Company = 'WOOD01' And PartNum = 'E137' And WareHouseCode = 'PORTNA' And BinNum = 'J02D02' And InvtyUOM = 'M' And LotNum = '' And ( SysDate > 08/21/2024 Or (SysDate = 08/21/2024 And SysTime >= 46157)) BY PartNum
-    const tag = tagsData[0];
-    if(tag){
+  
+    // Find the current tag
+    const currentTagNum = selectedTag?.TagNum;
+    const currentIndex = tagsData.findIndex(tag => tag.TagNum === currentTagNum);
+    let nextTagIndex = currentIndex + 1;
+  
+    // Check if currentTagNum exists and if nextTagIndex is within bounds
+    if (currentIndex === -1 || (nextTagIndex >= tagsData.length && currentIndex !== tagsData.length - 1)) {
+      // If no tag is selected or we're at the end of the list, use the first tag
+      nextTagIndex = 0;
+    }
+  
+    // Get the tag based on the computed index
+    const tag = tagsData[nextTagIndex];
+    if (tag) {
+      const qty = tag.FrozenQOH ? `${parseFloat(tag.FrozenQOH).toFixed(3)}` : tag.FrozenQOH
       setBin(tag?.BinNum);
       setPart(tag?.PartNum);
-      setCountedQty(tag?.FrozenQOH);
+      setCountedQty(qty);
       setNotes(tag?.TagNote);
       setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
-    }else{
-      await fetchAllTags(false, true)
-      dispatch(showSnackbar('No tags found, Please refresh to get new tags'))
-      setTimeout(()=> {
-        setCycleDetailsToCount(true)
-      },2000)
+    } else {
+      await fetchAllTags(false, true);
+      dispatch(showSnackbar('No tags found, Please refresh to get new tags'));
+      setTimeout(() => {
+        setCycleDetailsToCount(true);
+      }, 2000);
     }
-    // setSelectePart({ ...tag, label: tag.TagNum, value: tag.TagNum });
+  
     setNextConfirm(false);
     setLoading(false);
   }
 
   async function setBlankFalse(values, tag) {
-    // let tagData = values
-    // let data = {
-    //   pQty: qty,
-    //   ds: {
-    //     CCTag: [{
-    //       ...tagData,
-    //       RowMod: "U"
-    //     }]
-    //   }
-    // };
-    // let data = values;
-    // console.log('NEW DATA')
-    // console.log({values})
     const epicor_endpoint = `/Erp.BO.CountTagSvc/CountTags`;
     try {
       const response = await AnalogyxBIClient.post({
@@ -213,6 +207,7 @@ const CountingScreen = ({
         dispatch(
           setOnError({ value: true, message: errorResponse?.ErrorMessage })
         );
+        
       } catch (error) {
         dispatch(setOnError({ value: true, message: "An Error Occurred" }));
       }
@@ -238,7 +233,6 @@ const CountingScreen = ({
     try {
       const details = selectedCycleDetails[0].CCDtls;
       const cycleData = details.find((data) => data.PartNum == part);
-      // console.log({cycleData})
       if (cycleData) {
         let tag = selectedTag;
         delete tag.label;
@@ -292,6 +286,7 @@ const CountingScreen = ({
             // const unPart = getUnusedPart()
             // setCycleDetailsToCount(unPart, 'MfgSys')
             await setBlankFalse({ ...values, BlankTag: false }, tag.TagNum);
+            setCycleDetailsToCount(false);
           })
           .catch((err) => {
             err
@@ -612,9 +607,10 @@ const CountingScreen = ({
             <SelectInputValue
               value={selectedTag.TagNum}
               onChange={(tag) => {
+                const qty = tag.FrozenQOH ? `${parseFloat(tag.FrozenQOH).toFixed(3)}` : tag.FrozenQOH
                 setBin(tag?.BinNum);
                 setPart(tag?.PartNum);
-                setCountedQty(tag?.FrozenQOH);
+                setCountedQty(qty);
                 setNotes(tag?.TagNote);
                 setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
               }}
@@ -636,6 +632,32 @@ const CountingScreen = ({
               placeholder="Part (Scanning / Enter)"
               value={part}
               onChangeText={setPart}
+            />
+         
+            {/* <TouchableOpacity
+              style={styles.icon}
+              onPress={() => {
+                setCameraState("part");
+                setScannerVisible(true);
+              }}
+            >
+              <Ionicons name="scan-outline" size={24} color="#333" />
+            </TouchableOpacity> */}
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Description </Text>
+            <TextInput
+              style={{...styles.input, color:'black'}}
+              placeholder="Part Description"
+              value={selectedTag?.PartNumPartDescription}
+              onChangeText={(text)=>{
+                setSelectedTag((prev)=>({...prev, PartNumPartDescription: text}))
+              }}
+                multiline={true}
+                numberOfLines={5}
+                textAlignVertical="center"
+                editable={false}
+              
             />
             {/* <TouchableOpacity
               style={styles.icon}
@@ -703,12 +725,12 @@ const CountingScreen = ({
           >
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.footerButton}
             onPress={() => setNextConfirm(true)}
           >
             <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </KeyboardAvoidingView>
 
@@ -718,7 +740,7 @@ const CountingScreen = ({
         handleCancel={() => setSubmitConfirm(false)}
         handleOk={postTag}
         title="Save Changes"
-        message={"Are you sure you want Save details on tag?"}
+        message={"Are you sure you want Save details on tag to proceed to next tag?"}
       />
       <PopUpDialog
         visible={nextConfirm}
@@ -763,6 +785,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  textArea: {
+    height: 150, // Adjust height as needed
+    padding: 10,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    textAlignVertical: 'top', // Align text to the top of the TextInput
+    backgroundColor: '#f5f5f5', // Optional: to give a distinct background
+},
   header: {
     padding: 15,
     flexDirection: "row",
@@ -854,7 +885,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   footerButton: {
-    width: 150,
+    width: 300,
     height: 50,
     backgroundColor: globalStyles.colors.success,
     justifyContent: "center",

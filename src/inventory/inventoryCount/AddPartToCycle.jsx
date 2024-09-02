@@ -182,6 +182,7 @@ const AddPartToCycle = ({
           warehouse={currentCycle.WarehouseCode}
           multi={true}
           placeholder={'Select Bins to add its parts to the current cycle.'}
+          apiLimit={300}
         />
       </View>
       <PopUpDialog

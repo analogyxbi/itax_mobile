@@ -11,10 +11,8 @@ import {
     Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import debounce from 'lodash.debounce';
 import { useDispatch } from 'react-redux';
-import { showSnackbar } from '../Snackbar/messageSlice';
-import useSearch from '../utils/useSearch';
+import useSearch from '../hooks/useSearch';
 
 const MultiSelectAsync = ({
     label,

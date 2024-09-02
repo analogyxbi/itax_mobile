@@ -58,4 +58,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ErrorBackdrop;
+export default React.memo(ErrorBackdrop);

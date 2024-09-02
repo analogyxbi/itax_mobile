@@ -24,7 +24,7 @@ const SuccessBackdrop = ({ visible, onDismiss }) => {
     <Modal transparent={true} animationType="fade" visible={visible}>
       <View style={styles.container}>
         <LottieView
-          speed={2}
+          speed={3}
           ref={animationRef}
           style={styles.animation}
           source={SuccessAnimation}
@@ -59,4 +59,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SuccessBackdrop;
+export default React.memo(SuccessBackdrop);

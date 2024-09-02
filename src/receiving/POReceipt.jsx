@@ -50,7 +50,7 @@ import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
 import PopUpDialog from '../components/PopUpDialog';
-import { createMassReceipts, onChangeDTLPOSelected, receiveAllLines } from './utils';
+import { commitReceivedData, createMassReceipts, onChangeDTLPOSelected, receiveAllLines } from './utils';
 
 const initialFormdata = {
   poNum: '',
@@ -547,7 +547,7 @@ const POReceipt = () => {
       ReceivedTo: currentLine?.TranType,
       ReceivedComplete: false,
       ArrivedDate: today.toISOString(),
-      PORelArrivedQty: formData?.input,
+      PORelArrivedQty: ourQty,
       POLine: currentLine?.POLine,
       PORelNum: currentLine?.PORelNum,
       PartNum: currentLine?.POLinePartNum,
@@ -557,7 +557,7 @@ const POReceipt = () => {
       OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
-      WareHouseCode: formData?.WareHouseCode || currentLine?.WarehouseCode,
+      WareHouseCode: formData?.WareHouseCode || currentLine?.WareHouseCode,
       OurQty: ourQty,
       InputOurQty: ourQty,
       VendorQty: supplierQty,
@@ -571,7 +571,7 @@ const POReceipt = () => {
     };
     if (currentLine.PackLine) {
       receipt.PackLine = currentLine.PackLine;
-      receipt.WareHouseCode = formData?.WareHouseCode || currentLine?.WarehouseCode;
+      receipt.WareHouseCode = formData?.WareHouseCode || currentLine?.WareHouseCode;
       receipt.BinNum = formData?.BinNum || currentLine?.BinNum;
     }
     const postPayload = {
@@ -586,7 +586,6 @@ const POReceipt = () => {
       ReceivePerson: 'analogyx1',
       RcvDtls: [receipt],
     };
-    // console.log("postpayload", postPayload)
 
     const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
     AnalogyxBIClient.post({
@@ -681,37 +680,50 @@ const POReceipt = () => {
 
 
   const receivedAllLines = async () => {
-    if (createPackslipResponse) {
-      try{
-        dispatch(setIsLoading({ value: true, message: 'Creating Mass Receipts' }));
-        const postPayload = {
-          vendorNum: POData[0]?.VendorNum,
-          purPoint: '',
-          packSlip: packSLipNUm,
-          intQueId: 0,
-          poNum: POData[0]?.PONum,
-          ReceiveAllLines: true,
-          ipReceived:true,
-          ds: {
-            RcvHead: [createPackslipResponse]
-          }
+    if(packslipData?.length > 0){
+      let linesToExclude = [];
+      packslipData?.forEach(data => {
+        if((data?.XRelQty - data?.ArrivedQty) < 0){
+          return linesToExclude.push(data);
         }
-        const epicor_endpoint = `/Erp.BO.ReceiptSvc/CreateMassReceipts`;
-        const response = await createMassReceipts(epicor_endpoint, postPayload, dispatch);
-        const onChange = await onChangeDTLPOSelected({...response, poNum:POData[0]?.PONum })
-        const commitPayload = await receiveAllLines(onChange, POData, packSLipNUm, dispatch);
-        await commitReceivedData(commitPayload, dispatch);
-        dispatch(setIsLoading({ value: false, message: '' }));
-        dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
-      }catch(error){
-        console.log({error})
-        error.json().then((res) => {
-          console.log("error", res)
-          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+      })
+      if(linesToExclude?.length > 0){
+        dispatch(setOnError({value: true, message: "Can't receive all the items, when there is more Arrived qty than Ordered Qty"}))
+      }else{
+        if (createPackslipResponse) {
+          try{
+            dispatch(setIsLoading({ value: true, message: 'Creating Mass Receipts' }));
+            const postPayload = {
+              vendorNum: POData[0]?.VendorNum,
+              purPoint: '',
+              packSlip: packSLipNUm,
+              intQueId: 0,
+              poNum: POData[0]?.PONum,
+              ReceiveAllLines: true,
+              ipReceived:true,
+              ds: {
+                RcvHead: [createPackslipResponse]
+              }
+            }
+            const epicor_endpoint = `/Erp.BO.ReceiptSvc/CreateMassReceipts`;
+            const response = await createMassReceipts(epicor_endpoint, postPayload, dispatch);
+            const onChange = await onChangeDTLPOSelected({...response, poNum:POData[0]?.PONum })
+            const commitPayload = await receiveAllLines(onChange, POData, packSLipNUm, dispatch);
+            await commitReceivedData(commitPayload, dispatch);
+            dispatch(setIsLoading({ value: false, message: '' }));
+            dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
+            setTimeout(()=>{
+              fetchPackslips();
+            })
+          }catch(error){
+            error.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          }
+        } else {
+          dispatch(showSnackbar("Something went wrong!"))
+        }
       }
-    } else {
-      dispatch(showSnackbar("Something went wrong!"))
     }
   }
 
@@ -758,6 +770,7 @@ const POReceipt = () => {
             title="Confirm Receive all"
             message="Are you sure you want to Receive all?"
             visible={openConfirmModal}
+            setVisible={setOpenConfirmModal}
             handleOk={() => {
               setOpenConfirmModal(false);
               receivedAllLines();
@@ -1141,7 +1154,7 @@ const POReceipt = () => {
                     <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchCurrentPacklines} >
                       <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>Refresh</Text>
                     </TouchableOpacity>
-                    <ScrollView style={{ maxHeight: "80%" }}>
+                    <ScrollView style={{ maxHeight: "90%" }}>
                       {packslipLoading && (
                         <ActivityIndicator
                           animating={true}

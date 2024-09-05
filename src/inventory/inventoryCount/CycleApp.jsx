@@ -257,7 +257,7 @@ export default function CycleApp() {
     })
       .then(({ json }) => {
         dispatch(setCurrentCycle({ ...currentCycle, CycleStatus: 2 }));
-        fetchAllTags(false);
+        fetchAllTags(false, true);
       })
       .catch((err) => {
         err.json().then((res) => {

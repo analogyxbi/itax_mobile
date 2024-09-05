@@ -134,4 +134,14 @@ export const getDoors = async (data, po)=>{
 }
 
 export const saveJobDetails = async (data)=>{
+  const base = 'http://wls-hq-fnet02/PurchasedPartsAPI.php?Grp=PBJB_19767_WICKES;PBJB_19766_WICKES'
+  const response = await AnalogyxBIClient.post({
+    endpoint: `/erp_woodland/external_call`,
+    postPayload: {
+      url: '',
+    },
+    stringify: false,
+  });
+
+  return response?.json;
 }

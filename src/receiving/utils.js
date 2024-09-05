@@ -138,13 +138,19 @@ export const saveJobDetails = async (data, keys)=>{
   const url = base + createQueryParamsWithCustomKeys(data, keys)
 
   console.log("modified_url",url)
-  await AnalogyxBIClient.post({
-      endpoint: `/erp_woodland/external_call`,
-      postPayload: {
-        url
-      },
-      stringify: false,
-    }).then(res => console.log("success", res)). catch(err => console.log("err", err));
+  try{
+    const response = await AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/external_call`,
+        postPayload: {
+          url
+        },
+        stringify: false,
+      })
+      const { json } = response;
+
+  }catch(err){
+    throw new Error(err);
+  }
 }
 
 // Key mapping

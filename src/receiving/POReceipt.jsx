@@ -112,6 +112,7 @@ const POReceipt = () => {
   const [supplierQty, setSupplierQty] = useState('');
   const [ourQty, setOurQty] = useState('');
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [doors, setDoors] = useState([]);
 
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
@@ -470,9 +471,11 @@ const POReceipt = () => {
         ...po,
         DocUnitCost: selectedPo?.DocUnitCost,
         UnitCost: selectedPo?.UnitCost,
+        ClassID: selectedPo?.ClassID
       });
       if(selectedPo?.ClassID === "030"){
         const jobResponse = await getDoors(selectedPo, po);
+        setDoors(jobResponse);
       }
     } else {
       setCurrentLine(po);
@@ -602,9 +605,10 @@ const POReceipt = () => {
     })
       .then(async({ json }) => {
         setSaved(true);
-        // if(currentLine?.ClassID === "030"){
-        //   await saveJobDetails()
-        // }
+        if(currentLine?.ClassID === "030" && !_.isEmpty(doors)){
+          const keys = ["JobHead_UserChar1", 'PORel_PONum','PODetail_PartNum','PORel_POLine']
+          await saveJobDetails(doors, keys);
+        }
         dispatch(setIsLoading({ value: false, message: '' }));
         dispatch(setOnSuccess({ value: true, message: '' }));
         setIsSaved(true)

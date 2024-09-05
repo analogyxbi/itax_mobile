@@ -116,7 +116,7 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
 };
 
 export const getDoors = async (data, po)=>{
-  const epicor_endpoint = `/BaqSvc/WD_DoorsAPI/?$filter=PODetail_ClassID eq '${data?.ClassID}' and PODetail_PartNum eq '${data?.PartNum}' and PORel_POLine eq ${data?.POLine} and PORel_PONum eq ${data?.PONUM} and PORel_JobSeq eq ${po?.JobSeq} and PORel_JobNum eq '${po?.JobNum}'`;
+  const epicor_endpoint = `/BaqSvc/WD_DoorsAPI/?$filter=PODetail_ClassID eq '${data?.ClassID}' and PORel_POLine eq ${data?.POLine} and PORel_PONum eq ${data?.PONUM} and PORel_PORelNum eq ${po?.PORelNum}`;
     const response = await AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
@@ -156,6 +156,7 @@ const keyMap = {
   "PODetail_ClassID": "PartClass",
   "PORel_POLine": "LineNum",
   "PORel_PORelNum": "ReleaseNum",
+  "PORel_JobNum": "JobNum"
 };
 /**
  * Create a query string from an array of objects and specific keys with custom key mapping.

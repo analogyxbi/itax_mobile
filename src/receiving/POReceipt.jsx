@@ -606,7 +606,7 @@ const POReceipt = () => {
       .then(async({ json }) => {
         setSaved(true);
         if(currentLine?.ClassID === "030" && !_.isEmpty(doors)){
-          const keys = ["JobHead_UserChar1", 'PORel_PONum','PODetail_PartNum','PORel_POLine']
+          const keys = ["JobHead_UserChar1", 'PORel_PONum','PODetail_PartNum','PORel_POLine', 'PORel_JobNum']
           await saveJobDetails(doors, keys);
         }
         dispatch(setIsLoading({ value: false, message: '' }));

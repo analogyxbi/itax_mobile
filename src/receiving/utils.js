@@ -18,7 +18,6 @@ import { setIsLoading, setOnError, setOnSuccess } from "../components/Loaders/to
   }
 // Fetch initial data from API
 export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
-    console.log({epicor_endpoint, data})
       const response = await AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
         postPayload: {
@@ -29,7 +28,6 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
         stringify: false,
       });
   
-      console.log("1st res", response.json);
       return response.json.data.parameters;
 
   };
@@ -63,7 +61,6 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
         },
       };
   
-      console.log("2nd payload", modifiedResponse);
       const epicor_endpoint = `/Erp.BO.ReceiptSvc/ReceiveAllLines`;
       const response2 = await AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -80,7 +77,6 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
       commitPayload.purPoint = '';
       commitPayload.packSlip = packSLipNUm;
   
-      console.log("3rd payload", commitPayload);
       return commitPayload;
 
   };
@@ -120,7 +116,6 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
 };
 
 export const getDoors = async (data, po)=>{
-  console.log("selectedPo", data, po)
   const epicor_endpoint = `/BaqSvc/WD_DoorsAPI/?$filter=PODetail_ClassID eq '${data?.ClassID}' and PODetail_PartNum eq '${data?.PartNum}' and PORel_POLine eq ${data?.POLine} and PORel_PONum eq ${data?.PONUM} and PORel_JobSeq eq ${po?.JobSeq} and PORel_JobNum eq '${po?.JobNum}'`;
     const response = await AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
@@ -137,7 +132,6 @@ export const saveJobDetails = async (data, keys)=>{
   const base = 'http://wls-hq-fnet02/PurchasedPartsAPI.php?';
   const url = base + createQueryParamsWithCustomKeys(data, keys)
 
-  console.log("modified_url",url)
   try{
     const response = await AnalogyxBIClient.post({
         endpoint: `/erp_woodland/external_call`,

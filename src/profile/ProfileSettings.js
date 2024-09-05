@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
-import packageJson from "../../package.json";
+import packageJson from "../../app.json";
 import { logout } from '../loginscreen/authSlice';
 import { globalStyles } from '../style/globalStyles';
 const windowHeight = Dimensions.get('window').height;

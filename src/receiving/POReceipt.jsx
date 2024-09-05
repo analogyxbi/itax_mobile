@@ -50,7 +50,7 @@ import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
 import PopUpDialog from '../components/PopUpDialog';
-import { commitReceivedData, createMassReceipts, onChangeDTLPOSelected, receiveAllLines } from './utils';
+import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveJobDetails } from './utils';
 
 const initialFormdata = {
   poNum: '',
@@ -461,7 +461,7 @@ const POReceipt = () => {
     setPackSlipNUm(po?.PackSlip);
   };
 
-  const onSelectLine = (po) => {
+  const onSelectLine = async(po) => {
     setFormdata(prev => ({ ...prev, WareHouseCode: po?.WarehouseCode, BinNum: '', input: '' }))
     const poDetails = (POData && POData[0]?.PODetails) || [];
     const selectedPo = poDetails.find((da) => da.POLine === po.POLine);
@@ -471,6 +471,9 @@ const POReceipt = () => {
         DocUnitCost: selectedPo?.DocUnitCost,
         UnitCost: selectedPo?.UnitCost,
       });
+      if(selectedPo?.ClassID === "030"){
+        const jobResponse = await getDoors(selectedPo, po);
+      }
     } else {
       setCurrentLine(po);
     }
@@ -597,8 +600,11 @@ const POReceipt = () => {
       },
       stringify: false,
     })
-      .then(({ json }) => {
+      .then(async({ json }) => {
         setSaved(true);
+        // if(currentLine?.ClassID === "030"){
+        //   await saveJobDetails()
+        // }
         dispatch(setIsLoading({ value: false, message: '' }));
         dispatch(setOnSuccess({ value: true, message: '' }));
         setIsSaved(true)

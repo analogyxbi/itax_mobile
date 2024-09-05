@@ -118,3 +118,20 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
     return response3.json.data.parameters
 
 };
+
+export const getDoors = async (data, po)=>{
+  console.log("selectedPo", data, po)
+  const epicor_endpoint = `/BaqSvc/WD_DoorsAPI/?$filter=PODetail_ClassID eq '${data?.ClassID}' and PODetail_PartNum eq '${data?.PartNum}' and PORel_POLine eq ${data?.POLine} and PORel_PONum eq ${data?.PONUM} and PORel_JobSeq eq ${po?.JobSeq} and PORel_JobNum eq '${po?.JobNum}'`;
+    const response = await AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'GET',
+      },
+      stringify: false,
+    });
+    return response?.json?.data?.value;
+}
+
+export const saveJobDetails = async (data)=>{
+}

@@ -153,10 +153,10 @@ export const saveJobDetails = async (data, keys, qty)=>{
   }
 }
 
-export const saveAllJobDetails = async (data, keys)=>{
+export const saveAllJobDetails = async (data, keys, PONum)=>{
   const base = 'http://wls-hq-fnet02/PurchasedPartsAPI.php?';
-  const url = base + createQueryParamsWithCustomKeys(data, keys);
-  console.log("url", url)
+  const url = base + createQueryParamsWithCustomKeys(data, keys) + `&PONum=${PONum}`
+
   try{
     const response = await AnalogyxBIClient.post({
         endpoint: `/erp_woodland/external_call`,
@@ -181,7 +181,8 @@ const keyMap = {
   "PODetail_ClassID": "PartClass",
   "PORel_POLine": "LineNum",
   "PORel_PORelNum": "ReleaseNum",
-  "PORel_JobNum": "JobNum"
+  "PORel_JobNum": "JobNum",
+  "PORel_ArrivedQty" : "ArrivedQty"
 };
 /**
  * Create a query string from an array of objects and specific keys with custom key mapping.
@@ -198,17 +199,36 @@ function createQueryParamsWithCustomKeys(data, keys) {
   keys.forEach(key => {
       // Determine the custom key to use
       const customKey = keyMap[key] || key; // Default to original key if no mapping is found
+      if(customKey === 'ReceiptQty'){
+            // Collect values for the current key
+        const values = data
+        .map(item => {
+          if(item.PORel_XRelQty < item.PORel_ArrivedQty){
+            return 0
+          }else{
+            return parseFloat(item.PORel_XRelQty) - parseFloat(item.PORel_ArrivedQty)
+          }
+        })
+        .filter(value => value !== undefined && value !== null)
+        .map(value => encodeURIComponent(value)) // Encode values for URL
+        .join(';'); // Join values with a semicolon
 
-      // Collect values for the current key
-      const values = data
-          .map(item => item[key])
-          .filter(value => value !== undefined && value !== null)
-          .map(value => encodeURIComponent(value)) // Encode values for URL
-          .join(';'); // Join values with a semicolon
-
-      // If there are values for the key, add to queryParams with the custom key
-      if (values) {
-          queryParams[customKey] = values;
+        // If there are values for the key, add to queryParams with the custom key
+        if (values) {
+            queryParams[customKey] = values;
+        }
+      }else{
+        // Collect values for the current key
+        const values = data
+            .map(item => item[key])
+            .filter(value => value !== undefined && value !== null)
+            .map(value => encodeURIComponent(value)) // Encode values for URL
+            .join(';'); // Join values with a semicolon
+  
+        // If there are values for the key, add to queryParams with the custom key
+        if (values) {
+            queryParams[customKey] = values;
+        }
       }
   });
 

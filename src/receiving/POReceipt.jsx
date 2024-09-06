@@ -728,8 +728,8 @@ const POReceipt = () => {
 
             const poDetails = (POData && POData[0]?.PODetails) || [];
             if (poDetails.length > 0 && poDetails?.some(detail => detail.ClassID === "030")) {
-              const keys = ["JobHead_UserChar1", 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
-              await saveAllJobDetails(doors, keys);
+              const keys = ["JobHead_UserChar1", 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum','ReceiptQty']
+              await saveAllJobDetails(doors, keys, poNum);
             }
 
             dispatch(setIsLoading({ value: false, message: '' }));

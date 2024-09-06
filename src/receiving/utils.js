@@ -115,23 +115,48 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
 
 };
 
-export const getDoors = async (data, po)=>{
-  const epicor_endpoint = `/BaqSvc/WD_DoorsAPI/?$filter=PODetail_ClassID eq '${data?.ClassID}' and PORel_POLine eq ${data?.POLine} and PORel_PONum eq ${data?.PONUM} and PORel_PORelNum eq ${po?.PORelNum}`;
-    const response = await AnalogyxBIClient.post({
-      endpoint: `/erp_woodland/resolve_api`,
-      postPayload: {
-        epicor_endpoint,
-        request_type: 'GET',
-      },
-      stringify: false,
-    });
-    return response?.json?.data?.value;
+export const getDoors = async (PONum)=>{
+  console.log(PONum)
+  const epicor_endpoint = `/BaqSvc/WD_DoorsAPI/?$filter=PORel_PONum eq ${PONum}`;
+ try{
+   const response = await AnalogyxBIClient.post({
+     endpoint: `/erp_woodland/resolve_api`,
+     postPayload: {
+       epicor_endpoint,
+       request_type: 'GET',
+     },
+     stringify: false,
+   });
+   return response?.json?.data?.value;
+ }catch(err){
+    console.log(err); 
+    return [];
+ }
 }
 
-export const saveJobDetails = async (data, keys)=>{
+export const saveJobDetails = async (data, keys, qty)=>{
   const base = 'http://wls-hq-fnet02/PurchasedPartsAPI.php?';
-  const url = base + createQueryParamsWithCustomKeys(data, keys)
+  let url = base + createQueryParamsWithCustomKeys(data, keys);
+  url = url + `&ReceiptQty=${qty}`
+  console.log("url", url)
+  try{
+    const response = await AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/external_call`,
+        postPayload: {
+          url
+        },
+        stringify: false,
+      })
+      const { json } = response;
+  }catch(err){
+    throw new Error(err);
+  }
+}
 
+export const saveAllJobDetails = async (data, keys)=>{
+  const base = 'http://wls-hq-fnet02/PurchasedPartsAPI.php?';
+  const url = base + createQueryParamsWithCustomKeys(data, keys);
+  console.log("url", url)
   try{
     const response = await AnalogyxBIClient.post({
         endpoint: `/erp_woodland/external_call`,

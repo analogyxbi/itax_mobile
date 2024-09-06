@@ -50,7 +50,7 @@ import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
 import PopUpDialog from '../components/PopUpDialog';
-import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveJobDetails } from './utils';
+import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveAllJobDetails, saveJobDetails } from './utils';
 
 const initialFormdata = {
   poNum: '',
@@ -152,6 +152,7 @@ const POReceipt = () => {
     setPackSlipNUm('');
     setExistingPackSlips([]);
     setIsNewpackslip(true);
+    setDoors([]);
     if (poNum) {
       const epicor_endpoint = `/Erp.BO.POSvc/POes?$filter=PONum eq ${poNum}&$expand=PODetails`;
       try {
@@ -368,11 +369,17 @@ const POReceipt = () => {
           },
           stringify: false,
         })
-          .then(({ json }) => {
+          .then(async({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
             setCreatePackslipResponse(json?.data)
             setCreatepackslipLoading(false);
             setTabvalue('2');
+            const poDetails = (POData && POData[0]?.PODetails) || [];
+            if (poDetails.length > 0 && poDetails?.some(detail => detail.ClassID === "030")) {
+              const jobResponse = await getDoors(poNum);
+              console.log(jobResponse)
+              setDoors(jobResponse);
+            }
           })
           .catch((err) => {
             dispatch(showSnackbar('Error adding the Packslip'));
@@ -473,10 +480,6 @@ const POReceipt = () => {
         UnitCost: selectedPo?.UnitCost,
         ClassID: selectedPo?.ClassID
       });
-      if(selectedPo?.ClassID === "030"){
-        const jobResponse = await getDoors(selectedPo, po);
-        setDoors(jobResponse);
-      }
     } else {
       setCurrentLine(po);
     }
@@ -603,11 +606,12 @@ const POReceipt = () => {
       },
       stringify: false,
     })
-      .then(async({ json }) => {
+      .then(async ({ json }) => {
         setSaved(true);
-        if(currentLine?.ClassID === "030" && !_.isEmpty(doors)){
-          const keys = ["JobHead_UserChar1", 'PORel_PONum','PODetail_PartNum','PORel_POLine', 'PORel_JobNum']
-          await saveJobDetails(doors, keys);
+        if (currentLine?.ClassID === "030" && !_.isEmpty(doors)) {
+          const currentDoor = doors?.filter(door => door.PORel_POLine == currentLine?.POLine && door.PORel_PORelNum == currentLine?.PORelNum)
+          const keys = ["JobHead_UserChar1", 'PORel_PONum', 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
+          await saveJobDetails(currentDoor, keys, ourQty);
         }
         dispatch(setIsLoading({ value: false, message: '' }));
         dispatch(setOnSuccess({ value: true, message: '' }));
@@ -649,11 +653,12 @@ const POReceipt = () => {
       img_string: data.base64,
       img_format: data.mimeType
     }
-   
-    AnalogyxBIClient.post({endpoint:`/erp_woodland/save_po_images`, 
-      postPayload:payload,
+
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/save_po_images`,
+      postPayload: payload,
       stringify: false,
-    }).then(({json})=> { console.log({ json }); (onSuccess) && onSuccess(); }).catch((err)=> dispatch(showSnackbar("error uploading image")))
+    }).then(({ json }) => { console.log({ json }); (onSuccess) && onSuccess(); }).catch((err) => dispatch(showSnackbar("error uploading image")))
   }
 
   const captureImage = async () => {
@@ -675,16 +680,16 @@ const POReceipt = () => {
     setAttachments(attachments.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleUploadImages = () => {
+  const handleUploadImages = async() => {
     if (!packSLipNUm) {
       dispatch(showSnackbar('Select a Packslip first'));
       return;
     }
     const rowId = createPackslipResponse?.SysRowID;
-      attachments?.forEach(async (data) => await uploadImage(data, packSLipNUm, rowId, () => {
-        dispatch(setOnSuccess({ value: true, message: 'Files Uploaded Successfully' }));
-        setAttachments([]);
-      }));
+    attachments?.forEach(async (data) => await uploadImage(data, packSLipNUm, rowId, () => {
+      dispatch(setOnSuccess({ value: true, message: 'Files Uploaded Successfully' }));
+      setAttachments([]);
+    }));
   }
   // dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
 
@@ -720,6 +725,13 @@ const POReceipt = () => {
             const onChange = await onChangeDTLPOSelected({...response, poNum:POData[0]?.PONum })
             const commitPayload = await receiveAllLines(onChange, POData, packSLipNUm, dispatch);
             await commitReceivedData(commitPayload, dispatch);
+
+            const poDetails = (POData && POData[0]?.PODetails) || [];
+            if (poDetails.length > 0 && poDetails?.some(detail => detail.ClassID === "030")) {
+              const keys = ["JobHead_UserChar1", 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
+              await saveAllJobDetails(doors, keys);
+            }
+
             dispatch(setIsLoading({ value: false, message: '' }));
             dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
             setTimeout(()=>{

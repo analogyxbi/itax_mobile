@@ -725,13 +725,16 @@ const POReceipt = () => {
             const onChange = await onChangeDTLPOSelected({...response, poNum:POData[0]?.PONum })
             const commitPayload = await receiveAllLines(onChange, POData, packSLipNUm, dispatch);
             await commitReceivedData(commitPayload, dispatch);
-
             const poDetails = (POData && POData[0]?.PODetails) || [];
             if (poDetails.length > 0 && poDetails?.some(detail => detail.ClassID === "030")) {
-              const keys = ["JobHead_UserChar1", 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum','ReceiptQty']
-              await saveAllJobDetails(doors, keys, poNum);
+              try {
+                const keys = ["JobHead_UserChar1", 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum', 'ReceiptQty'];
+                await saveAllJobDetails(doors, keys, poNum);
+            } catch (error) {
+                dispatch(setIsLoading({ value: false, message: '' }));
+                dispatch(setOnError({ value: true, message: 'Failed to save job details' }));
             }
-
+            }
             dispatch(setIsLoading({ value: false, message: '' }));
             dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
             setTimeout(()=>{
@@ -741,7 +744,9 @@ const POReceipt = () => {
             error.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-          }
+          } finally {
+            dispatch(setIsLoading({ value: false, message: '' }));
+        }
         } else {
           dispatch(showSnackbar("Something went wrong!"))
         }

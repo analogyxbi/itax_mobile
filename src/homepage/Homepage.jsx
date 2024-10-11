@@ -8,24 +8,75 @@ import {
   MaterialIcons
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  Button,
   Dimensions,
+  FlatList,
   Image,
+  Modal,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import HomepageIcon from '../ApiConfiguration/components/HomepageIcon';
-import { setUserData } from '../loginscreen/authSlice';
+import { setCompanies, setCompany, setUserData } from '../loginscreen/authSlice';
 import { globalStyles } from '../style/globalStyles';
 import getClientErrorObject from '../utils/getClientErrorObject';
+import { showSnackbar } from '../Snackbar/messageSlice';
+import { Chip } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Homepage() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { visible, message } = useSelector((state) => state.snackbar); // Add this line
+  const {companies, company} = useSelector(state => state.auth);
+  const [modalVisible, setIsModalVisible] = useState(false);
+
+  const fetchCompanies = async() =>{
+    let localStorageCompany;
+    const postPayload = {
+      epicor_endpoint:
+        "/Erp.BO.CompanySvc/Companies",
+      request_type: "GET",
+    };
+    try {
+      localStorageCompany = await AsyncStorage.getItem('company');
+      dispatch(setCompany(JSON.parse(localStorageCompany)))
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+      })
+        .then(({ json }) => {
+          dispatch(setCompanies(json.data.value));
+          if(!company && !localStorageCompany){
+            dispatch(setCompany(json?.data?.value && json?.data?.value[0]?.Company1))
+            AsyncStorage.setItem('company', json?.data?.value && JSON.stringify(json?.data?.value[0]?.Company1));
+          }
+          dispatch(showSnackbar("Companies List refreshed"));
+        })
+        .catch((err) => {
+          // setLoading(false);
+          dispatch(
+            showSnackbar(
+              "Error getting the list of Companies",
+              JSON.stringify(err)
+            )
+          );
+        });
+    } catch (err) {
+      dispatch(
+        showSnackbar(
+          "Error getting the list of warehouses",
+          JSON.stringify(err)
+        )
+      );
+    }
+  }
 
   useEffect(() => {
     const endpoint = `/user_management/users?json=true`;
@@ -38,10 +89,36 @@ export default function Homepage() {
           ToastAndroid.show(t(res), ToastAndroid.SHORT)
         );
       });
+      fetchCompanies();
   }, []);
 
   return (
     <View style={styles.container}>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>{company ? `Company: ${company}` : "Select Company"}</Text>
+          <FlatList
+            style={{width: "100%"}}
+            data={companies?.map(comp => ({id: comp.Company1, name: comp.Company1}))}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={()=> {
+                dispatch(setCompany(item?.name))
+                AsyncStorage.setItem('company', JSON.stringify(item?.name));
+                setIsModalVisible(false);
+                }}>
+                <View style={styles.companyItem} >
+                  <Text style={styles.companyName}>{item.name}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+          <Button title="Close" onPress={()=> setIsModalVisible(false)} />
+        </View>
+      </Modal>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.openDrawer()}
@@ -56,11 +133,14 @@ export default function Homepage() {
             resizeMode="contain"
           />
         </View>
+        <Chip style={{marginRight: 10}} onPress={() => setIsModalVisible(true)}>
+          {company}
+        </Chip>
         <TouchableOpacity
           style={styles.rightIcon}
           onPress={() => navigation.navigate('ProfileSettings')}
         >
-          <Feather name="user" size={24} color="black" />
+          {<Feather name="user" size={24} color="black" />}
         </TouchableOpacity>
       </View>
       <View style={[globalStyles.dFlexR, styles.homepageIcons]}>
@@ -145,7 +225,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: '60%',
+    width: '70%',
     height: '60%',
   },
   rightIcon: {
@@ -171,5 +251,25 @@ const styles = StyleSheet.create({
   iconImage: {
     color: globalStyles.colors.success,
     fontSize: 100,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  companyItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  companyName: {
+    fontSize: 18,
   },
 });

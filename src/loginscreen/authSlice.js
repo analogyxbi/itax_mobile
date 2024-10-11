@@ -6,6 +6,8 @@ const initialState = {
   csrf: null,
   url: null,
   user_data: null,
+  companies: null,
+  company: null,
 };
 
 export const authSlice = createSlice({
@@ -27,10 +29,16 @@ export const authSlice = createSlice({
     setUserData: (state, action) => {
       state.user_data = action.payload;
     },
+    setCompanies: (state, action) => {
+      state.companies = action.payload;
+    },
+    setCompany: (state, action) => {
+      state.company = action.payload;
+    }
   },
 });
 
 // Action creators are generated for each case reducer function
-export const { login, logout, setUserData } = authSlice.actions;
+export const { login, logout, setUserData, setCompanies, setCompany } = authSlice.actions;
 
 export default authSlice.reducer;

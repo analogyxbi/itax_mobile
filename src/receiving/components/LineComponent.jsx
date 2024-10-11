@@ -26,6 +26,7 @@ const LineComponent = ({ currentLine,
     const dispatch = useDispatch();
     const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);
+    const {company} = useSelector(state => state.auth);
     const [bins, setBins] = useState({
         from: [],
         to: [],
@@ -147,7 +148,7 @@ const LineComponent = ({ currentLine,
 
     const generateQRCodeAndPrintPDF = async (currentLine, formData) => {
         dispatch(setIsLoading({ value: true, message: 'Printing...' }));
-        const epicor_endpoint = `/BaqSvc/WHAppPrint2(WOOD01)/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
+        const epicor_endpoint = `/BaqSvc/WHAppPrint2(${company})/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
         const postData = {
             UD12_Character01: "Analogyx1",
             UD12_Key1: `${currentLine?.PONum}`,

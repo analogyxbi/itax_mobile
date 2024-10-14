@@ -139,7 +139,8 @@ export async function getPartDetails(searchText, page, warehouse) {
 export async function fetchBinfromPartWhse(part, warehouse){
   const data = {
     "partNum": part,
-    "whseCode": warehouse
+    "whseCode": warehouse,
+    "consolidateInvAttributes": true
   }
   const epicor_endpoint = `/Erp.BO.PartBinSearchSvc/GetFullBinSearch`; // Adjust pagination logic
   const postPayload = {
@@ -157,6 +158,7 @@ export async function fetchBinfromPartWhse(part, warehouse){
 
     const { json } = response;
     const part = json.data;
+    console.log({part})
     return {
       data: part
     };

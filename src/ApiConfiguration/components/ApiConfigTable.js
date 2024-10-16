@@ -27,6 +27,7 @@ const ApiConfigTable = ({
       <DataTable.Header>
         <DataTable.Title>URL</DataTable.Title>
         <DataTable.Title numeric>Username</DataTable.Title>
+        <DataTable.Title numeric>Company</DataTable.Title>
         <DataTable.Title numeric>Action</DataTable.Title>
       </DataTable.Header>
 
@@ -34,6 +35,7 @@ const ApiConfigTable = ({
         <DataTable.Row key={item.id}>
           <DataTable.Cell>{item.base_url}</DataTable.Cell>
           <DataTable.Cell numeric>{item.api_username}</DataTable.Cell>
+          <DataTable.Cell numeric>{item.api_company || "-"}</DataTable.Cell>
           <DataTable.Cell numeric>
             <Entypo
               onPress={() => {

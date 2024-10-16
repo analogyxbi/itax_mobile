@@ -9,6 +9,8 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { globalStyles } from '../../style/globalStyles';
+import RNPickerSelect from 'react-native-picker-select';
+import { View } from 'react-native';
 
 const windowHeight = Dimensions.get('window').height;
 
@@ -17,12 +19,22 @@ const ApiConfigform = ({
   formData,
   setFormData,
   saveFormData,
+  companies,
+  company
 }) => {
   const onChangeText = (e, name) => {
     setFormData((prev) => ({
       ...prev,
       [name]: e,
     }));
+  };
+  const renderLabelsValues = () => {
+    const result = companies?.map((val) => ({
+      ...val,
+      label: val.Company1,
+      value: val.Company1,
+    }));
+    return result;
   };
 
   return (
@@ -48,6 +60,15 @@ const ApiConfigform = ({
           value={formData?.api_password}
           secureTextEntry={true}
           placeholder="password"
+        />
+        <RNPickerSelect
+          onValueChange={(text) => onChangeText(text, 'api_company')}
+          items={renderLabelsValues()}
+          placeholder={{
+            label: 'Company',
+            value: null,
+          }}
+          value={formData?.api_company}
         />
       </ScrollView>
       <TouchableOpacity

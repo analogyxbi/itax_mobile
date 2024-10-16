@@ -33,50 +33,47 @@ export default function Homepage() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { visible, message } = useSelector((state) => state.snackbar); // Add this line
-  const {companies, company} = useSelector(state => state.auth);
-  const [modalVisible, setIsModalVisible] = useState(false);
+  const { companies, company } = useSelector(state => state.auth);
 
-  const fetchCompanies = async() =>{
-    let localStorageCompany;
+  const fetchCompanies = async () => {
     const postPayload = {
       epicor_endpoint:
         "/Erp.BO.CompanySvc/Companies",
       request_type: "GET",
     };
-    try {
-      localStorageCompany = await AsyncStorage.getItem('company');
-      dispatch(setCompany(JSON.parse(localStorageCompany)))
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload,
-        stringify: false,
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload,
+      stringify: false,
+    })
+      .then(({ json }) => {
+        dispatch(setCompanies(json.data.value));
+        dispatch(showSnackbar("Companies List refreshed"));
       })
-        .then(({ json }) => {
-          dispatch(setCompanies(json.data.value));
-          if(!company && !localStorageCompany){
-            dispatch(setCompany(json?.data?.value && json?.data?.value[0]?.Company1))
-            AsyncStorage.setItem('company', json?.data?.value && JSON.stringify(json?.data?.value[0]?.Company1));
-          }
-          dispatch(showSnackbar("Companies List refreshed"));
-        })
-        .catch((err) => {
-          // setLoading(false);
-          dispatch(
-            showSnackbar(
-              "Error getting the list of Companies",
-              JSON.stringify(err)
-            )
-          );
-        });
-    } catch (err) {
-      dispatch(
-        showSnackbar(
-          "Error getting the list of warehouses",
-          JSON.stringify(err)
-        )
-      );
-    }
+      .catch((err) => {
+        dispatch(
+          showSnackbar(
+            "Error getting the list of Companies",
+            JSON.stringify(err)
+          )
+        );
+      });
   }
+
+  useEffect(() => {
+    AnalogyxBIClient.get({
+      endpoint: `/erp_woodland/show_woodland_apis_config`,
+    })
+      .then(({ json }) => {
+        const data = json?.api_config;
+        dispatch(setCompany(data && data[0]?.api_company));
+      })
+      .catch((err) => {
+        getClientErrorObject(err).then((res) => {
+          dispatch(showSnackbar(res.error));
+        });
+      });
+  }, []);
 
   useEffect(() => {
     const endpoint = `/user_management/users?json=true`;
@@ -89,12 +86,12 @@ export default function Homepage() {
           ToastAndroid.show(t(res), ToastAndroid.SHORT)
         );
       });
-      fetchCompanies();
+    fetchCompanies();
   }, []);
 
   return (
     <View style={styles.container}>
-      <Modal
+      {/* <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
@@ -118,7 +115,7 @@ export default function Homepage() {
           />
           <Button title="Close" onPress={()=> setIsModalVisible(false)} />
         </View>
-      </Modal>
+      </Modal> */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.openDrawer()}
@@ -133,9 +130,14 @@ export default function Homepage() {
             resizeMode="contain"
           />
         </View>
-        <Chip style={{marginRight: 10}} onPress={() => setIsModalVisible(true)}>
-          {company}
-        </Chip>
+        {
+          company &&
+          <Chip style={{ marginRight: 10 }}
+          // onPress={() => setIsModalVisible(true)}
+          >
+            {company}
+          </Chip>
+        }
         <TouchableOpacity
           style={styles.rightIcon}
           onPress={() => navigation.navigate('ProfileSettings')}
@@ -152,7 +154,7 @@ export default function Homepage() {
         <HomepageIcon
           name="Inventory Count"
           onPress={() => navigation.navigate('inventory_count')}
-          icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage}/>}
+          icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage} />}
         />
         <HomepageIcon
           name="PO Receipt"

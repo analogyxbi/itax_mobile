@@ -32,50 +32,63 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function Homepage() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { visible, message } = useSelector((state) => state.snackbar); // Add this line
-  const {companies, company} = useSelector(state => state.auth);
+  const { companies, company } = useSelector(state => state.auth);
   const [modalVisible, setIsModalVisible] = useState(false);
 
-  const fetchCompanies = async() =>{
-    let localStorageCompany;
+  const fetchCompanies = async () => {
     const postPayload = {
       epicor_endpoint:
         "/Erp.BO.CompanySvc/Companies",
       request_type: "GET",
     };
-    try {
-      localStorageCompany = await AsyncStorage.getItem('company');
-      dispatch(setCompany(JSON.parse(localStorageCompany)))
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload,
-        stringify: false,
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload,
+      stringify: false,
+    })
+      .then(({ json }) => {
+        dispatch(setCompanies(json.data.value));
+        dispatch(showSnackbar("Companies List refreshed"));
       })
-        .then(({ json }) => {
-          dispatch(setCompanies(json.data.value));
-          if(!company && !localStorageCompany){
-            dispatch(setCompany(json?.data?.value && json?.data?.value[0]?.Company1))
-            AsyncStorage.setItem('company', json?.data?.value && JSON.stringify(json?.data?.value[0]?.Company1));
-          }
-          dispatch(showSnackbar("Companies List refreshed"));
-        })
-        .catch((err) => {
-          // setLoading(false);
-          dispatch(
-            showSnackbar(
-              "Error getting the list of Companies",
-              JSON.stringify(err)
-            )
-          );
-        });
-    } catch (err) {
-      dispatch(
-        showSnackbar(
-          "Error getting the list of warehouses",
-          JSON.stringify(err)
-        )
-      );
-    }
+      .catch((err) => {
+        dispatch(
+          showSnackbar(
+            "Error getting the list of Companies",
+            JSON.stringify(err)
+          )
+        );
+      });
+  }
+
+  const handleSetCompany = (comp) => {
+    const endpoint = `/erp_woodland/api_company`;
+    AnalogyxBIClient.post({
+      endpoint,
+      postPayload: { api_company: comp },
+      stringify: false,
+    })
+      .then(({ json }) => {
+        dispatch(setCompany(comp))
+        setIsModalVisible(false);
+      })
+      .catch((err) => {
+        getClientErrorObject(err).then((res) =>
+          ToastAndroid.show(t(res), ToastAndroid.SHORT)
+        );
+      });
+  }
+
+  const handlegetCompany = (comp) => {
+    const endpoint = `/erp_woodland/api_company`;
+    AnalogyxBIClient.get({ endpoint })
+      .then(({ json }) => {
+        dispatch(setCompany(json?.api_company))
+      })
+      .catch((err) => {
+        getClientErrorObject(err).then((res) =>
+          ToastAndroid.show(t(res), ToastAndroid.SHORT)
+        );
+      });
   }
 
   useEffect(() => {
@@ -89,7 +102,8 @@ export default function Homepage() {
           ToastAndroid.show(t(res), ToastAndroid.SHORT)
         );
       });
-      fetchCompanies();
+    fetchCompanies();
+    handlegetCompany();
   }, []);
 
   return (
@@ -102,21 +116,19 @@ export default function Homepage() {
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>{company ? `Company: ${company}` : "Select Company"}</Text>
           <FlatList
-            style={{width: "100%"}}
-            data={companies?.map(comp => ({id: comp.Company1, name: comp.Company1}))}
+            style={{ width: "100%" }}
+            data={companies?.map(comp => ({ id: comp.Company1, name: comp.Company1 }))}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={()=> {
-                dispatch(setCompany(item?.name))
-                AsyncStorage.setItem('company', JSON.stringify(item?.name));
-                setIsModalVisible(false);
-                }}>
+              <TouchableOpacity onPress={() => {
+                handleSetCompany(item.name)
+              }}>
                 <View style={styles.companyItem} >
                   <Text style={styles.companyName}>{item.name}</Text>
                 </View>
               </TouchableOpacity>
             )}
           />
-          <Button title="Close" onPress={()=> setIsModalVisible(false)} />
+          <Button title="Close" onPress={() => setIsModalVisible(false)} />
         </View>
       </Modal>
       <View style={styles.header}>
@@ -133,8 +145,8 @@ export default function Homepage() {
             resizeMode="contain"
           />
         </View>
-        <Chip style={{marginRight: 10}} onPress={() => setIsModalVisible(true)}>
-          {company}
+        <Chip style={{ marginRight: 10 }} onPress={() => setIsModalVisible(true)}>
+          {company || "WOOD01"}
         </Chip>
         <TouchableOpacity
           style={styles.rightIcon}
@@ -152,7 +164,7 @@ export default function Homepage() {
         <HomepageIcon
           name="Inventory Count"
           onPress={() => navigation.navigate('inventory_count')}
-          icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage}/>}
+          icon={<MaterialIcons name="production-quantity-limits" style={styles.iconImage} />}
         />
         <HomepageIcon
           name="PO Receipt"

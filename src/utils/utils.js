@@ -158,7 +158,6 @@ export async function fetchBinfromPartWhse(part, warehouse){
 
     const { json } = response;
     const part = json.data;
-    console.log({part})
     return {
       data: part
     };

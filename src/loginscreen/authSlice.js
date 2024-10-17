@@ -7,7 +7,7 @@ const initialState = {
   url: null,
   user_data: null,
   companies: [],
-  company: "",
+  company: "WOOD01",
 };
 
 export const authSlice = createSlice({

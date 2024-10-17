@@ -6,8 +6,8 @@ const initialState = {
   csrf: null,
   url: null,
   user_data: null,
-  companies: null,
-  company: null,
+  companies: [],
+  company: "WOOD01",
 };
 
 export const authSlice = createSlice({

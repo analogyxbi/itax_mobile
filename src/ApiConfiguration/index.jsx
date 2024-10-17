@@ -10,16 +10,18 @@ import {
   Text,
   View
 } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 import { globalStyles } from '../style/globalStyles';
 import getClientErrorObject from '../utils/getClientErrorObject';
 import ApiConfigForm from './components/ApiConfigForm';
 import ApiConfigTable from './components/ApiConfigTable';
+import { setCompany } from '../loginscreen/authSlice';
 const initialFormData = {
   base_url: '',
   api_username: '',
   api_password: '',
+  api_company: '',
 };
 
 const ApiConfiguration = () => {
@@ -29,6 +31,7 @@ const ApiConfiguration = () => {
   const [apiConfigs, setApiconfigs] = useState([]);
   const [message, setMessage] = useState('Edit');
   const dispatch = useDispatch();
+  const { companies, company } = useSelector(state => state.auth);
   // const userData = useSelector((state) => state.auth.user_data);
 
   function removeNullValues(form) {
@@ -46,7 +49,7 @@ const ApiConfiguration = () => {
       endpoint: `/erp_woodland/show_woodland_apis_config`,
     })
       .then(({ json }) => {
-        const data = json.api_config;
+        const data = json?.api_config;
         setApiconfigs(() => data);
         dispatch(showSnackbar('Details Fetched Successfully'));
       })
@@ -61,27 +64,29 @@ const ApiConfiguration = () => {
     if (
       !formData.base_url ||
       !formData.api_username ||
-      !formData.api_password
+      !formData.api_password ||
+      !formData.api_company
     ) {
-      return console.log('Please Enter the Required fields');
-    }
-    AnalogyxBIClient.post({
-      endpoint: `/erp_woodland/create_or_update_woodland_api_config`,
-      postPayload: formData,
-      stringify: false,
-    })
-      .then(({ json }) => {
-        // console.log({ res });
-        setApiconfigs(() => [{ ...formData, id: json.id }]);
-        setModalVisible(false);
-        setFormData(initialFormData);
-        dispatch(showSnackbar('Configuration saved.'));
+       console.log("Please Enter the Required fields")
+    } else {
+      AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/create_or_update_woodland_api_config`,
+        postPayload: formData,
+        stringify: false,
       })
-      .catch((err) => {
-        getClientErrorObject(err).then((res) => {
-          dispatch(showSnackbar(res.error));
+        .then(({ json }) => {
+          setApiconfigs(() => [{ ...formData, id: json.id }]);
+          dispatch(setCompany(formData?.api_company))
+          setModalVisible(false);
+          setFormData(initialFormData);
+          dispatch(showSnackbar('Configuration saved.'));
+        })
+        .catch((err) => {
+          getClientErrorObject(err).then((res) => {
+            dispatch(showSnackbar(res.error));
+          });
         });
-      });
+    }
   }
 
   return (
@@ -153,6 +158,8 @@ const ApiConfiguration = () => {
               // roleData={userData?.role_data}
               // userGroups={userData?.user_group_data || []}
               // timeZone={userData?.timezone}
+              companies={companies}
+              company={company}
             />
           </View>
         </SafeAreaView>

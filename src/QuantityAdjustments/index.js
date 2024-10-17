@@ -149,8 +149,8 @@ const QuantityAdjustments = () => {
               Company: formData?.Company || partSpecification?.Company,
               PartNum: formData?.PartNum || partNum,
               WareHseCode: formData?.WareHouseCode,
-              OnHandQty: binwithPart?.length == 0 ? "0" :(formData?.OnHandQty || formData?.QuantityOnHand)?.toString(),
-              BinNum: binwithPart?.length == 0 ? formData?.bin : formData?.BinNum,
+              OnHandQty: binwithPart?.length == 0 ? "0" : (formData?.OnHandQty || formData?.QuantityOnHand)?.toString(),
+              BinNum: formData?.BinNum,
               AdjustQuantity: formData?.QuantityAdjust,
               ReasonCode: formData?.reasonCode,
               UnitOfMeasure: formData?.DimCode || partSpecification?.IUM,
@@ -226,8 +226,8 @@ const QuantityAdjustments = () => {
           // cameraState={cameraState}
           />
         </View>)
-        : 
-        <View style={{height: windowHeight - 20}}>
+        :
+        <View style={{ height: windowHeight - 20 }}>
           <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()}>
           <Ionicons
@@ -274,6 +274,16 @@ const QuantityAdjustments = () => {
             // editable={!loading}
             placeholder="Part Num"
           />
+           {/* <View style={{ marginHorizontal: 13, flex:1 }}>
+                <Text style={{ color: globalStyles?.colors.darkGrey }}>Part Num</Text>
+                <SelectAsync
+                  style={[styles.input]}
+                  value={partNum}
+                  onChange={(val) => setPartNum(val)}
+                  fetchOptions={getPartNums}
+                  // warehouse={formData.WareHouseCode}
+                />
+              </View> */}
           <Pressable onPress={()=> {
             fetchPartDetails(partNum)
           }}>
@@ -529,7 +539,7 @@ const styles = StyleSheet.create({
   },
   body: {
     padding: 10,
-    height: "80%",
+    maxHeight: "82%",
   },
   input: {
     height: 32,

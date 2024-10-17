@@ -175,7 +175,7 @@ const SelectAsync = ({
                                         isSelected={item.BinNum === value}
                                     />
                                 )}
-                                keyExtractor={(item) => item.BinNum.toString()}
+                                keyExtractor={(item) => item?.BinNum?.toString()}
                                 initialNumToRender={30}
                                 maxToRenderPerBatch={50}
                                 updateCellsBatchingPeriod={50}

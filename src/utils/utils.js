@@ -46,6 +46,45 @@ export async function getBinsData(searchText, page, warehouse, limit=100) {
   }
 }
 
+export async function getPartNums(searchText, page, limit=100) {
+  //   setRefreshing(true);
+    // Prepare filters
+    // const warehouseFilter = encodeURI(`WarehouseCode eq '${warehouse}'`);
+    const inactiveFilter = encodeURI('InActive eq false');
+    const searchFilter = encodeURI(`startswith(PartNum, '${searchText}')`);// Adjust based on how you want to search
+  
+    // Combine the filters using the `and` operator
+    let combinedFilter = `${inactiveFilter}`;
+    if(searchText.length >0){
+      combinedFilter = combinedFilter + ` and ${searchFilter}`
+    }
+    const epicor_endpoint = `/Erp.BO.PartSvc/Parts?$select=PartNum,PartDescription&$filter=${combinedFilter}&$skip=${page * limit}&$top=${limit}`; // Adjust pagination logic
+    const postPayload = {
+      epicor_endpoint,
+      request_type: 'GET',
+    };
+    try {
+      const response = await AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload,
+        stringify: false,
+      });
+  
+      const { json } = response;
+      const parts = json.data.value;
+      const hasMore = parts.length >= limit; // Check if there might be more data to load
+  
+      return {
+        data: parts,
+        hasMore,
+      };
+    } catch (err) {
+      console.error('Error fetching partnums:', err);
+      throw new Error('Error getting the list of partnums');
+    } finally {
+      // setRefreshing(false);
+    }
+  }
 
 
 export async function getPartWhseInfo(searchText, page, warehouse) {

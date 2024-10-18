@@ -40,6 +40,8 @@ import ErrorBackdrop from "../components/Loaders/ErrorBackdrop";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
 import PopUpDialog from "../components/PopUpDialog";
 import BarcodeScannerComponent from "../components/BarcodeScannerComponent";
+import AsyncPartSelect from "../components/AsyncPartSelect";
+import { getPartNums } from "../utils/utils";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -314,33 +316,26 @@ const MiscellaneousMaterial = () => {
               From
             </Text>
             <View style={globalStyles.dFlexR}>
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                onChangeText={(val) => setPartNum(val)}
-                value={partNum}
-                // editable={!loading}
-                placeholder="Part Num"
-              />
-              <Pressable onPress={()=>{
-                fetchPartDetails(partNum)
-                }}>
-                {!loading ? (
-                  <Feather
-                    name="search"
-                    size={24}
-                    color={globalStyles.colors.darkGrey}
-                  />
-                ) : (
-                  <ActivityIndicator animating={true} color={MD2Colors.red800} />
-                )}
-              </Pressable>
+              <View style={{ marginHorizontal: 13, flex: 1 }}>
+                <Text style={{ color: globalStyles?.colors.darkGrey }}>Part Num</Text>
+                <AsyncPartSelect
+                  style={[styles.input]}
+                  value={partNum}
+                  onChange={(val) => {
+                    setPartNum(val);
+                    fetchPartDetails(val)
+                  }}
+                  fetchOptions={getPartNums}
+                />
+              </View>
+              {loading && <ActivityIndicator animating={true} color={MD2Colors.red800} />}
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => {
                   openScanner();
                 }}
               >
-                <Text style={styles.closeButtonText}>
+                <Text style={[styles.closeButtonText, {marginTop: 12}]}>
                   <AntDesign
                     name="scan1"
                     size={24}
@@ -469,7 +464,7 @@ const MiscellaneousMaterial = () => {
                     color: globalStyles?.colors.darkGrey,
                   }}
                 >
-                  Bin
+                  Selected Bin
                 </Text>
                 <TextInput
                   style={[styles.input, { flex: 1, marginVertical: 5 }]}

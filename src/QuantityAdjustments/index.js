@@ -32,8 +32,9 @@ import SuccessBackdrop from "../components/Loaders/SuccessBackdrop";
 import ErrorBackdrop from "../components/Loaders/ErrorBackdrop";
 import PopUpDialog from "../components/PopUpDialog";
 import SelectAsync from "../components/SelectAsync";
-import { getBinsData } from "../utils/utils";
+import { getBinsData, getPartNums } from "../utils/utils";
 import BarcodeScannerComponent from "../components/BarcodeScannerComponent";
+import AsyncPartSelect from "../components/AsyncPartSelect";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -104,19 +105,19 @@ const QuantityAdjustments = () => {
     }));
   };
 
-  function setAdjustStateQuantity(qty){
-    if(qty){
-        const id = selectedBin.SysRowId
-        setSelectedBin((prev) => ({...prev , QuantityOnHand: prev.QuantityOnHand + qty}))
-        setBinwithpart((prev)=> prev.map((data)=> {
-            if(data.SysRowId === id){
-                return {
-                    ...data,
-                    QuantityOnHand: data.QuantityOnHand + qty
-                }
-            }
-            return data
-        }))
+  function setAdjustStateQuantity(qty) {
+    if (qty) {
+      const id = selectedBin.SysRowId
+      setSelectedBin((prev) => ({ ...prev, QuantityOnHand: prev.QuantityOnHand + qty }))
+      setBinwithpart((prev) => prev.map((data) => {
+        if (data.SysRowId === id) {
+          return {
+            ...data,
+            QuantityOnHand: data.QuantityOnHand + qty
+          }
+        }
+        return data
+      }))
     }
   }
   const onSelectBin = (val) => {
@@ -149,8 +150,8 @@ const QuantityAdjustments = () => {
               Company: formData?.Company || partSpecification?.Company,
               PartNum: formData?.PartNum || partNum,
               WareHseCode: formData?.WareHouseCode,
-              OnHandQty: binwithPart?.length == 0 ? "0" :(formData?.OnHandQty || formData?.QuantityOnHand)?.toString(),
-              BinNum: binwithPart?.length == 0 ? formData?.bin : formData?.BinNum,
+              OnHandQty: binwithPart?.length == 0 ? "0" : (formData?.OnHandQty || formData?.QuantityOnHand)?.toString(),
+              BinNum: formData?.BinNum,
               AdjustQuantity: formData?.QuantityAdjust,
               ReasonCode: formData?.reasonCode,
               UnitOfMeasure: formData?.DimCode || partSpecification?.IUM,
@@ -226,284 +227,267 @@ const QuantityAdjustments = () => {
           // cameraState={cameraState}
           />
         </View>)
-        : 
-        <View style={{height: windowHeight - 20}}>
+        :
+        <View style={{ height: windowHeight - 20 }}>
           <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
-          <Ionicons
-            name="chevron-back-outline"
-            size={24}
-            color={globalStyles.colors.darkGrey}
-          />
-        </Pressable>
-        <Text style={styles.heading}>Quantity Adjustments</Text>
-      </View>
-      <ScrollView style={styles.body}>
-        <Transferbackdrop
-          loading={isLoading && !onSuccess}
-          setLoading={(value) => dispatch(setIsLoading({ value, message: "" }))}
-        />
-        <SuccessBackdrop
-          visible={onSuccess}
-          onDismiss={() => {
-            setTimeout(() => {
-              dispatch(setOnSuccess({ value: false, message: "" }));
-              dispatch(setIsLoading({ value: false, message: "" }));
-            }, 500);
-          }}
-        />
-        <ErrorBackdrop
-          visible={onError}
-          onDismiss={() => {
-            setTimeout(() => {
-              dispatch(setOnError({ value: false, message: "" }));
-              dispatch(setIsLoading({ value: false, message: "" }));
-            }, 500);
-          }}
-        />
-        <Text
-          style={{ fontSize: 18, paddingHorizontal: 13, fontWeight: "600" }}
-        >
-          Selection
-        </Text>
-        <View style={globalStyles.dFlexR}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            onChangeText={(val) => setPartNum(val)}
-            value={partNum}
-            // editable={!loading}
-            placeholder="Part Num"
-          />
-          <Pressable onPress={()=> {
-            fetchPartDetails(partNum)
-          }}>
-            {!loading ? (
-              <Feather
-                name="search"
+            <Pressable onPress={() => navigation.goBack()}>
+              <Ionicons
+                name="chevron-back-outline"
                 size={24}
                 color={globalStyles.colors.darkGrey}
               />
-            ) : (
-              <ActivityIndicator animating={true} color={MD2Colors.red800} />
-            )}
-          </Pressable>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => {
-              openScanner();
-            }}
-          >
-            <Text style={styles.closeButtonText}>
-              <AntDesign
-                name="scan1"
-                size={24}
-                color={globalStyles.colors.darkGrey}
-              />
+            </Pressable>
+            <Text style={styles.heading}>Quantity Adjustments</Text>
+          </View>
+          <ScrollView style={styles.body}>
+            <Transferbackdrop
+              loading={isLoading && !onSuccess}
+              setLoading={(value) => dispatch(setIsLoading({ value, message: "" }))}
+            />
+            <SuccessBackdrop
+              visible={onSuccess}
+              onDismiss={() => {
+                setTimeout(() => {
+                  dispatch(setOnSuccess({ value: false, message: "" }));
+                  dispatch(setIsLoading({ value: false, message: "" }));
+                }, 500);
+              }}
+            />
+            <ErrorBackdrop
+              visible={onError}
+              onDismiss={() => {
+                setTimeout(() => {
+                  dispatch(setOnError({ value: false, message: "" }));
+                  dispatch(setIsLoading({ value: false, message: "" }));
+                }, 500);
+              }}
+            />
+            <Text
+              style={{ fontSize: 18, paddingHorizontal: 13, fontWeight: "600" }}
+            >
+              Selection
             </Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={[
-            styles.datepicker,
-            globalStyles.dFlexR,
-            globalStyles.justifySB,
-          ]}
-          onPress={() => setShowPicker(true)}
-        >
-          <Text>{date ? date?.toLocaleDateString() : "Select Date"}</Text>
-        </TouchableOpacity>
-        {showPicker && (
-          <RNDateTimePicker value={date} onChange={onChangeDate} mode="date" />
-        )}
-
-        <View style={{ flex: 1, paddingHorizontal: 12 }}>
-          <SelectInput
-            containerStyle={{
-              marginTop: 12,
-              flexDirection: "row",
-              alignItems: "center",
-              borderColor: "#ccc",
-              borderRadius: 5,
-            }}
-            value={formData.WareHouseCode || null}
-            onChange={(itemValue) => {
-              handleSelectWarehouse(itemValue);
-            }}
-            options={partDetails?.data?.returnObj?.PartOnHandWhse?.map(
-              (data) => ({
-                ...data,
-                label: data.WarehouseCode,
-                value: data.WarehouseCode,
-              })
-            )}
-            placeholder="Warehouse"
-            isLoading={loading}
-            label="WarehouseCode"
-          // handleRefresh={handleOptionsRefresh}
-          />
-        </View>
-        {partSpecification?.PartDescription ? (
-          <Text
-            style={{
-              paddingHorizontal: 13,
-              marginTop: 10,
-              color: globalStyles?.colors.darkGrey,
-            }}
-          >
-            Description: {partSpecification?.PartDescription}
-          </Text>
-        ) : null}
-        <View
-          style={{
-            margin: 12,
-            borderColor: globalStyles.colors.success,
-            borderWidth: 1,
-          }}
-        >
-          {binwithPart?.length > 0 && (
-            <>
-              <Text
-                style={{
-                  paddingVertical: 5,
-                  color: "black",
-                  textAlign: "center",
-                }}
-              >
-                Please select the Bin
-              </Text>
-              <View
-                style={[
-                  globalStyles.dFlexR,
-                  globalStyles.justifySB,
-                  styles.poModalHeader,
-                ]}
-              >
-                <Text style={{ color: "white" }}>BinNum</Text>
-                <Text style={{ color: "white" }}>OnHand Qty</Text>
-                <Text style={{ color: "white" }}>Bin Description</Text>
-              </View>
-            </>
-          )}
-          <ScrollView style={{ maxHeight: 200, padding: 5 }}>
-            {binwithPart?.length > 0 ? (
-              binwithPart?.map((bin, id) => (
-                <View
-                  key={id}
-                  style={{
-                    padding: 2,
-                    backgroundColor:
-                      bin.BinNum == selectedBin?.BinNum ? "#d9d9d9" : "white",
+            <View style={globalStyles.dFlexR}>
+              <View style={{ marginHorizontal: 13, flex: 1 }}>
+                <Text style={{ color: globalStyles?.colors.darkGrey }}>Part Num</Text>
+                <AsyncPartSelect
+                  style={[styles.input]}
+                  value={partNum}
+                  onChange={(val) => {
+                    setPartNum(val);
+                    fetchPartDetails(val)
                   }}
-                >
-                  <TouchableOpacity onPress={() => onSelectBin(bin)}>
-                    <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
-                      <Text>{bin.BinNum}</Text>
-                      <Text>
-                        {bin.QuantityOnHand} {selectedBin?.UnitOfMeasure}
-                      </Text>
-                      <Text>{bin?.BinDescription}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))
-            ) : (
-              <Text style={{ textAlign: "center", marginVertical: 10 }}>
-                No Data Found
-              </Text>
-            )}
-          </ScrollView>
-        </View>
-        <Text
-          style={{ fontSize: 18, paddingHorizontal: 13, fontWeight: "600" }}
-        >
-          Adjustment
-        </Text>
-        <View style={{ marginTop: 10 }}>
-          {
-            binwithPart?.length == 0 &&
-            <View style={{ marginHorizontal: 13 }}>
-              <Text style={{ color: globalStyles?.colors.darkGrey }}>Select Bin</Text>
-              <SelectAsync
-                style={[styles.input, { flex: 1, marginVertical: 5 }]}
-                value={formData?.bin}
-                onChange={(itemValue) => {
-                  console.log("itemValue", itemValue)
-                  setFormData(prev => ({ ...prev, bin: itemValue }));
+                  fetchOptions={getPartNums}
+                />
+              </View>
+              {loading && <ActivityIndicator animating={true} color={MD2Colors.red800} />}
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  openScanner();
                 }}
-                fetchOptions={getBinsData}
-                warehouse={formData.WareHouseCode}
+              >
+                <Text style={[styles.closeButtonText, {marginTop: 12}]}>
+                  <AntDesign
+                    name="scan1"
+                    size={24}
+                    color={globalStyles.colors.darkGrey}
+                  />
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.datepicker,
+                globalStyles.dFlexR,
+                globalStyles.justifySB,
+              ]}
+              onPress={() => setShowPicker(true)}
+            >
+              <Text>{date ? date?.toLocaleDateString() : "Select Date"}</Text>
+            </TouchableOpacity>
+            {showPicker && (
+              <RNDateTimePicker value={date} onChange={onChangeDate} mode="date" />
+            )}
+
+            <View style={{ flex: 1, paddingHorizontal: 12 }}>
+              <SelectInput
+                containerStyle={{
+                  marginTop: 12,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderColor: "#ccc",
+                  borderRadius: 5,
+                }}
+                value={formData.WareHouseCode || null}
+                onChange={(itemValue) => {
+                  handleSelectWarehouse(itemValue);
+                }}
+                options={partDetails?.data?.returnObj?.PartOnHandWhse?.map(
+                  (data) => ({
+                    ...data,
+                    label: data.WarehouseCode,
+                    value: data.WarehouseCode,
+                  })
+                )}
+                placeholder="Warehouse"
+                isLoading={loading}
+                label="WarehouseCode"
+              // handleRefresh={handleOptionsRefresh}
               />
             </View>
-          }
-          <View>
-            <Text
+            {partSpecification?.PartDescription ? (
+              <Text
+                style={{
+                  paddingHorizontal: 13,
+                  marginTop: 10,
+                  color: globalStyles?.colors.darkGrey,
+                }}
+              >
+                Description: {partSpecification?.PartDescription}
+              </Text>
+            ) : null}
+            <View
               style={{
-                paddingHorizontal: 13,
-                color: globalStyles?.colors.darkGrey,
+                margin: 12,
+                borderColor: globalStyles.colors.success,
+                borderWidth: 1,
               }}
             >
-              Bin
-            </Text>
-            <TextInput
-              style={[styles.input, { flex: 1, marginVertical: 5 }]}
-              // onChangeText={(val) => setPartNum(val)}
-              value={formData?.bin || selectedBin?.BinNum}
-              editable={false}
-              placeholder="Bin"
-            />
-          </View>
-          <View>
+              {binwithPart?.length > 0 && (
+                <>
+                  <Text
+                    style={{
+                      paddingVertical: 5,
+                      color: "black",
+                      textAlign: "center",
+                    }}
+                  >
+                    Please select the Bin
+                  </Text>
+                  <View
+                    style={[
+                      globalStyles.dFlexR,
+                      globalStyles.justifySB,
+                      styles.poModalHeader,
+                    ]}
+                  >
+                    <Text style={{ color: "white" }}>BinNum</Text>
+                    <Text style={{ color: "white" }}>OnHand Qty</Text>
+                    <Text style={{ color: "white" }}>Bin Description</Text>
+                  </View>
+                </>
+              )}
+              <ScrollView style={{ maxHeight: 200, padding: 5 }}>
+                {binwithPart?.length > 0 ? (
+                  binwithPart?.map((bin, id) => (
+                    <View
+                      key={id}
+                      style={{
+                        padding: 2,
+                        backgroundColor:
+                          bin.BinNum == selectedBin?.BinNum ? "#d9d9d9" : "white",
+                      }}
+                    >
+                      <TouchableOpacity onPress={() => onSelectBin(bin)}>
+                        <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
+                          <Text>{bin.BinNum}</Text>
+                          <Text>
+                            {bin.QuantityOnHand} {selectedBin?.UnitOfMeasure}
+                          </Text>
+                          <Text>{bin?.BinDescription}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ textAlign: "center", marginVertical: 10 }}>
+                    No Data Found
+                  </Text>
+                )}
+              </ScrollView>
+            </View>
             <Text
-              style={{
-                paddingHorizontal: 13,
-                color: globalStyles?.colors.darkGrey,
-              }}
+              style={{ fontSize: 18, paddingHorizontal: 13, fontWeight: "600" }}
             >
-              Quantity ({selectedBin?.UnitOfMeasure})
+              Adjustment
             </Text>
-            <TextInput
-              style={[styles.input, { flex: 1, marginVertical: 5 }]}
-              onChangeText={(val) => handleChange(val, "QuantityAdjust")}
-              value={formData?.QuantityAdjust?.toString()}
-              keyboardType="numeric"
-              placeholder="Quantity"
+            <View style={{ marginTop: 10 }}>
+              <View style={{ marginHorizontal: 13 }}>
+                <Text style={{ color: globalStyles?.colors.darkGrey }}>Select Bin</Text>
+                <SelectAsync
+                  style={[styles.input, { flex: 1, marginVertical: 5 }]}
+                  value={formData?.BinNum}
+                  onChange={(itemValue) => {
+                    console.log("itemValue", itemValue)
+                    setFormData(prev => ({ ...prev, BinNum: itemValue }));
+                  }}
+                  fetchOptions={getBinsData}
+                  warehouse={formData.WareHouseCode}
+                />
+              </View>
+              <View>
+                <Text
+                  style={{
+                    paddingHorizontal: 13,
+                    fontWeight: "600"
+                  }}
+                >
+                  Selected Bin: {formData?.BinNum || '-'}
+                </Text>
+              </View>
+              <View>
+                <Text
+                  style={{
+                    paddingHorizontal: 13,
+                    color: globalStyles?.colors.darkGrey,
+                  }}
+                >
+                  Quantity ({selectedBin?.UnitOfMeasure})
+                </Text>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginVertical: 5 }]}
+                  onChangeText={(val) => handleChange(val, "QuantityAdjust")}
+                  value={formData?.QuantityAdjust?.toString()}
+                  keyboardType="numeric"
+                  placeholder="Quantity"
+                />
+              </View>
+              <View style={{ flex: 1, paddingHorizontal: 12 }}>
+                <Text style={{ color: globalStyles?.colors.darkGrey }}>Reason</Text>
+                <SelectInputValue
+                  value={formData?.reasonValue || null}
+                  onChange={(itemValue) => {
+                    handleSelectReason(itemValue);
+                  }}
+                  options={reasons?.map((data) => ({
+                    ...data,
+                    label: data.Description,
+                    value: data.Description,
+                  }))}
+                  placeholder="Reason"
+                  isLoading={loading}
+                  label="Reason"
+                // handleRefresh={handleOptionsRefresh}
+                />
+              </View>
+            </View>
+            <PopUpDialog
+              visible={confirmAdjust}
+              setVisible={setConfirmAdjust}
+              handleCancel={() => setConfirmAdjust(false)}
+              handleOk={handleAdjust}
+              title="Adjust Stock Quantity"
+              message={'Are you sure you want to change the stock quantity?'}
             />
-          </View>
-          <View style={{ flex: 1, paddingHorizontal: 12 }}>
-            <Text style={{ color: globalStyles?.colors.darkGrey }}>Reason</Text>
-            <SelectInputValue
-              value={formData?.reasonValue || null}
-              onChange={(itemValue) => {
-                handleSelectReason(itemValue);
-              }}
-              options={reasons?.map((data) => ({
-                ...data,
-                label: data.Description,
-                value: data.Description,
-              }))}
-              placeholder="Reason"
-              isLoading={loading}
-              label="Reason"
-            // handleRefresh={handleOptionsRefresh}
-            />
-          </View>
-        </View>
-        <PopUpDialog
-          visible={confirmAdjust}
-          setVisible={setConfirmAdjust}
-          handleCancel={() => setConfirmAdjust(false)}
-          handleOk={handleAdjust}
-          title="Adjust Stock Quantity"
-          message={'Are you sure you want to change the stock quantity?'}
-        />
-      </ScrollView>
-      <TouchableOpacity
-        // disabled={_.isEmpty(form) || _.isEmpty(POData)}
-        style={styles.receiveButton}
-        onPress={() => setConfirmAdjust(true)}
-      >
-        <Text style={styles.receiveButtonText}>Adjust</Text>
-      </TouchableOpacity>
+          </ScrollView>
+          <TouchableOpacity
+            // disabled={_.isEmpty(form) || _.isEmpty(POData)}
+            style={styles.receiveButton}
+            onPress={() => setConfirmAdjust(true)}
+          >
+            <Text style={styles.receiveButtonText}>Adjust</Text>
+          </TouchableOpacity>
         </View>
       }
     </SafeAreaView>
@@ -529,7 +513,7 @@ const styles = StyleSheet.create({
   },
   body: {
     padding: 10,
-    height: "80%",
+    maxHeight: "82%",
   },
   input: {
     height: 32,

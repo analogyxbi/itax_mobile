@@ -15,7 +15,7 @@ import debounce from 'lodash.debounce';
 import { useDispatch } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
 
-const SelectAsync = ({
+const AsyncPartSelect = ({
     label,
     value,
     onChange,
@@ -118,9 +118,9 @@ const SelectAsync = ({
     const OptionItem = React.memo(({ item, onPress, isSelected }) => (
         <TouchableOpacity
             style={[styles.option, isSelected && styles.selectedOption]}
-            onPress={() => onPress(item.BinNum)}
+            onPress={() => onPress(item.PartNum)}
         >
-            <Text style={styles.optionText}>{item.BinNum}</Text>
+            <Text style={styles.optionText}>{item.PartNum}</Text>
             {isSelected && (
                 <Ionicons name="checkmark" size={20} color="#007BFF" />
             )}
@@ -172,10 +172,10 @@ const SelectAsync = ({
                                     <OptionItem
                                         item={item}
                                         onPress={handleOptionPress}
-                                        isSelected={item.BinNum === value}
+                                        isSelected={item.PartNum === value}
                                     />
                                 )}
-                                keyExtractor={(item) => item?.BinNum?.toString()}
+                                keyExtractor={(item) => item?.PartNum?.toString()}
                                 initialNumToRender={30}
                                 maxToRenderPerBatch={50}
                                 updateCellsBatchingPeriod={50}
@@ -262,4 +262,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SelectAsync;
+export default AsyncPartSelect;

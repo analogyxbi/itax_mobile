@@ -180,7 +180,11 @@ const QuantityAdjustments = () => {
           stringify: false,
         });
         dispatch(setOnSuccess({ value: true, message: "Quantity Adjusted" }));
-        setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
+        setFormData({});
+        setPartNum("");
+        setBinwithpart([]);
+        setPartSpecification({})
+        // setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
       } catch (err) {
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
@@ -419,7 +423,6 @@ const QuantityAdjustments = () => {
                   style={[styles.input, { flex: 1, marginVertical: 5 }]}
                   value={formData?.BinNum}
                   onChange={(itemValue) => {
-                    console.log("itemValue", itemValue)
                     setFormData(prev => ({ ...prev, BinNum: itemValue }));
                   }}
                   fetchOptions={getBinsData}

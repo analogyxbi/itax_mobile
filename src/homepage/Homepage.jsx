@@ -117,10 +117,10 @@ export default function Homepage() {
           <Text style={styles.modalTitle}>{company ? `Company: ${company}` : "Select Company"}</Text>
           <FlatList
             style={{ width: "100%" }}
-            data={companies?.map(comp => ({ id: comp.Company1, name: comp.Company1 }))}
+            data={companies?.map(comp => ({ id: comp.Company1, name: comp.Name }))}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => {
-                handleSetCompany(item.name)
+                handleSetCompany(item.id)
               }}>
                 <View style={styles.companyItem} >
                   <Text style={styles.companyName}>{item.name}</Text>
@@ -272,8 +272,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 14,
     marginBottom: 10,
   },
   companyItem: {

@@ -57,7 +57,7 @@ const AddPartToCycle = ({
       const flattenedBins = partBins.flat();
       const filterParts = filterOutparts(flattenedBins)
       // Chunk the flattened array into batches
-      const batches = chunkArray(filterParts, 500);
+      // const batches = chunkArray(filterParts, 500);
 
       // Process each batch sequentially
       // for (const batch of batches) {

@@ -191,6 +191,7 @@ async function createMultiPartPayload(cycle, part) {
     ccMonth: cycle.CCMonth,
     fullPhysical: cycle.FullPhysical,
     cycleSeq: cycle.CycleSeq,
+    partNum:''
   };
 
   return data;

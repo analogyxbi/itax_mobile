@@ -135,15 +135,29 @@ const MiscellaneousMaterial = () => {
 
   const perFromMeaterialMovement = async (payload) => {
     try {
+      const epicor_endpoint1 = `/Erp.BO.IssueReturnSvc/PrePerformMaterialMovement`;
+      const postPayload1 = {
+        epicor_endpoint: epicor_endpoint1,
+        request_type: 'POST',
+        data: JSON.stringify({
+          plNegQtyAction: false,
+          ds: {
+            IssueReturn: payload?.ds?.IssueReturn
+          }
+        })
+      }
+      const response1 = await AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: postPayload1,
+        stringify: false,
+      })
       const epicor_endpoint = `/Erp.BO.IssueReturnSvc/PerformMaterialMovement`;
       const postPayload = {
         epicor_endpoint,
         request_type: 'POST',
         data: JSON.stringify({
           plNegQtyAction: false,
-          ds: {
-            IssueReturn: payload.ds.IssueReturn
-          }
+          ds: response1?.json?.data?.parameters?.ds
         })
       }
       const response = await AnalogyxBIClient.post({
@@ -151,13 +165,15 @@ const MiscellaneousMaterial = () => {
         postPayload,
         stringify: false,
       })
-      const { json } = response;
-
+      dispatch(setOnSuccess({ value: true, message: 'Part issued.' }))
+      setFormData({});
+      setPartNum("");
+      setBinwithpart([]);
+      setPartSpecification({})
       return response.json
     } catch (err) {
       err.json().then((res) => {
         dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-        // console.log({ res });
       }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
     }
   }
@@ -202,6 +218,9 @@ const MiscellaneousMaterial = () => {
   }
 
   const handleAdjust = async () => {
+    if (parseFloat(formData?.QuantityOnHand) < parseFloat(formData?.QuantityAdjust)) {
+      return dispatch(setOnError({ value: true, message: 'Entered Qty is more than OnHand Qty' }))
+    }
     setConfirmAdjust(false)
     if (formData?.QuantityAdjust && partNum && partNum.length > 0) {
       if (typeof formData?.QuantityAdjust === 'string' && formData?.QuantityAdjust.length === 0) {
@@ -226,7 +245,7 @@ const MiscellaneousMaterial = () => {
         arrData.ReasonCode = formData.reasonCode;
         arrData.ReasonType = formData.reasonType;
         arrData.TranDate = new Date(date)?.toLocaleDateString(),
-        arrData.ReasonCodeDescription = formData.reasonValue;
+          arrData.ReasonCodeDescription = formData.reasonValue;
         let payload = {
           pdTranQty: formData.QuantityAdjust,
           ds: {
@@ -236,10 +255,7 @@ const MiscellaneousMaterial = () => {
         };
         const transQty = await saveIssueQuantity(payload);
         const { json } = transQty;
-        dispatch(
-          setOnSuccess({ value: true, message: 'Part issued.' })
-        );
-        setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
+        // setAdjustStateQuantity(parseInt(formData?.QuantityAdjust))
       } catch (err) {
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
@@ -267,7 +283,7 @@ const MiscellaneousMaterial = () => {
   }, []);
 
   return (
-  <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {scannerVisible ? (
         <View style={{ flex: 1 }}>
           <BarcodeScannerComponent
@@ -276,7 +292,7 @@ const MiscellaneousMaterial = () => {
           // cameraState={cameraState}
           />
         </View>) :
-        <View style={{height:windowHeight - 20}}>
+        <View style={{ height: windowHeight - 20 }}>
           <View style={styles.header}>
             <Pressable onPress={() => navigation.goBack()}>
               <Ionicons
@@ -335,7 +351,7 @@ const MiscellaneousMaterial = () => {
                   openScanner();
                 }}
               >
-                <Text style={[styles.closeButtonText, {marginTop: 12}]}>
+                <Text style={[styles.closeButtonText, { marginTop: 12 }]}>
                   <AntDesign
                     name="scan1"
                     size={24}

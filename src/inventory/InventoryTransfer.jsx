@@ -85,6 +85,7 @@ const InventoryTransfer = () => {
   const [cameraState, setCameraState] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [partsOptions, setPartsOptions] = useState([]);
+  const [inputHeight, setInputHeight] = useState(40);
 
   const openScanner = () => {
     setScannerVisible(true);
@@ -684,8 +685,12 @@ const InventoryTransfer = () => {
           <View>
             <Text style={styles.inputLabel}>Part Description</Text>
             <TextInput
-              style={{...styles.input, color: 'black'}}
+              style={{...styles.input, color: 'black', height: inputHeight}}
               editable={false}
+              multiline
+              onContentSizeChange={(event) =>
+                setInputHeight(event?.nativeEvent?.contentSize?.height)
+              }
               value={selectedPart?.PartDesc}
               placeholder="Part Description"
             />
@@ -861,7 +866,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    margin: 12,
+    marginVertical: 12,
     borderWidth: 1,
     padding: 8,
     borderRadius: 5,

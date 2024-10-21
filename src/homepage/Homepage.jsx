@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Button,
   Dimensions,
   FlatList,
@@ -34,8 +35,10 @@ export default function Homepage() {
   const dispatch = useDispatch();
   const { companies, company } = useSelector(state => state.auth);
   const [modalVisible, setIsModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false)
 
   const fetchCompanies = async () => {
+    setLoading(true)
     const postPayload = {
       epicor_endpoint:
         "/Erp.BO.CompanySvc/Companies",
@@ -49,8 +52,11 @@ export default function Homepage() {
       .then(({ json }) => {
         dispatch(setCompanies(json.data.value));
         dispatch(showSnackbar("Companies List refreshed"));
+        setLoading(false)
+        
       })
       .catch((err) => {
+        setLoading(false)
         dispatch(
           showSnackbar(
             "Error getting the list of Companies",
@@ -61,6 +67,7 @@ export default function Homepage() {
   }
 
   const handleSetCompany = (comp) => {
+    setLoading(true)
     const endpoint = `/erp_woodland/api_company`;
     AnalogyxBIClient.post({
       endpoint,
@@ -68,12 +75,18 @@ export default function Homepage() {
       stringify: false,
     })
       .then(({ json }) => {
+        console.log({json})
         dispatch(setCompany(comp))
         setIsModalVisible(false);
+        dispatch(showSnackbar(json.message));
+        setLoading(false)
       })
       .catch((err) => {
-        getClientErrorObject(err).then((res) =>
-          ToastAndroid.show(t(res), ToastAndroid.SHORT)
+        setLoading(false)
+        getClientErrorObject(err).then((res) => {
+          dispatch(showSnackbar(res));
+        }
+          // ToastAndroid.show(t(res), ToastAndroid.SHORT)
         );
       });
   }
@@ -128,7 +141,7 @@ export default function Homepage() {
               </TouchableOpacity>
             )}
           />
-          <Button title="Close" onPress={() => setIsModalVisible(false)} />
+          {loading ? <ActivityIndicator />  :<Button title="Close" onPress={() => setIsModalVisible(false)} />}
         </View>
       </Modal>
       <View style={styles.header}>

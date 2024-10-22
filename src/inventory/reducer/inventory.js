@@ -34,6 +34,7 @@ const initialState = {
   selectedCycleDetails: [],
   tagsData: [],
   cycleTags: [],
+  screen:'initial'
 };
 
 const inventorySlice = createSlice({
@@ -64,7 +65,14 @@ const inventorySlice = createSlice({
         onSuccess: false,
         onError: false,
         binsData: [],
+        cyclesData: [],
+        selectedCycleDetails: [],
+        tagsData: [],
+        cycleTags: [],
       };
+    },
+    setScreenLayout:(state,action) =>{
+      state.screen = action.payload;
     },
     setCurrentCycle: (state, action) => {
       state.currentCycle = action.payload;
@@ -75,11 +83,15 @@ const inventorySlice = createSlice({
     setSelectedCycleDetails: (state, action) => {
       state.selectedCycleDetails = action.payload;
     },
+    setSelectedCycleCCDtls: (state, action)=>{
+      const CCDtls = action.payload
+      state.selectedCycleDetails[0].CCDtls = CCDtls
+    },
     setTagsData: (state, action) => {
       if (action.payload && Array.isArray(action.payload)) {
         const remainingTags = action.payload.filter(
           (tag) =>
-            tag.PartNum === '' && tag.BinNum === '' && tag.CountedQty === ''
+            tag.TagReturned === false
         );
         state.tagsData = remainingTags;
       }
@@ -93,6 +105,9 @@ const inventorySlice = createSlice({
       let tags = state.tagsData.filter((tag) => tag.TagNum != action.payload);
       state.tagsData = tags;
     },
+    changeCurrentCycleStatus:(state, action)=>{
+      state.currentCycle.CycleStatus = action.payload
+    } 
   },
 });
 
@@ -107,6 +122,9 @@ export const {
   setTagsData,
   removeTag,
   setCycleTags,
+  setSelectedCycleCCDtls,
+  setScreenLayout,
+  changeCurrentCycleStatus
 } = inventorySlice.actions;
 
 export default inventorySlice.reducer;

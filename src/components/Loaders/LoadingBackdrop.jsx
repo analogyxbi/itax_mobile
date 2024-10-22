@@ -1,8 +1,8 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Modal, StyleSheet, Text } from 'react-native';
 import LottieView from 'lottie-react-native';
-import Loading from '../../../assets/Lottie/Loading.json';
+import React, { useEffect, useRef } from 'react';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
+import Loading from '../../../assets/Lottie/Loading.json';
 
 const LoadingBackdrop = ({ visible, onDismiss }) => {
   const animationRef = useRef(null);

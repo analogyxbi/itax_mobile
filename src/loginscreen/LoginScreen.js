@@ -13,9 +13,6 @@ import {
 import React, { useState, useRef, useEffect } from 'react';
 import { BlurView } from 'expo-blur';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-// import { useNavigation } from '@react-navigation/native';
-// import { useDispatch } from 'react-redux';
-// import { loginUser } from './actions/actions';
 import axios from 'axios';
 import JSSoup from 'jssoup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -33,7 +30,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
   const dispatch = useDispatch();
   const [csrf, setCsrf] = useState('');
   const [loading, setLoading] = useState(false);
-  // const dispatch = useDispatch();
 
   const UNPWCheck = () => {
     if (!username || !password || !url) {
@@ -67,16 +63,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       })
       .catch(function (error) {
         console.log('First Error' + JSON.stringify(error));
-        // const csrf =
-        //   'IjU5NDdlOTdiNWQ4MjU0YjJjMWE3ZTI0Zjk2N2Y5NGVlY2U2OGRkODQi.ZiebCQ.jhphhb5RUKzz3_OynmaaGkz1mYM';
-        // setupClient(csrf, url);
-        // dispatch(login({ csrf, url }));
-        // AsyncStorage.multiSet([
-        //   ['csrf', csrf],
-        //   ['url', url],
-        // ]);
-        // setLoading(false);
-        // setIsAuthenticated(true);
         setLoading(false);
       });
   };
@@ -110,7 +96,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
         }
       })
       .catch((error) => {
-        console.log(error.response);
         if (error.response.data) {
           if (error.response?.data?.message) {
             console.log('Error message:');
@@ -125,7 +110,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
           );
         } else {
           // Something happened in setting up the request that triggered the error
-          console.log('Error Message:', error.message);
           alert('An unexpected error occurred.');
         }
         setLoading(false);
@@ -152,13 +136,6 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
       })
       .catch((error) => {
         if (error.response) {
-          console.log(error.response);
-          console.log({ error });
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          // console.log('Error Response Data:', error.response.data);
-          // console.log('Error Response Status:', error.response.status);
-          // Example: Show a generic message based on the status code
           if (error.response.status === 404) {
             alert('Resource not found.');
           } else {
@@ -171,32 +148,11 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
             'Network error. Please check your org url or internet connection.'
           );
         } else {
-          // Something happened in setting up the request that triggered the error
-          // console.log('Error Message:', error.message);
           alert('An unexpected error occurred.');
         }
         setLoading(false);
       });
   }
-
-  // useEffect(() => {
-  //   var myHeaders = new Headers();
-  //   myHeaders.append('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
-  //   myHeaders.append('X-XSRF-TOKEN',"")
-  //   axios
-  //     .get(`http://${url}/login/`, {
-  //       headers:myHeaders
-  //     })
-  //     .then((res) => {
-  //       let soup = new JSSoup(res.data);
-  //       let csrf = soup.find('input', { id: 'csrf_token' }).attrs.value;
-  //       setCsrf(csrf);
-  //      alert("FETCHED CSRF")
-  //     })
-  //     .catch((err) => {
-  //       console.log("CSRF Error", JSON.stringify(err))
-  //     });
-  // }, [url]);
 
   const passwordVisibilityHandler = () => {
     if (passwordHidden == true) {
@@ -204,9 +160,21 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
     } else return false;
   };
 
-  useEffect(async ()=>{
+
+async function setCacheFromLocal(){
+  try{
     const url = await AsyncStorage.getItem('url')
-    if(url) setUrl(url)
+    if(url) {
+      setUrl(url)
+    }
+  }catch(err){
+    console.log("Error")
+  }
+}
+
+  useEffect(()=>{
+    setCacheFromLocal()
+    // console.log("test")
   },[])
 
   const eyeVisible = () => {
@@ -230,9 +198,9 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
         style={styles.main}
       >
         <View style={styles.container}>
-          <BlurView intensity={80} style={styles.loginBox}>
+          <BlurView intensity={100} style={styles.loginBox}>
             <Image
-              source={require('../../images/analogyxbi-logo-horiz.png')}
+              source={require('../../images/wland_logo.png')}
               style={styles.logo}
             ></Image>
 
@@ -305,7 +273,7 @@ const LoginScreen = ({ isAuthenticated, setIsAuthenticated }) => {
           <Text
             style={{
               position: 'absolute',
-              bottom: 60,
+              bottom: 25,
               opacity: 0.5,
             }}
           >
@@ -340,7 +308,7 @@ const styles = StyleSheet.create({
   loginBox: {
     backgroundColor: 'transparent',
     width: '90%',
-    height: '70%',
+    height: '80%',
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -349,7 +317,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 60,
     alignSelf: 'center',
-    marginTop: 40,
+    marginTop: 60,
   },
 
   welcomeText: {

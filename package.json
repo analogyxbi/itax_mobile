@@ -1,13 +1,15 @@
 {
   "name": "woodland-application",
-  "version": "1.0.0",
+  "version": "1.0.14",
   "main": "node_modules/expo/AppEntry.js",
   "proxy": "http://192.168.0.103:8088",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "expo_apk": "eas build --platform android --local",
+    "expo_ios": "eas build --platform ios --local"
   },
   "dependencies": {
     "@analogyxbi/connection": "^1.0.3",
@@ -15,6 +17,7 @@
     "@expo/metro-runtime": "~3.1.3",
     "@expo/vector-icons": "^14.0.0",
     "@react-native-async-storage/async-storage": "1.21.0",
+    "@react-native-community/datetimepicker": "7.7.0",
     "@react-native-picker/picker": "2.6.1",
     "@react-navigation/drawer": "^6.6.15",
     "@react-navigation/native": "^6.1.17",
@@ -39,6 +42,7 @@
     "expo-status-bar": "~1.11.1",
     "expo-system-ui": "~2.9.4",
     "jssoup": "0.0.15",
+    "lodash": "^4.17.21",
     "lottie-react-native": "6.5.1",
     "querystringify": "^2.2.0",
     "react": "18.2.0",

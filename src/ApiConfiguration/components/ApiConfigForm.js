@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  Button,
   Dimensions,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
+  TouchableOpacity
 } from 'react-native';
-import RNPickerSelect from 'react-native-picker-select';
 import { globalStyles } from '../../style/globalStyles';
-import { Switch } from 'react-native-paper';
 
 const windowHeight = Dimensions.get('window').height;
 

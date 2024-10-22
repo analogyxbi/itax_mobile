@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Button,
   Dimensions,
   SafeAreaView,
   ScrollView,
@@ -8,11 +7,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { Switch } from 'react-native-paper';
 import RNPickerSelect from 'react-native-picker-select';
 import { globalStyles } from '../../style/globalStyles';
-import { Switch } from 'react-native-paper';
 
 const roleOptions = [
   {
@@ -118,21 +117,21 @@ const UsersForm = ({
     return result;
   };
   return (
-    <SafeAreaView>
-      <ScrollView style={{ maxHeight: '92%' }}>
+    <View style={{height: "90%"}}>
+      <ScrollView >
         <TextInput
           style={styles.input}
           onChangeText={(text) => onChangeText(text, 'first_name')}
           value={formData?.first_name}
           placeholder="First name"
-          // autoCapitalize
+        // autoCapitalize
         />
         <TextInput
           style={styles.input}
           onChangeText={(text) => onChangeText(text, 'last_name')}
           value={formData?.last_name}
           placeholder="Last name"
-          // autoCapitalize
+        // autoCapitalize
         />
         <TextInput
           style={styles.input}
@@ -183,28 +182,6 @@ const UsersForm = ({
             value={formData?.roles}
           />
         </View>
-        {/* <View style={[styles.input, styles.select]}>
-          <RNPickerSelect
-            onValueChange={(text) => onChangeText(text, 'time_zone')}
-            placeholder={{
-              label: 'Time Zone',
-              value: null,
-            }}
-            items={renderLabelsValues(timeZone)}
-            value={formData?.time_zone}
-          />
-        </View> */}
-        {/* <View style={[styles.input, styles.select]}>
-          <RNPickerSelect
-            onValueChange={(text) => onChangeText(text, 'user_group')}
-            placeholder={{
-              label: 'User Group',
-              value: null,
-            }}
-            items={renderLabelsValues(userGroups)}
-            value={formData?.user_group}
-          />
-        </View> */}
         <TextInput
           style={styles.input}
           onChangeText={(text) => onChangeText(text, 'password')}
@@ -229,16 +206,16 @@ const UsersForm = ({
             {error.confirm_password}
           </Text>
         )}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={() => setFormData(initialFormData)}
+          >
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.resetButton}
-          onPress={() => setFormData(initialFormData)}
-        >
-          <Text style={styles.resetButtonText}>Reset</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -271,8 +248,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     flexDirection: 'row',
-    position: 'absolute',
-    bottom: 0,
+    // position: 'absolute',
+    // bottom: 0,
   },
 });
 

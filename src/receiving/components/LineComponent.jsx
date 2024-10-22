@@ -1,32 +1,51 @@
-import { ScrollView, Text, TextInput, View } from "react-native"
-import { Button } from "react-native-paper";
-import { generateReceiptPDF } from "../../utils/PDFGenerator";
-import RNPickerSelect from 'react-native-picker-select';
-import { globalStyles } from "../../style/globalStyles";
 import { AnalogyxBIClient } from "@analogyxbi/connection";
+import { useCallback, useEffect, useState } from "react";
+import { ScrollView, Text, TextInput, View } from "react-native";
+import { Button, RadioButton } from "react-native-paper";
 import { useDispatch, useSelector } from "react-redux";
 import { setIsLoading, setOnError, setOnSuccess } from "../../components/Loaders/toastReducers";
-import { useEffect, useState } from "react";
+import SelectInput from "../../components/SelectInput";
 import { setWarehouses, setWhseBins } from "../../inventory/reducer/inventory";
 import { showSnackbar } from "../../Snackbar/messageSlice";
-import SelectInput from "../../components/SelectInput";
+import { globalStyles } from "../../style/globalStyles";
+import { getBinsData } from "../../utils/utils";
+import SelectAsync from "../../components/SelectAsync";
 
-
-const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeText, isNewPackSlip, handleSave, isSaved, packSLipNUm }) => {
+const LineComponent = ({ currentLine, 
+    styles, 
+    formData, 
+    setFormdata, 
+    onChangeText, 
+    isNewPackSlip, 
+    handleSave, 
+    isSaved, setIsSaved, 
+    warehouse, convertQuantity,
+    supplierQty, setSupplierQty,
+    ourQty, setOurQty
+ }) => {
     const dispatch = useDispatch();
     const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);
+    const {company} = useSelector(state => state.auth);
     const [bins, setBins] = useState({
         from: [],
         to: [],
     });
-    const renderBinOptions = (values) => {
-        const result = values.map((val) => ({
-            ...val,
-            label: val.BinNum,
-            value: val.BinNum,
-        }));
-        return result;
+
+    const handleSupplierQtyChange = (text) => {
+        setFormdata(prev => ({ ...prev, input: text }));
+        const parsedQty = parseFloat(text) || 0;
+        setSupplierQty(text);
+        const convertedQty = convertUOMs(parsedQty, currentLine?.PUM, currentLine?.IUM);
+        setOurQty(convertedQty.toString());
+    };
+
+    const handleOurQtyChange = (text) => {
+        setFormdata(prev => ({ ...prev, input: text }));
+        const parsedQty = parseFloat(text) || 0;
+        setOurQty(text);
+        const convertedQty = convertUOMs(parsedQty, currentLine?.IUM, currentLine?.PUM);
+        setSupplierQty(convertedQty.toString());
     };
 
     function getWarehouse() {
@@ -88,7 +107,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
     function getBins(to, warehouse) {
         setRefreshing(true);
         const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
-        const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+        const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}&$top=10000`;
         const postPayload = {
             epicor_endpoint,
             request_type: 'GET',
@@ -129,7 +148,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
 
     const generateQRCodeAndPrintPDF = async (currentLine, formData) => {
         dispatch(setIsLoading({ value: true, message: 'Printing...' }));
-        const epicor_endpoint = `/BaqSvc/WHAppPrint2(WOOD01)/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
+        const epicor_endpoint = `/BaqSvc/WHAppPrint2(${company})/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
         const postData = {
             UD12_Character01: "Analogyx1",
             UD12_Key1: `${currentLine?.PONum}`,
@@ -148,7 +167,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
             },
             stringify: false,
         }).then(({ json }) => {
-            dispatch(setOnSuccess({ value: true, message: 'Printed' }));
+            dispatch(setOnSuccess({ value: true, message: 'Print Job created.' }));
         }).catch(err => {
             dispatch(setIsLoading({ value: false, message: '' }));
             dispatch(setOnError({ value: true, message: 'Error Occured While Printing \n', err }));
@@ -157,6 +176,20 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
 
     function onSelectBins(key, value) {
         setFormdata((prev) => ({ ...prev, [key]: value }));
+    }
+
+    function createNewReceipt() {
+        setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
+        setIsSaved(false);
+    }
+
+    useEffect(() => {
+        setFormdata(prev => ({ ...prev, qty_type: currentLine?.QtyOption == "Our" ? "Our" : "Supplier" }));
+    }, [currentLine])
+
+    const convertUOMs = (qty, from, to) => {
+        const ourQty = convertQuantity(qty, from, to);
+        return ourQty;
     }
 
     return (
@@ -224,40 +257,50 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                                 /{currentLine.IUM || '-'}
                             </Text>
                     }
-
-                    {/* <TextInput
-              style={styles.input}
-              onChangeText={(text) => onChangeText(text, 'arrived_qty')}
-              value={currentLine.PORelArrivedQty && Math.round(currentLine.PORelArrivedQty)?.toString()}
-              placeholder="Arrived qty"
-            /> */}
+                </View>
+            </View>
+            <View style={[globalStyles.dFlexR, globalStyles.justifySE]}>
+                <View style={[globalStyles.dFlexR]}>
+                    <RadioButton
+                        value="Supplier"
+                        disabled={isNewPackSlip && currentLine?.QtyOption == "Our"}
+                        status={formData?.qty_type === 'Supplier' ? 'checked' : 'unchecked'}
+                        onPress={() => setFormdata(prev => ({ ...prev, qty_type: 'Supplier' }))}
+                    />
+                    <Text style={styles.inputLabel}>Supplier Qty ({currentLine?.PUM})</Text>
+                </View>
+                <View style={[globalStyles.dFlexR]}>
+                    <RadioButton
+                        value="Our"
+                        disabled={isNewPackSlip && currentLine?.QtyOption == "Supplier"}
+                        status={formData?.qty_type === 'Our' ? 'checked' : 'unchecked'}
+                        onPress={() => setFormdata(prev => ({ ...prev, qty_type: 'Our' }))}
+                    />
+                    <Text style={styles.inputLabel}>Our Qty ({currentLine?.IUM})</Text>
                 </View>
             </View>
             <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.inputLabel}>Input Qty</Text>
                     <TextInput
+                        editable={formData?.qty_type !== 'Our'}
+                        keyboardType='numeric'
                         style={styles.input}
-                        onChangeText={(text) => onChangeText(text, 'input')}
-                        value={formData.input}
-                        placeholder="Input"
+                        onChangeText={handleSupplierQtyChange}
+                        value={supplierQty}
+                        placeholder="Supplier Qty"
+                    />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <TextInput
+                        editable={formData?.qty_type !== 'Supplier'}
+                        keyboardType='numeric'
+                        style={styles.input}
+                        onChangeText={handleOurQtyChange}
+                        value={ourQty}
+                        placeholder="Our Qty"
                     />
                 </View>
             </View>
-            {/* <View style={[globalStyles.dFlexR, globalStyles.justifySE]}>
-          <View>
-            <Text style={styles.inputLabel}>Complete</Text>
-            <Checkbox status={true ? 'checked' : 'unchecked'} />
-          </View>
-          <View>
-            <Text style={styles.inputLabel}>Insp Req</Text>
-            <Checkbox status={true ? 'checked' : 'unchecked'} />
-          </View>
-          <View>
-            <Text style={styles.inputLabel}>Print Label</Text>
-            <Checkbox status={true ? 'checked' : 'unchecked'} />
-          </View>
-        </View> */}
             <Text style={styles.sideHeading}>Location</Text>
             <View>
                 <Text style={styles.inputLabel}>Note</Text>
@@ -271,16 +314,14 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
             </View>
             {
                 isNewPackSlip &&
-                <View style={[globalStyles.dFlexR, globalStyles.justifySB]}>
+                <View style={[globalStyles.dFlexR, globalStyles.justifySB, { paddingHorizontal: 10 }]}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>Warehouse</Text>
                         <SelectInput
                             value={formData.WareHouseCode || null}
                             onChange={(itemValue) => {
                                 onSelectBins('WareHouseCode', itemValue);
-                                if (!binsData[itemValue]) {
-                                    getBins('from', itemValue);
-                                }
+                                setFormdata(prev => ({...prev, BinNum: ''}));
                             }}
                             options={warehouses?.map((data) => ({
                                 ...data,
@@ -294,7 +335,7 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>Bin Number</Text>
-                        <SelectInput
+                        <SelectAsync
                             value={formData.BinNum}
                             onChange={(itemValue) => {
                                 onSelectBins('BinNum', itemValue);
@@ -309,6 +350,8 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                             isLoading={refreshing}
                             // handleRefresh={handleOptionsRefresh}
                             label="BinNum"
+                            fetchOptions={getBinsData}
+                            warehouse={warehouse}
                         />
                     </View>
                 </View>
@@ -331,15 +374,26 @@ const LineComponent = ({ currentLine, styles, formData, setFormdata, onChangeTex
                         Reverse
                     </Button>
                 }
-                <Button
-                    buttonColor={globalStyles.colors.success}
-                    icon="floppy"
-                    mode="contained"
-                    disabled={handleValidate()}
-                    onPress={() => handleSave(true)}
-                >
-                    Save
-                </Button>
+                {isSaved ?
+                    <Button
+                        buttonColor={globalStyles.colors.success}
+                        icon="plus"
+                        mode="contained"
+                        // disabled={handleValidate()}
+                        onPress={createNewReceipt}
+                    >
+                        New Receipt
+                    </Button> :
+                    <Button
+                        buttonColor={ globalStyles.colors.success }
+                        icon="floppy"
+                        mode="contained"
+                        disabled={handleValidate()}
+                        onPress={() => handleSave(true)}
+                    >
+                        Save
+                    </Button>}
+
                 {
                     isNewPackSlip &&
                     <Button

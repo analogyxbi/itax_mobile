@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View } from 'react-native';
-import { Button, Dialog, Portal, Text } from 'react-native-paper';
+import { ActivityIndicator, Button, Dialog, Portal, Text } from 'react-native-paper';
 
 const PopUpDialog = ({
   visible,
@@ -9,6 +9,7 @@ const PopUpDialog = ({
   message,
   handleCancel,
   handleOk,
+  loading=false
 }) => {
   const hideDialog = () => setVisible(false);
 
@@ -16,13 +17,15 @@ const PopUpDialog = ({
     <View>
       <Portal>
         <Dialog visible={visible} onDismiss={hideDialog}>
-          <Dialog.Title>{title}</Dialog.Title>
+          <Dialog.Title>{loading ? "Please wait" :title}</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodyMedium"> {message} </Text>
+            {loading ?  <ActivityIndicator /> :<Text variant="bodyMedium"> {message} </Text>}
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={handleCancel}>Cancel</Button>
-            <Button onPress={handleOk}>Ok</Button>
+            {!loading && <>
+              <Button onPress={handleCancel}>Cancel</Button>
+              <Button onPress={handleOk}>Ok</Button>
+            </>}
           </Dialog.Actions>
         </Dialog>
       </Portal>

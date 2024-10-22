@@ -1,9 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
-import { Dimensions, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Linking, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import packageJson from "../../app.json";
 import { globalStyles } from "../style/globalStyles";
-import { Ionicons } from "@expo/vector-icons";
-import packageJson from "../../package.json"
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -29,29 +29,10 @@ const HelpScreen = () => {
                     {"           "} Welcome to our Warehouse Management App!. This app helps you manage inventory, track shipments, and streamline warehouse operations.
                 </Text>
 
-                {/* <Text style={styles.sectionTitle}>Getting Started</Text>
-            <Text style={styles.text}>
-                1. Download the app from the App Store or Google Play.
-                2. Create an account or log in if you already have one.
-                3. Set up your warehouse details and start adding inventory.
-            </Text> */}
-
-                {/* <Text style={styles.sectionTitle}>Frequently Asked Questions (FAQ)</Text>
-            <Text style={styles.text}>
-                <Text style={styles.question}>Q: How do I add new inventory?</Text>
-                <Text>A: Go to the Inventory section, click on "Add New Item", and fill in the required details.</Text>
-
-                <Text style={styles.question}>Q: How do I track shipments?</Text>
-                <Text>A: Navigate to the Shipments section, where you can see the status of all incoming and outgoing shipments.</Text>
-
-                <Text style={styles.question}>Q: How do I reset my password?</Text>
-                <Text>A: Go to the login page, click on "Forgot Password", and follow the instructions.</Text>
-            </Text> */}
-
                 <Text style={styles.sectionTitle}>Contact Support</Text>
                 <Text style={styles.text}>
                     {"           "} If you need further assistance, please contact us at
-                    <TouchableOpacity onPress={() => Linking.openURL('https://analogyx.com/contact-us/#')}>
+                    <TouchableOpacity onPress={() => Linking.openURL('https://analogyx.com/contact-us')}>
                         <Text style={styles.link}> https://analogyx.com/contact-us/#</Text>
                     </TouchableOpacity>.
                 </Text>

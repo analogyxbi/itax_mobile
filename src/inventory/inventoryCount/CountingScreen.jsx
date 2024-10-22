@@ -1,39 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import { AnalogyxBIClient } from "@analogyxbi/connection";
+import Entypo from "@expo/vector-icons/Entypo";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Pressable,
-  BackHandler,
-  Alert,
-  SafeAreaView,
-} from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { globalStyles } from '../../style/globalStyles';
-import { useNavigation } from '@react-navigation/native';
-import BarcodeScannerComponent from '../../components/BarcodeScannerComponent';
-import { useDispatch, useSelector } from 'react-redux';
-import { showSnackbar } from '../../Snackbar/messageSlice';
+  View,
+} from "react-native";
+import { Menu } from "react-native-paper";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { useDispatch, useSelector } from "react-redux";
+import { showSnackbar } from "../../Snackbar/messageSlice";
+import BarcodeScannerComponent from "../../components/BarcodeScannerComponent";
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
-} from '../../components/Loaders/toastReducers';
-import PopUpDialog from '../../components/PopUpDialog';
+} from "../../components/Loaders/toastReducers";
+import PopUpDialog from "../../components/PopUpDialog";
+import { globalStyles } from "../../style/globalStyles";
+import {
+  createDsPayload,
+  fetchCountPartDetails,
+  fetchXrefPart,
+  getCycleScheduleDesc,
+  updatePartToDataset,
+} from "../Utils/InventoryUtils";
 import {
   removeTag,
   setCurrentCycle,
   setSelectedCycleDetails,
-} from '../reducer/inventory';
-import { Button, Menu, Divider } from 'react-native-paper';
-import Entypo from '@expo/vector-icons/Entypo';
-import TagsPopUp from './components/TagsPopUp';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import { createDsPayload, updatePartToDataset } from '../Utils/InventoryUtils';
-import getClientErrorMessage from '../../utils/getClientErrorMessage';
+} from "../reducer/inventory";
+import TagsPopUp from "./components/TagsPopUp";
+import SelectInputValue from "../../components/SelectInputValue";
+import { isEmpty } from "../../utils/utils";
 
 const CountingScreen = ({
   part,
@@ -48,6 +55,7 @@ const CountingScreen = ({
   currentCycle,
   tagsData,
   generateNewTags,
+  fetchAllTags,
   generateNewCCDtls,
 }) => {
   const navigation = useNavigation();
@@ -55,135 +63,275 @@ const CountingScreen = ({
   const [cameraState, setCameraState] = useState(null);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
-  const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [submitConfirm, setSubmitConfirm] = useState(false);
   const [visible, setVisible] = React.useState(false);
   const [genNewTag, setGenNewTag] = useState(false);
-  const { selectedCycleDetails } = useSelector((state) => state.inventory);
+  const { selectedCycleDetails, cycleTags } = useSelector(
+    (state) => state.inventory
+  );
   const [addPart, setAddPart] = useState(false);
+  const [selectedTag, setSelectedTag] = useState({});
+  const [existingPartsOnTag, setExistingPartsOnTag] = useState(
+    cycleTags.filter((data) => data.TagReturned == false).map((data) => data.PartNum)
+  );
+  const [tagIndex, setTagIndex] = useState(0)
+  const [CCPartsOnTag, setCCPartsOnTag] = useState(
+    selectedCycleDetails[0].CCDtls.filter((data) => data.PartNum != "").map(
+      (data) => data.PartNum
+    )
+  );
+  const [selectedPart, setSelectedPart] = useState({});
+  const [nextConfirm, setNextConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
 
   const openMenu = () => setVisible(true);
 
   const closeMenu = () => setVisible(false);
 
-  const dispatch = useDispatch();
-  const openScanner = () => {
-    setScannerVisible(true);
-  };
+  function pickUniquePart(existingParts, newParts) {
+    // Convert existingParts to a Set for efficient lookups
+    const existingSet = new Set(existingParts);
+
+    // Filter newParts to get parts that are not in existingParts
+    const uniqueParts = newParts.filter((part) => !existingSet.has(part));
+
+    // Check if there are any unique parts available
+    if (uniqueParts.length === 0) {
+      return null; // No unique parts available
+    }
+
+    // Pick a random item from uniqueParts
+    const randomIndex = Math.floor(Math.random() * uniqueParts.length);
+    return uniqueParts[randomIndex];
+  }
+
+  function getUnusedPart() {
+    return pickUniquePart(existingPartsOnTag, CCPartsOnTag);
+  }
+
   const closeScanner = () => {
     setCameraState(null);
     setScannerVisible(false);
   };
 
   function captureDetails(details, state) {
-    if (cameraState != 'bin' && cameraState != 'part') {
+    if (cameraState != "bin" && cameraState != "part") {
       setCameraState(null);
       closeScanner();
       return dispatch(
-        showSnackbar('Warehouse or bin not found for the part number')
+        showSnackbar("Part or Bin not found for the part number")
       );
     }
-    if (cameraState === 'part') {
-      setPart(details);
-    } else if (details.includes('\\')) {
-      let data = details.split(' \\ ');
-      setBin(data[1]);
+    if (cameraState === "part") {
+      if (details.includes("\\")) {
+        let data = details.split(" \\ ");
+        setPart(data[2]);
+      } else {
+        setPart(details);
+      }
+    } else if (cameraState === "bin") {
+      if (details.includes("\\")) {
+        let data = details.split(" \\ ");
+        setBin(data[1]);
+      } else {
+        setBin(details);
+      }
     }
-    // setFormData((prev) => ({ ...prev, [state]: details }));
     setCameraState(null);
     closeScanner();
   }
 
+  async function setCycleDetailsToCount(finish) {
+    if (finish) {
+      return dispatch(showSnackbar("No more tags with part available."));
+    }
+  
+    setLoading(true);
+  
+    // Find the current tag
+    const currentTagNum = selectedTag?.TagNum;
+    const currentIndex = tagsData.findIndex(tag => tag.TagNum === currentTagNum);
+    let nextTagIndex = currentIndex + 1;
+  
+    // Check if currentTagNum exists and if nextTagIndex is within bounds
+    if (currentIndex === -1 || (nextTagIndex >= tagsData.length && currentIndex !== tagsData.length - 1)) {
+      // If no tag is selected or we're at the end of the list, use the first tag
+      nextTagIndex = 0;
+    }
+  
+    // Get the tag based on the computed index
+    const tag = tagsData[nextTagIndex];
+    if (tag) {
+      const qty = tag.FrozenQOH ? `${parseFloat(tag.FrozenQOH).toFixed(3)}` : tag.FrozenQOH
+      setBin(tag?.BinNum);
+      setPart(tag?.PartNum);
+      setCountedQty(qty);
+      setNotes(tag?.TagNote);
+      setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
+    } else {
+      await fetchAllTags(false, true);
+      dispatch(showSnackbar('No tags found, Please refresh to get new tags'));
+      setTimeout(() => {
+        setCycleDetailsToCount(true);
+      }, 2000);
+    }
+  
+    setNextConfirm(false);
+    setLoading(false);
+  }
+
+  async function setBlankFalse(values, tag) {
+    const epicor_endpoint = `/Erp.BO.CountTagSvc/CountTags`;
+    try {
+      const response = await AnalogyxBIClient.post({
+        endpoint: `/erp_woodland/resolve_api`,
+        postPayload: {
+          epicor_endpoint,
+          request_type: "POST",
+          data: JSON.stringify(values),
+        },
+        stringify: false,
+      });
+      // delete data.odata
+      const { json } = response;
+      dispatch(
+        setOnSuccess({
+          value: true,
+          message: `Data added on Tag ${tag}`,
+        })
+      );
+    } catch (err) {
+      try {
+        const errorResponse = await err.json();
+        dispatch(
+          setOnError({ value: true, message: errorResponse?.ErrorMessage })
+        );
+        
+      } catch (error) {
+        dispatch(setOnError({ value: true, message: "An Error Occurred" }));
+      }
+    }
+  }
+
+  function findAndRemovePart(part) {
+    const ccDtls = CCPartsOnTag.filter((p) => p != part);
+    setCCPartsOnTag(() => [...ccDtls]);
+    setExistingPartsOnTag((prev) => [...prev, part]);
+  }
+
   function postTag() {
     setSubmitConfirm(false);
+    if (isEmpty(selectedTag))
+      return dispatch(showSnackbar("Please select the tag"));
     dispatch(
       setIsLoading({
         value: true,
-        message: 'Saving Count Cycle',
+        message: "Saving Count Cycle",
       })
     );
     try {
       const details = selectedCycleDetails[0].CCDtls;
       const cycleData = details.find((data) => data.PartNum == part);
       if (cycleData) {
-        const tag = tagsData[0];
+        let tag = selectedTag;
+        delete tag.label;
+        delete tag.value;
         let values = {
           ...tag,
           BinNum: bin,
           PartNum: part,
           TagNote: notes,
-          CountedBy: 'App User',
+          CountedBy: "Warehouse App",
           CountedQty: countedQty,
-          UOM: cycleData.BaseUOM,
           TagReturned: true,
-          BlankTag: false,
+          CountedDate: new Date().toISOString(),
+          RowMod: "U"
         };
-
-        const epicor_endpoint = '/Erp.BO.CountTagSvc/CountTags';
+        delete values.SysRevID;
+        // const dataset = {
+        //   ds: {
+        //     CCTag:[values]
+        //   }
+        // }
+        const epicor_endpoint = "/Erp.BO.CountTagSvc/CountTags";
+        const qty = countedQty
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
           postPayload: {
             epicor_endpoint,
-            request_type: 'POST',
+            request_type: "POST",
             data: JSON.stringify(values),
           },
           stringify: false,
         })
-          .then(({ json }) => {
+          .then(async ({ json }) => {
             // delete data.odata
-            dispatch(
-              setOnSuccess({
-                value: true,
-                message: `Data added on Tag ${tag.TagNum}`,
-              })
-            );
+            // dispatch(
+            //   setOnSuccess({
+            //     value: true,
+            //     message: `Data added on Tag ${tag.TagNum}`,
+            //   })
+            // );
+            // let newPayload = json.data.parameters;
+            // let tags = newPayload.ds.CCTag[0]
+            // tags.BlankTag = false
+            // tags.RowMod = "U"
+            // await setBlankFalse({ds: {
+            //   CCTag:[tags]
+            // }}, tag.TagNum);
+            // delete newPayload['odata.metadata']
             dispatch(removeTag(tag.TagNum));
-            setPart('');
-            setBin('');
-            setNotes('');
-            setCountedQty('0');
+            findAndRemovePart(cycleData.part);
+            // const unPart = getUnusedPart()
+            // setCycleDetailsToCount(unPart, 'MfgSys')
+            await setBlankFalse({ ...values, BlankTag: false }, tag.TagNum);
+            setCycleDetailsToCount(false);
           })
           .catch((err) => {
-            err.json().then((res) => {
-              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
-            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(
-            //     setOnError({
-            //       value: true,
-            //       message: message,
-            //     })
-            //   );
-            // });
+            err
+              .json()
+              .then((res) => {
+                dispatch(
+                  setOnError({ value: true, message: res.ErrorMessage })
+                );
+              })
+              .catch((error) =>
+                dispatch(
+                  setOnError({ value: true, message: "An Error Occured" })
+                )
+              );
           });
       } else {
         dispatch(
           setOnError({
             value: true,
             message:
-              'Part Not Found in the current Cycle, Please add the part to the current cycle first.',
+              "Part Not Found in the current Cycle, Please add the part to the current cycle first.",
           })
         );
         setAddPart(true);
       }
     } catch (err) {
-      dispatch(showSnackbar('Error Occured while generating tags'));
+      dispatch(showSnackbar("Error Occured while generating tags"));
       dispatch(
         setOnError({
           value: true,
-          message: 'Tags Not Found, Please create a new tag',
+          message: "Tags Not Found, Please create a new tag",
         })
       );
     }
   }
 
-  // dispatch(setOnError({ message: '', value: true }));
+  useEffect(() => {
+    // const unPart = getUnusedPart();
+    setCycleDetailsToCount();
+  }, []);
 
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
+      setHasPermission(status === "granted");
     };
     getBarCodeScannerPermissions();
   }, []);
@@ -200,12 +348,12 @@ const CountingScreen = ({
 
   async function updateCCDtls(dataset, part, details) {
     const data = updatePartToDataset(dataset, part);
-    const epicor_endpoint = '/Erp.BO.CCPartSelectUpdSvc/Update';
+    const epicor_endpoint = "/Erp.BO.CCPartSelectUpdSvc/Update";
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
         epicor_endpoint,
-        request_type: 'POST',
+        request_type: "POST",
         data: JSON.stringify(data),
       },
       stringify: false,
@@ -216,29 +364,25 @@ const CountingScreen = ({
         // await updateCCDtls(value, part);
       })
       .catch((err) => {
-        err.json().then((res) => {
-          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
-        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
+        err
+          .json()
+          .then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          })
+          .catch((error) =>
+            dispatch(setOnError({ value: true, message: "An Error Occured" }))
+          );
       });
   }
 
   async function postGetNewCCDtl(load, part, details) {
     const payload = createDsPayload(load, part);
-    const epicor_endpoint = '/Erp.BO.CCPartSelectUpdSvc/GetNewCCDtl';
+    const epicor_endpoint = "/Erp.BO.CCPartSelectUpdSvc/GetNewCCDtl";
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
         epicor_endpoint,
-        request_type: 'POST',
+        request_type: "POST",
         data: JSON.stringify(payload),
       },
       stringify: false,
@@ -248,18 +392,14 @@ const CountingScreen = ({
         await updateCCDtls(value, part, details);
       })
       .catch((err) => {
-        err.json().then((res) => {
-          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
-        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
+        err
+          .json()
+          .then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          })
+          .catch((error) =>
+            dispatch(setOnError({ value: true, message: "An Error Occured" }))
+          );
       });
   }
 
@@ -268,59 +408,59 @@ const CountingScreen = ({
     dispatch(
       setIsLoading({
         value: true,
-        message: 'Adding new Part.',
+        message: "Adding new Part.",
       })
     );
     try {
-      let details = { ...currentCycle, RowMod: 'U', CycleStatus: 0 };
+      let details = { ...currentCycle, RowMod: "U", CycleStatus: 0 };
       if (details) {
-        const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/CCCountCycles';
+        const epicor_endpoint = "/Erp.BO.CCCountCycleSvc/CCCountCycles";
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
           postPayload: {
             epicor_endpoint,
-            request_type: 'POST',
+            request_type: "POST",
             data: JSON.stringify(details),
           },
           stringify: false,
         })
           .then(async ({ json }) => {
             let value = json.data;
-            delete value['odata.metadata'];
+            delete value["odata.metadata"];
             details = value;
             dispatch(setCurrentCycle(details));
             await postGetNewCCDtl(value, part, details);
           })
           .catch((err) => {
-            err.json().then((res) => {
-              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
-            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(
-            //     setOnError({
-            //       value: true,
-            //       message: message,
-            //     })
-            //   );
-            // });
+            err
+              .json()
+              .then((res) => {
+                dispatch(
+                  setOnError({ value: true, message: res.ErrorMessage })
+                );
+              })
+              .catch((error) =>
+                dispatch(
+                  setOnError({ value: true, message: "An Error Occured" })
+                )
+              );
           });
       } else {
         dispatch(
           setOnError({
             value: true,
             message:
-              'Part Not Found in the current Cycle, Please add the part to the current cycle first.',
+              "Part Not Found in the current Cycle, Please add the part to the current cycle first.",
           })
         );
         setAddPart(true);
       }
     } catch (err) {
-      dispatch(showSnackbar('Error Occured while generating tags'));
+      dispatch(showSnackbar("Error Occured while generating tags"));
       dispatch(
         setOnError({
           value: true,
-          message: 'Tags Not Found, Please create a new tag',
+          message: "Tags Not Found, Please create a new tag",
         })
       );
     }
@@ -337,7 +477,7 @@ const CountingScreen = ({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
         epicor_endpoint,
-        request_type: 'GET',
+        request_type: "GET",
         data: JSON.stringify(values),
       },
       stringify: false,
@@ -348,8 +488,8 @@ const CountingScreen = ({
           endpoint: `/erp_woodland/resolve_api`,
           postPayload: {
             epicor_endpoint: post_endpoint,
-            request_type: 'POST',
-            data: JSON.stringify({ ...data, RowMod: 'U', CycleStatus: 3 }),
+            request_type: "POST",
+            data: JSON.stringify({ ...data, RowMod: "U", CycleStatus: 3 }),
           },
           stringify: false,
         })
@@ -360,45 +500,41 @@ const CountingScreen = ({
             dispatch(
               setOnSuccess({
                 value: true,
-                message: 'Part Added Successfully.',
+                message: "Part Added Successfully.",
               })
             );
           })
           .catch((err) => {
-            err.json().then((res) => {
-              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
-            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(
-            //     setOnError({
-            //       value: true,
-            //       message: message,
-            //     })
-            //   );
-            // });
+            err
+              .json()
+              .then((res) => {
+                dispatch(
+                  setOnError({ value: true, message: res.ErrorMessage })
+                );
+              })
+              .catch((error) =>
+                dispatch(
+                  setOnError({ value: true, message: "An Error Occured" })
+                )
+              );
           });
       })
       .catch((err) => {
-        err.json().then((res) => {
-          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
-        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
+        err
+          .json()
+          .then((res) => {
+            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+          })
+          .catch((error) =>
+            dispatch(setOnError({ value: true, message: "An Error Occured" }))
+          );
       });
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => setScreen("initial")}>
           <Ionicons
             name="chevron-back-outline"
             size={24}
@@ -406,7 +542,6 @@ const CountingScreen = ({
           />
         </Pressable>
         <Text style={styles.heading}>Counting Process</Text>
-
         <View style={styles.menu}>
           <Menu
             visible={visible}
@@ -427,12 +562,11 @@ const CountingScreen = ({
               }}
               title="Generate New Tags"
             />
-            {/* <Menu.Item onPress={() => {}} title="Item 2" />
-            <Divider />
-            <Menu.Item onPress={() => {}} title="Item 3" /> */}
+            {/* Additional Menu Items can be added here */}
           </Menu>
         </View>
       </View>
+
       <View style={[globalStyles.dFlexR, styles.detailsContainer]}>
         <View style={styles.row}>
           <View style={styles.column}>
@@ -450,64 +584,139 @@ const CountingScreen = ({
           <View style={styles.column}>
             <Text style={styles.label}>Cycle Date</Text>
             <Text style={styles.value}>
-              {new Date(currentCycle.CycleDate).toISOString().split('T')[0]}
+              {new Date(currentCycle.CycleDate).toISOString().split("T")[0]}
             </Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.label}>Status</Text>
-            <Text style={styles.value}>{currentCycle.CycleStatusDesc}</Text>
+            <Text style={styles.value}>{getCycleScheduleDesc(currentCycle.CycleStatus)}</Text>
           </View>
         </View>
       </View>
-      <View style={styles.countingScreenContainer}>
-        <ScrollView contentContainerStyle={styles.countingScreen}>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.countingScreen}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={{ flex: 1, width: 300 }}>
+          <Text style={{paddingHorizontal: 8}}>Tag Num</Text>
+            <SelectInputValue
+              value={selectedTag.TagNum}
+              onChange={(tag) => {
+                const qty = tag.FrozenQOH ? `${parseFloat(tag.FrozenQOH).toFixed(3)}` : tag.FrozenQOH
+                setBin(tag?.BinNum);
+                setPart(tag?.PartNum);
+                setCountedQty(qty);
+                setNotes(tag?.TagNote);
+                setSelectedTag({ ...tag, label: tag.TagNum, value: tag.TagNum });
+              }}
+              options={tagsData.map((data) => ({
+                ...data,
+                label: data.TagNum,
+                value: data.TagNum,
+              }))}
+              isLoading={false}
+              label="TagNum"
+              handleRefresh={() => {}}
+              placeholder={"Select Tag Number"}
+            />
+          </View>
           <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Part Number </Text>
             <TextInput
               style={styles.input}
               placeholder="Part (Scanning / Enter)"
               value={part}
               onChangeText={setPart}
             />
-            <TouchableOpacity
+         
+            {/* <TouchableOpacity
               style={styles.icon}
               onPress={() => {
-                setCameraState('part');
+                setCameraState("part");
                 setScannerVisible(true);
               }}
             >
               <Ionicons name="scan-outline" size={24} color="#333" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Description </Text>
+            <TextInput
+              style={{...styles.input, color:'black'}}
+              placeholder="Part Description"
+              value={selectedTag?.PartNumPartDescription}
+              onChangeText={(text)=>{
+                setSelectedTag((prev)=>({...prev, PartNumPartDescription: text}))
+              }}
+                multiline={true}
+                numberOfLines={5}
+                textAlignVertical="center"
+                editable={false}
+              
+            />
+            {/* <TouchableOpacity
+              style={styles.icon}
+              onPress={() => {
+                setCameraState("part");
+                setScannerVisible(true);
+              }}
+            >
+              <Ionicons name="scan-outline" size={24} color="#333" />
+            </TouchableOpacity> */}
+          </View>
+          <View style={styles.inputContainer}>
+          <Text style={{paddingHorizontal: 8}}>Bin Num</Text>
             <TextInput
               style={styles.input}
               placeholder="Bin (Scanning / Enter)"
               value={bin}
               onChangeText={setBin}
             />
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.icon}
               onPress={() => {
-                setCameraState('bin');
+                setCameraState("bin");
                 setScannerVisible(true);
               }}
             >
               <Ionicons name="scan-outline" size={24} color="#333" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
-          <TextInput
-            style={styles.inputNoIcon}
-            placeholder="Counted Qty (Manual Input)"
-            value={countedQty}
-            onChangeText={setCountedQty}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.inputNoIcon}
-            placeholder="Notes (Manual Input - If any)"
-            value={notes}
-            onChangeText={setNotes}
-          />
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Counted QTY</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Counted Qty (Manual Input)"
+              value={countedQty}
+              onChangeText={setCountedQty}
+              keyboardType="numeric"
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>UOM</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="UOM"
+              value={selectedTag?.UOM}
+              onChangeText={(text) => {
+                setSelectedTag((prev) => ({ ...prev, UOM: text }));
+              }}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={{paddingHorizontal: 8}}>Notes</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Notes (Manual Input - If any)"
+              value={notes}
+              onChangeText={setNotes}
+            />
+            </View>
         </ScrollView>
         <View style={styles.footer}>
           <TouchableOpacity
@@ -516,26 +725,37 @@ const CountingScreen = ({
           >
             <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.footerButton}
-            onPress={() => {
-              setPart('');
-              setBin('');
-              setCountedQty('');
-              setNotes('');
-            }}
+            onPress={() => setNextConfirm(true)}
           >
-            <Text style={styles.buttonText}>Clear</Text>
-          </TouchableOpacity>
+            <Text style={styles.buttonText}>Next</Text>
+          </TouchableOpacity> */}
         </View>
-      </View>
+      </KeyboardAvoidingView>
+
       <PopUpDialog
         visible={submitConfirm}
         setVisible={setSubmitConfirm}
         handleCancel={() => setSubmitConfirm(false)}
         handleOk={postTag}
         title="Save Changes"
-        message={'Are you sure you want Save details on tag?'}
+        message={"Are you sure you want Save details on tag to proceed to next tag?"}
+      />
+      <PopUpDialog
+        visible={nextConfirm}
+        setVisible={setNextConfirm}
+        handleCancel={() => setNextConfirm(false)}
+        handleOk={() => {
+          setCycleDetailsToCount(false);
+          // if (unPart) {
+          // } else {
+          //   dispatch(showSnackbar("No More parts available for the cycle."));
+          // }
+        }}
+        title="Move to next Part"
+        message={"Are you sure to change the tag?"}
+        loading={loading}
       />
       <TagsPopUp
         visible={genNewTag}
@@ -546,7 +766,7 @@ const CountingScreen = ({
           generateNewTags(value);
         }}
         title="Generate New"
-        message={'Please enter the number of tags to be generated'}
+        message={"Please enter the number of tags to be generated"}
       />
       <PopUpDialog
         visible={addPart}
@@ -554,7 +774,7 @@ const CountingScreen = ({
         handleCancel={() => setAddPart(false)}
         handleOk={addNewPart}
         title="Add New Part"
-        message={'Do you wish to add new part to the cycle?'}
+        message={"Do you wish to add new part to the cycle?"}
       />
     </SafeAreaView>
   );
@@ -563,100 +783,44 @@ const CountingScreen = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
+  textArea: {
+    height: 150, // Adjust height as needed
+    padding: 10,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    textAlignVertical: 'top', // Align text to the top of the TextInput
+    backgroundColor: '#f5f5f5', // Optional: to give a distinct background
+},
   header: {
     padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+    backgroundColor: "#fff", // Ensure header is visible with a background color
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
   },
   heading: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: "600",
     color: globalStyles.colors.darkGrey,
     marginLeft: 20,
   },
-  countingScreenContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  countingScreen: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 10,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 20,
-    width: 300,
-    height: 40,
-    backgroundColor: '#fff',
-  },
-  input: {
-    flex: 1,
-    paddingLeft: 10,
-  },
   menu: {
-    position: 'absolute',
+    position: "absolute",
     right: 18,
   },
-  inputNoIcon: {
-    width: 300,
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingLeft: 10,
-    marginBottom: 20,
-    backgroundColor: '#fff',
-  },
-  icon: {
-    paddingHorizontal: 10,
-  },
-  footer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    position: 'absolute',
-    bottom: 0,
-    paddingVertical: 10,
-    backgroundColor: '#f8f8f8',
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-    width: '100%',
-  },
-  footerButton: {
-    width: 150,
-    height: 50,
-    backgroundColor: globalStyles.colors.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   detailsContainer: {
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
     marginHorizontal: 50,
     marginVertical: 10,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 10,
   },
   column: {
@@ -664,12 +828,74 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   value: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  countingScreenContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  countingScreen: {
+    padding: 20,
+    alignItems: "center",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 20,
+    width: 300,
+    height: 40,
+    backgroundColor: "#fff",
+  },
+  input: {
+    flex: 1,
+    paddingLeft: 10,
+  },
+  inputNoIcon: {
+    width: 300,
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingLeft: 10,
+    marginBottom: 20,
+    backgroundColor: "#fff",
+  },
+  icon: {
+    paddingHorizontal: 10,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 10,
+    backgroundColor: "#f8f8f8",
+    borderTopWidth: 1,
+    borderColor: "#ccc",
+    width: "100%",
+  },
+  footerButton: {
+    width: 300,
+    height: 50,
+    backgroundColor: globalStyles.colors.success,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

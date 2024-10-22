@@ -1,8 +1,5 @@
-import { View, ViewStyle } from "react-native";
+import { View } from "react-native";
 import { styles } from "./styles";
-import { ReactNode } from "react";
-
-
 
 export const Row = ({
   children,

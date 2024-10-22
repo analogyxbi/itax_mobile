@@ -1,15 +1,16 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import {
   AntDesign,
   Feather,
-  FontAwesome,
   FontAwesome5,
-  Ionicons,
-  MaterialCommunityIcons,
+  Ionicons
 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { BarCodeScanner } from 'expo-barcode-scanner';
+import * as ImagePicker from 'expo-image-picker';
+import _ from 'lodash';
 import { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -17,44 +18,39 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  Platform,
-  FlatList,
+  View
 } from 'react-native';
 import {
+  ActivityIndicator,
   Button,
-  Checkbox,
-  Portal,
-  SegmentedButtons,
+  Divider,
+  MD2Colors,
   Modal,
-  FAB,
+  Portal,
+  SegmentedButtons
 } from 'react-native-paper';
-import { globalStyles } from '../style/globalStyles';
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import getClientErrorObject from '../utils/getClientErrorObject';
-import { ActivityIndicator, MD2Colors } from 'react-native-paper';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import _ from 'lodash';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
-import CustomDatatable from '../components/CustomDatatable';
-import LinesCard from './components/LinesCard';
-import { setPOdataResponse } from './reducer/poReceipts';
-import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
-import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
-import Transferbackdrop from '../components/Loaders/Transferbackdrop';
-import ExpoCamera from '../components/Camera';
-import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
-import * as ImagePicker from 'expo-image-picker';
 import AttachedImage from '../components/AttachedImage';
-import LineComponent from './components/LineComponent';
+import BarcodeScannerComponent from '../components/BarcodeScannerComponent';
+import ExpoCamera from '../components/Camera';
+import CustomDatatable from '../components/CustomDatatable';
 import ImagePreview from '../components/ImagePreview';
+import ErrorBackdrop from '../components/Loaders/ErrorBackdrop';
+import SuccessBackdrop from '../components/Loaders/SuccessBackdrop';
+import Transferbackdrop from '../components/Loaders/Transferbackdrop';
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
 } from '../components/Loaders/toastReducers';
-import getClientErrorMessage, { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
+import { globalStyles } from '../style/globalStyles';
+import { getClientPOErrorMessage } from '../utils/getClientErrorMessage';
+import LineComponent from './components/LineComponent';
+import LinesCard from './components/LinesCard';
+import { setPOdataResponse } from './reducer/poReceipts';
+import PopUpDialog from '../components/PopUpDialog';
+import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveAllJobDetails, saveJobDetails } from './utils';
 
 const initialFormdata = {
   poNum: '',
@@ -64,6 +60,7 @@ const initialFormdata = {
   rel: '',
   order_qty: '',
   arrived_qty: '',
+  qty_type: 'Supplier',
   input: '',
   note: '',
   WareHouseCode: '',
@@ -75,12 +72,10 @@ const POReceipt = () => {
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
   const [localPoData, setLocalPoData] = useState({ 1: podata });
   const [hasPermission, setHasPermission] = useState(null);
-  const [warehouseCodes, setWarehouseCodes] = useState([]);
   const [isNewPackSlip, setIsNewpackslip] = useState(true);
   const [createPackslipLoading, setCreatepackslipLoading] = useState(false);
   const navigation = useNavigation();
   const [tabValue, setTabvalue] = useState('1');
-  const [cameraState, setCameraState] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [vendorNameSearch, setVendorNameSearch] = useState('');
   const [scannerVisible, setScannerVisible] = useState(false);
@@ -93,7 +88,6 @@ const POReceipt = () => {
   const [selectedPackSlip, setSelectedPackslip] = useState({});
   const [packslipLoading, setPackslipLoading] = useState(false);
   const [isPosLoading, setIsPOsLoading] = useState(false);
-  const [selectedPOdata, setSelectedPOdata] = useState({});
   const [existingPackslips, setExistingPackSlips] = useState([]);
   const [existingPackslipLoading, setExistingPackslipLoading] = useState(false);
   const [currentLine, setCurrentLine] = useState({});
@@ -102,16 +96,23 @@ const POReceipt = () => {
   const [saved, setSaved] = useState(false);
   const [bins, setBins] = useState([]);
   const [filteredPos, setFilteredPos] = useState([]);
-  const [openBarcodescreen, setOpenBarcodeScreen] = useState(false);
   const [customTableState, setCustomTableState] = useState({
     page: 1,
     totalPages: 1000,
     limit: 100,
   });
-  const [whseBin, setWhseBin] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [packslipButtonCliked, setPackslipButtonClicked] = useState(false);
+  const [createPackslipResponse, setCreatePackslipResponse] = useState();
+  const [currentPacklines, setCurrentPacklines] = useState([]);
+  const [uoms, setUoms] = useState([]);
+  const [uomMap, setUomMap] = useState({})
+  const [supplierQty, setSupplierQty] = useState('');
+  const [ourQty, setOurQty] = useState('');
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [doors, setDoors] = useState([]);
 
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
@@ -135,22 +136,6 @@ const POReceipt = () => {
     setScannerVisible(false);
   };
 
-  const renderWarehouseOptions = (values) => {
-    const result = values.map((val) => ({
-      ...val,
-      label: val.WarehouseCode,
-      value: val.WarehouseCode,
-    }));
-    return result;
-  };
-
-  // if (hasPermission === null) {
-  //     return <Text>Requesting for camera permission</Text>;
-  // }
-  // if (hasPermission === false) {
-  //     return <Text>No access to camera</Text>;
-  // }
-
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -159,32 +144,6 @@ const POReceipt = () => {
     getBarCodeScannerPermissions();
     setLocalPoData({});
   }, []);
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true);
-    if (data.startsWith('http')) {
-      Alert.alert(
-        'Open URL',
-        `Do you want to open this URL?\n${data}`,
-        [
-          {
-            text: 'Cancel',
-            onPress: () => setScanned(false),
-            style: 'cancel',
-          },
-          {
-            text: 'Open',
-            onPress: () => {
-              setScanned(false);
-              Linking.openURL(data);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } else {
-      alert(`Bar code with type ${type} and data ${data} has been scanned!`);
-    }
-  };
 
   const getPoReciept = async () => {
     setLoading(true);
@@ -193,14 +152,9 @@ const POReceipt = () => {
     setPackSlipNUm('');
     setExistingPackSlips([]);
     setIsNewpackslip(true);
-    // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
-    // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls`;
+    setDoors([]);
     if (poNum) {
-      // let filterQuery = encodeURI(`PONum eq ${poNum}`);
-      // epicor_endpoint = epicor_endpoint + `&$filter=${filterQuery}`
-      // const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=PONum eq ${poNum}`
       const epicor_endpoint = `/Erp.BO.POSvc/POes?$filter=PONum eq ${poNum}&$expand=PODetails`;
-      // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$select=PackSlip,Company,PORel,ShipViaCode,PONum,RcvDtls/BinNum,RcvDtls/PONum,RcvDtls/POLine,RcvDtls/PackLine,RcvDtls/WareHouseCode,VendorNumName&$expand=RcvDtls&$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -212,7 +166,6 @@ const POReceipt = () => {
               dispatch(showSnackbar('PO Not Found'));
             } else {
               setPOData(() => json.data.value);
-              console.log({ json });
             }
             setLoading(false);
           })
@@ -220,11 +173,7 @@ const POReceipt = () => {
             setLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // getClientErrorMessage(err).then(({ message }) => {
-            //   dispatch(showSnackbar(message));
-            // });
           });
       } catch (err) {
         setLoading(false);
@@ -239,7 +188,7 @@ const POReceipt = () => {
     setExistingPackslipLoading(true);
     if (poNum) {
       setIsNewpackslip(false);
-      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum}&$expand=RcvDtls&$select=PONum,PackSlip,RcvDtls`;
+      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum}&$expand=RcvDtls&$select=PONum,PackSlip,SysRowID,RcvDtls`;
       try {
         AnalogyxBIClient.post({
           endpoint: `/erp_woodland/resolve_api`,
@@ -256,7 +205,6 @@ const POReceipt = () => {
             setIsNewpackslip(true);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
@@ -269,10 +217,40 @@ const POReceipt = () => {
     }
   };
 
+
+  const fetchCurrentPacklines = ()=>{
+    if (poNum && packSLipNUm) {
+      setPackslipLoading(true);
+      const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$filter=PONum eq ${poNum} and PackSlip eq '${packSLipNUm}'&$expand=RcvDtls&$select=PONum,PackSlip,SysRowID,RcvDtls`;
+      try {
+        AnalogyxBIClient.post({
+          endpoint: `/erp_woodland/resolve_api`,
+          postPayload: { epicor_endpoint, request_type: 'GET' },
+          stringify: false,
+        })
+          .then(( {json} ) => {
+            setSelectedPackslip(json?.data?.value ? json.data.value[0] : {})
+            setPackslipLoading(false);
+          })
+          .catch((err) => {
+            setPackslipLoading(false);
+            err.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          });
+      } catch (err) {
+        setPackslipLoading(false);
+        dispatch(showSnackbar('Something went wrong'));
+      }
+    } else {
+      dispatch(showSnackbar('PO and Packslip is required'));
+      setPackslipLoading(false);
+    }
+  }
+
   const fetchPackslips = () => {
     setPackslipLoading(true);
     if (poNum) {
-      // setIsNewpackslip(false);
       const epicor_endpoint = `/Erp.BO.PORelSearchSvc/PORelSearches?$filter=PONum eq ${poNum}`;
       try {
         AnalogyxBIClient.post({
@@ -283,19 +261,15 @@ const POReceipt = () => {
           .then(({ json }) => {
             setPackSlipData(json.data.value);
             setPackslipLoading(false);
-            // setIsNewpackslip(false);
           })
           .catch((err) => {
             setPackslipLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-            // setIsNewpackslip(true);
           });
       } catch (err) {
         setPackslipLoading(false);
-        // setIsNewpackslip(true);
       }
     } else {
       dispatch(showSnackbar('Enter the PO Num first'));
@@ -306,47 +280,20 @@ const POReceipt = () => {
   useEffect(() => {
     if (tabValue === '2' && isNewPackSlip) {
       fetchPackslips();
+    }else if(tabValue === '2' && !isNewPackSlip){
+      fetchCurrentPacklines();
     }
   }, [tabValue]);
 
-  const getWareHouseList = (warehouseCode) => {
-    setFormdata(prev => ({...prev, WareHouseCode: warehouseCode }))
-    const filter = encodeURI(`WarehouseCode eq '${warehouseCode}'`);
-    const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}&$top=1000`;
-    const postPayload = {
-      epicor_endpoint,
-      request_type: 'GET',
-    };
-    // if (poNum) {
-    //   let filterQuery = encodeURI(`PONum eq ${poNum}`);
-    //   epicor_endpoint.concat(`&$filter=${filterQuery}`);
-    // }
-    try {
-      AnalogyxBIClient.post({
-        endpoint: `/erp_woodland/resolve_api`,
-        postPayload,
-        stringify: false,
-      })
-        .then(({ json }) => {
-          // setWarehouseCodes(() => json.data.value);
-          setBins(() => json.data.value);
-        })
-        .catch((err) => {
-          err.json().then((res) => {
-            dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
-          }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-          // setLoading(false);
-        });
-    } catch (err) {
-      // setLoading(false);
-    }
-  };
   const onChangeText = (val, name) => {
     setFormdata((form) => ({ ...form, [name]: val }));
     if (name === 'WareHouseCode') {
-      const filter = encodeURI(`WarehouseCode eq '${val}'`);
-      const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${filter}`;
+      const warehouseFilter = encodeURI(`WarehouseCode eq '${val}'`);
+      const inactiveFilter = encodeURI('InActive eq false');
+
+      // Combine the filters using the `and` operator
+      const combinedFilter = `${warehouseFilter} and ${inactiveFilter}`;
+      const epicor_endpoint = `/Erp.BO.WhseBinSvc/WhseBins?$select=WarehouseCode,BinNum&$filter=${combinedFilter}&$top=10000`;
       const postPayload = {
         epicor_endpoint,
         request_type: 'GET',
@@ -363,7 +310,6 @@ const POReceipt = () => {
             dispatch(showSnackbar(`Bins fetched for ${val}`));
           })
           .catch((err) => {
-            // setLoading(false);
             setRefreshing(false);
             dispatch(
               showSnackbar(
@@ -393,6 +339,7 @@ const POReceipt = () => {
     } else {
       setTabvalue('2');
     }
+    setPackslipButtonClicked(true);
   };
 
   const createPackSlip = () => {
@@ -422,18 +369,23 @@ const POReceipt = () => {
           },
           stringify: false,
         })
-          .then(({ json }) => {
+          .then(async({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
-            attachments.forEach(async (data)=> await uploadImage(data, packSLipNUm, json.data.SysRowID))
+            setCreatePackslipResponse(json?.data)
             setCreatepackslipLoading(false);
             setTabvalue('2');
+            const poDetails = (POData && POData[0]?.PODetails) || [];
+            if (poDetails.length > 0 && poDetails?.some(detail => detail.ClassID === "030")) {
+              const jobResponse = await getDoors(poNum);
+              console.log(jobResponse)
+              setDoors(jobResponse);
+            }
           })
           .catch((err) => {
             dispatch(showSnackbar('Error adding the Packslip'));
             setCreatepackslipLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
@@ -470,8 +422,6 @@ const POReceipt = () => {
               [pageValue]: json?.data?.value,
             }));
             setFilteredPos(json.data.value);
-            3;
-
             setCustomTableState((prev) => ({
               ...prev,
               page: pageValue,
@@ -482,7 +432,6 @@ const POReceipt = () => {
             setIsPOsLoading(false);
             err.json().then((res) => {
               dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-              // console.log({ res });
             }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
           });
       } catch (err) {
@@ -498,10 +447,6 @@ const POReceipt = () => {
       }));
       setIsPOsLoading(false);
     }
-    // } else {
-    //   dispatch(showSnackbar('Enter the vendor name first'));
-    //   setIsPOsLoading(false)
-    // }
   };
 
   const onChangeSearchQuery = (val) => {
@@ -515,7 +460,6 @@ const POReceipt = () => {
   };
 
   useEffect(() => {
-    // getWareHouseList()
     if (showPOModal && _.isEmpty(localPoData)) {
       searchPoNum();
     }
@@ -523,14 +467,10 @@ const POReceipt = () => {
 
   const onSelectPackslip = (po) => {
     setPackSlipNUm(po?.PackSlip);
-    if (!isNewPackSlip) {
-      setSelectedPackslip(po);
-    }
   };
 
-  const onSelectLine = (po) => {
-    // getWareHouseList(po?.WarehouseCode);
-    setFormdata(prev => ({...prev, WareHouseCode: po?.WarehouseCode}))
+  const onSelectLine = async(po) => {
+    setFormdata(prev => ({ ...prev, WareHouseCode: po?.WarehouseCode, BinNum: '', input: '' }))
     const poDetails = (POData && POData[0]?.PODetails) || [];
     const selectedPo = poDetails.find((da) => da.POLine === po.POLine);
     if (isNewPackSlip && selectedPo) {
@@ -538,12 +478,63 @@ const POReceipt = () => {
         ...po,
         DocUnitCost: selectedPo?.DocUnitCost,
         UnitCost: selectedPo?.UnitCost,
+        ClassID: selectedPo?.ClassID
       });
     } else {
       setCurrentLine(po);
     }
     setTabvalue('3');
+    setIsSaved(false);
   };
+
+  const fetchUoms = () => {
+    const epicor_endpoint = `/BaqSvc/UOMCOV/`;
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/resolve_api`,
+      postPayload: {
+        epicor_endpoint,
+        request_type: 'GET',
+      },
+      stringify: false,
+    })
+      .then(({ json }) => {
+        setUoms(json?.data?.value);
+        saveToState(json?.data?.value)
+      })
+      .catch(err => console.log(err))
+  }
+  useEffect(() => {
+    fetchUoms()
+  }, [])
+ 
+  function saveToState(data) {
+    // Create conversion map
+    const conversionMap = data.reduce((map, item) => {
+      map[item.UOMConv_UOMCode] = {
+        factor: parseFloat(item.UOMConv_ConvFactor),
+        baseUOM: item.UOMClass_BaseUOMCode
+      };
+      return map;
+    }, {});
+    setUomMap(()=> conversionMap)
+  }
+ 
+  // Function to convert from one UOM to another
+  function convertQuantity(value, fromUOM, toUOM) {
+    if (fromUOM === toUOM) return value;
+    const fromConv = uomMap[fromUOM];
+    const toConv = uomMap[toUOM];
+    if (!fromConv || !toConv) {
+      throw new Error('Conversion factor not found for the given UOM codes');
+    }
+    // Convert from 'fromUOM' to base UOM
+    const valueInBaseUOM = value * fromConv.factor;
+    // Convert from base UOM to 'toUOM'
+    const result = valueInBaseUOM / toConv.factor;
+    
+    // Return the result rounded to two decimal places
+    return result.toFixed(2);
+  }
 
   const handleSave = (reverse) => {
     dispatch(
@@ -562,33 +553,35 @@ const POReceipt = () => {
       AutoReceipt: false,
       POType: POData[0]?.POType,
       Received: reverse,
-      ReceivedTo: 'PUR-STK',
+      ReceivedTo: currentLine?.TranType,
       ReceivedComplete: false,
       ArrivedDate: today.toISOString(),
-      VendorQty: formData.input,
-      PORelArrivedQty: formData?.input,
+      PORelArrivedQty: ourQty,
       POLine: currentLine?.POLine,
       PORelNum: currentLine?.PORelNum,
       PartNum: currentLine?.POLinePartNum,
-      DocVendorUnitCost: currentLine.DocUnitCost
-        ? currentLine.DocUnitCost
-        : '0',
+      DocVendorUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       DocUnitCost: currentLine.DocUnitCost ? currentLine.DocUnitCost : '0',
       VendorUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       OurUnitCost: currentLine.UnitCost ? currentLine.UnitCost : '0',
       BinNum: formData?.BinNum,
       EnableBin: true,
-      WareHouseCode: currentLine?.WarehouseCode || formData?.WareHouseCode,
-      OurQty: formData.input,
-      InputOurQty: formData.input,
+      WareHouseCode: formData?.WareHouseCode || currentLine?.WareHouseCode,
+      OurQty: ourQty,
+      InputOurQty: ourQty,
+      VendorQty: supplierQty,
       IUM: currentLine?.IUM,
       PUM: currentLine?.PUM,
       RowMod: !reverse ? 'U' : 'A',
+      JobNum: currentLine?.JobNum,
+      JobSeq: currentLine?.JobSeq,
+      JobSeqType: currentLine?.JobSeqType,
+      QtyOption: formData?.qty_type || currentLine?.QtyOption,
     };
     if (currentLine.PackLine) {
       receipt.PackLine = currentLine.PackLine;
-      receipt.WareHouseCode = currentLine?.WareHouseCode;
-      receipt.BinNum = currentLine?.BinNum;
+      receipt.WareHouseCode = formData?.WareHouseCode || currentLine?.WareHouseCode;
+      receipt.BinNum = formData?.BinNum || currentLine?.BinNum;
     }
     const postPayload = {
       Company: POData[0]?.Company,
@@ -613,23 +606,22 @@ const POReceipt = () => {
       },
       stringify: false,
     })
-      .then(({ json }) => {
+      .then(async ({ json }) => {
         setSaved(true);
+        if (currentLine?.ClassID === "030" && !_.isEmpty(doors)) {
+          const currentDoor = doors?.filter(door => door.PORel_POLine == currentLine?.POLine && door.PORel_PORelNum == currentLine?.PORelNum)
+          const keys = ["JobHead_UserChar1", 'PORel_PONum', 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
+          await saveJobDetails(currentDoor, keys, ourQty);
+        }
         dispatch(setIsLoading({ value: false, message: '' }));
         dispatch(setOnSuccess({ value: true, message: '' }));
-        setFormdata((prev) => ({ ...prev, BinNum: '', input: '' }));
         setIsSaved(true)
       })
       .catch((err) => {
         dispatch(setIsLoading({ value: false, message: '' }));
-        getClientPOErrorMessage(err).then(({message}) => {
-          dispatch(
-            setOnError({
-              value: true,
-              message: message,
-            })
-          );
-        });
+        err.json().then((res) => {
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   };
 
@@ -654,18 +646,19 @@ const POReceipt = () => {
   };
 
 
-  const uploadImage = (data, packslip_id, packslip_fk) => {
+  const uploadImage = (data, packslip_id, packslip_fk, onSuccess) => {
     const payload = {
       packslip_fk,
       packslip_id,
       img_string: data.base64,
       img_format: data.mimeType
     }
-    console.log("UPLOAFING", payload)
-    AnalogyxBIClient.post({endpoint:`/erp_woodland/save_po_images`, 
-      postPayload:payload,
+
+    AnalogyxBIClient.post({
+      endpoint: `/erp_woodland/save_po_images`,
+      postPayload: payload,
       stringify: false,
-    }).then(({json})=> console.log({json})).catch((err)=> console.log({err}))
+    }).then(({ json }) => { console.log({ json }); (onSuccess) && onSuccess(); }).catch((err) => dispatch(showSnackbar("error uploading image")))
   }
 
   const captureImage = async () => {
@@ -681,15 +674,85 @@ const POReceipt = () => {
     if (!result.canceled) {
       // Do something with the captured image URI
       setAttachments((prev) => [...prev, ...result.assets]);
-      // uploadImage(result.assets[0])
-      // You may want to set the captured image URI to state or handle it in any way your application requires
     }
   };
   const removeImage = (indexToRemove) => {
     setAttachments(attachments.filter((_, index) => index !== indexToRemove));
   };
 
+  const handleUploadImages = async() => {
+    if (!packSLipNUm) {
+      dispatch(showSnackbar('Select a Packslip first'));
+      return;
+    }
+    const rowId = createPackslipResponse?.SysRowID;
+    attachments?.forEach(async (data) => await uploadImage(data, packSLipNUm, rowId, () => {
+      dispatch(setOnSuccess({ value: true, message: 'Files Uploaded Successfully' }));
+      setAttachments([]);
+    }));
+  }
+  // dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
 
+
+  const receivedAllLines = async () => {
+    if(packslipData?.length > 0){
+      let linesToExclude = [];
+      packslipData?.forEach(data => {
+        if((data?.XRelQty - data?.ArrivedQty) < 0){
+          return linesToExclude.push(data);
+        }
+      })
+      if(linesToExclude?.length > 0){
+        dispatch(setOnError({value: true, message: "Can't receive all the items, when there is more Arrived qty than Ordered Qty"}))
+      }else{
+        if (createPackslipResponse) {
+          try{
+            dispatch(setIsLoading({ value: true, message: 'Creating Mass Receipts' }));
+            const postPayload = {
+              vendorNum: POData[0]?.VendorNum,
+              purPoint: '',
+              packSlip: packSLipNUm,
+              intQueId: 0,
+              poNum: POData[0]?.PONum,
+              ReceiveAllLines: true,
+              ipReceived:true,
+              ds: {
+                RcvHead: [createPackslipResponse]
+              }
+            }
+            const epicor_endpoint = `/Erp.BO.ReceiptSvc/CreateMassReceipts`;
+            const response = await createMassReceipts(epicor_endpoint, postPayload, dispatch);
+            const onChange = await onChangeDTLPOSelected({...response, poNum:POData[0]?.PONum })
+            const commitPayload = await receiveAllLines(onChange, POData, packSLipNUm, dispatch);
+            await commitReceivedData(commitPayload, dispatch);
+            const poDetails = (POData && POData[0]?.PODetails) || [];
+            if (poDetails.length > 0 && poDetails?.some(detail => detail.ClassID === "030")) {
+              try {
+                const keys = ["JobHead_UserChar1", 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum', 'ReceiptQty'];
+                await saveAllJobDetails(doors, keys, poNum);
+            } catch (error) {
+                dispatch(setIsLoading({ value: false, message: '' }));
+                dispatch(setOnError({ value: true, message: 'Failed to save job details' }));
+            }
+            }
+            dispatch(setIsLoading({ value: false, message: '' }));
+            dispatch(setOnSuccess({ value: true, message: 'Received All Lines' }));
+            setTimeout(()=>{
+              fetchPackslips();
+            })
+          }catch(error){
+            error.json().then((res) => {
+              dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+            }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+          } finally {
+            dispatch(setIsLoading({ value: false, message: '' }));
+        }
+        } else {
+          dispatch(showSnackbar("Something went wrong!"))
+        }
+      }
+    }
+  }
 
 
   return (
@@ -699,7 +762,7 @@ const POReceipt = () => {
           <BarcodeScannerComponent
             closeScanner={closeScanner}
             captureDetails={captureDetails}
-            // cameraState={cameraState}
+          // cameraState={cameraState}
           />
         </View>
       ) : cameraVisible ? (
@@ -730,6 +793,16 @@ const POReceipt = () => {
               }, 500);
             }}
           />
+          <PopUpDialog
+            title="Confirm Receive all"
+            message="Are you sure you want to Receive all?"
+            visible={openConfirmModal}
+            setVisible={setOpenConfirmModal}
+            handleOk={() => {
+              setOpenConfirmModal(false);
+              receivedAllLines();
+            }}
+            handleCancel={() => setOpenConfirmModal(false)} />
 
           <View style={styles.header}>
             <Pressable onPress={() => navigation.goBack()}>
@@ -770,7 +843,7 @@ const POReceipt = () => {
                 {
                   value: '2',
                   label: 'Receipt',
-                  disabled: _.isEmpty(packSLipNUm) || _.isEmpty(POData),
+                  disabled: _.isEmpty(packSLipNUm) || _.isEmpty(POData) || !packslipButtonCliked,
                   icon: () => (
                     <FontAwesome5
                       name="receipt"
@@ -1027,65 +1100,89 @@ const POReceipt = () => {
                     </Text>
                   </TouchableOpacity>
                 )}
-                <View
-                  style={{
-                    width: 200,
-                    alignSelf: 'flex-end',
-                    paddingHorizontal: 10,
-                  }}
-                >
-                  <Button
-                    type="text"
-                    // buttonColor={globalStyles.colors.primary}
-                    mode="outlined"
-                    // icon="camera"
-                    // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
-                    onPress={captureImage}
-                  >
-                    Upload Document
-                  </Button>
-                </View>
-                <View
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'flex-start',
-                    flexDirection: 'column',
-                    width: '100%',
-                  }}
-                >
-                  <ScrollView horizontal={true} style={styles.scrollView}>
-                    {attachments.map((item, index) => (
-                      <TouchableOpacity
-                        onPress={() => handleImagePress(item.base64)}
-                      >
-                        <AttachedImage
-                          key={index}
-                          imageBase64={item.base64}
-                          onRemove={() => removeImage(index)}
-                          handleImagePress={() => {}}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                    {previewImage && (
-                      <ImagePreview
-                        imageBase64={previewImage}
-                        onClose={handleClosePreview}
-                      />
-                    )}
-                  </ScrollView>
-                </View>
               </View>
             )}
             {tabValue == '2' && (
               <View style={styles.tabView}>
+                <Button
+                  type="text"
+                  style={{ alignSelf: "flex-end", width: 130 }}
+                  // buttonColor={globalStyles.colors.primary}
+                  // mode="outlined"
+                  icon="camera"
+                  // disabled={currentLine.ArrivedQty !== currentLine.XRelQty}
+                  onPress={captureImage}
+                >
+                  {attachments?.length > 0 ? "Add more" : "Attach Images"}
+                </Button>
+                {
+                  attachments.length > 0 && (
+                    <View>
+                      <View
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'flex-start',
+                          flexDirection: 'column',
+                          width: '100%',
+                        }}
+                      >
+                        <ScrollView horizontal={true} style={styles.scrollView}>
+                          {attachments.map((item, index) => (
+                            <TouchableOpacity
+                              onPress={() => handleImagePress(item.base64)}
+                            >
+                              <AttachedImage
+                                key={index}
+                                imageBase64={item.base64}
+                                onRemove={() => removeImage(index)}
+                                handleImagePress={() => { }}
+                              />
+                            </TouchableOpacity>
+                          ))}
+                          {previewImage && (
+                            <ImagePreview
+                              imageBase64={previewImage}
+                              onClose={handleClosePreview}
+                            />
+                          )}
+                        </ScrollView>
+                      </View>
+
+                    </View>
+                  )
+                }
+                {
+                  attachments?.length > 0 &&
+                  <View
+                    style={{
+                      marginTop: 10,
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "space-around",
+                    }}
+                  >
+                    <Button
+                      type="text"
+                      // buttonColor={globalStyles.colors.primary}
+                      // mode="outlined"
+                      icon="upload"
+                      disabled={attachments?.length === 0}
+                      onPress={handleUploadImages}
+                    >
+                      {`Upload ${attachments?.length} ${attachments.length == 1 ? "Image" : "Images"}`}
+                    </Button>
+                  </View>
+                }
+                <Divider bold />
+
                 {!_.isEmpty(selectedPackSlip) ? (
-                  <View style={{ height: '100%' }}>
-                    {/* <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchExistingPackslips} >
+                  <View style={{ height: '100%', marginTop: 5 }}>
+                    <TouchableOpacity style={{ width: 120, alignSelf: "flex-end" }} onPress={fetchCurrentPacklines} >
                       <Text style={{ color: globalStyles.colors.primary, alignSelf: "flex-end" }}>Refresh</Text>
-                    </TouchableOpacity> */}
-                    <ScrollView>
-                      {existingPackslipLoading && (
+                    </TouchableOpacity>
+                    <ScrollView style={{ maxHeight: "90%" }}>
+                      {packslipLoading && (
                         <ActivityIndicator
                           animating={true}
                           color={MD2Colors.red800}
@@ -1101,7 +1198,7 @@ const POReceipt = () => {
                         Packslip: {packSLipNUm}
                       </Text>
                       {selectedPackSlip &&
-                      selectedPackSlip?.RcvDtls?.length > 0 ? (
+                        selectedPackSlip?.RcvDtls?.length > 0 ? (
                         selectedPackSlip?.RcvDtls?.map((po) => (
                           <LinesCard
                             data={po}
@@ -1120,7 +1217,7 @@ const POReceipt = () => {
                   </View>
                 ) : (
                   <View style={{ height: '100%' }}>
-                    <ScrollView>
+                    <ScrollView style={{ maxHeight: "85%" }}>
                       {packslipLoading && (
                         <ActivityIndicator
                           animating={true}
@@ -1150,6 +1247,9 @@ const POReceipt = () => {
                         </Text>
                       )}
                     </ScrollView>
+                    <TouchableOpacity style={[styles.receiveButton, { bottom: 40 }]} onPress={() => setOpenConfirmModal(true)} >
+                      <Text style={styles.receiveButtonText}>Receive All</Text>
+                    </TouchableOpacity>
                   </View>
                 )}
               </View>
@@ -1165,10 +1265,17 @@ const POReceipt = () => {
                     bins,
                     onChangeText,
                     isNewPackSlip,
+                    setIsSaved,
                     isSaved,
                     packSLipNUm,
-                    setFormdata
+                    setFormdata,
+                    convertQuantity,
+                    supplierQty, 
+                    setSupplierQty, 
+                    ourQty, 
+                    setOurQty
                   }}
+                  warehouse={formData?.WareHouseCode || currentLine?.WarehouseCode}
                 />
               </View>
             )}
@@ -1240,9 +1347,10 @@ const styles = StyleSheet.create({
     backgroundColor: globalStyles.colors.success,
     padding: 10,
     borderRadius: 5,
+    marginLeft: 10,
     position: 'absolute',
     bottom: 10,
-    width: '100%',
+    width: '94%',
     zIndex: 10,
   },
   receiveButtonText: {

@@ -1,7 +1,7 @@
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { AnalogyxBIClient } from '@analogyxbi/connection';
+import { FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,11 +14,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
+import packageJson from "../../app.json";
 import { logout } from '../loginscreen/authSlice';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-// import { logoutUser } from '../loginscreen/actions/actions';
-// import { clearAllTabs } from '../welcome/actions/actions';
-import packageJson from "../../package.json"
+import { globalStyles } from '../style/globalStyles';
 const windowHeight = Dimensions.get('window').height;
 const windowWidth = Dimensions.get('window').width;
 
@@ -120,6 +118,14 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
         <Text style={styles.optionText}>Help</Text>
       </Pressable>
 
+      <Pressable
+        onPress={() => navigation.navigate('PrivacyPolicy')}
+        style={styles.option}
+      >
+        <MaterialIcons name="policy" size={18} color="black" style={{ marginRight: 10 }} />
+        <Text style={styles.optionText}>Privacy Policy</Text>
+      </Pressable>
+
       <View
         style={{
           width: windowWidth,
@@ -136,7 +142,7 @@ const ProfileSettings = ({ isAuthenticated, setIsAuthenticated }) => {
         onPress={() => onLogoutPressed()}
         style={styles.logoutButton}
       >
-        <View>{loading ? <ActivityIndicator /> : <Text>Log Out</Text>}</View>
+        <View>{loading ? <ActivityIndicator /> : <Text style={styles.logoutText}>Log Out</Text>}</View>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -150,12 +156,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+
   header: {
     backgroundColor: 'white',
     shadowOffset: { height: 3, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    height: windowHeight * 0.08,
+    height: windowHeight * 0.06,
     alignItems: 'center',
     marginBottom: 10,
     flexDirection: 'row',
@@ -186,12 +193,22 @@ const styles = StyleSheet.create({
   },
 
   logoutButton: {
-    backgroundColor: 'orange',
+    backgroundColor: globalStyles.colors.success,
     alignItems: 'center',
     marginTop: 50,
     width: windowWidth * 0.6,
     alignSelf: 'center',
     padding: 5,
     borderRadius: 5,
+    height: 48,
+
   },
+  logoutText: {
+    color: 'white',
+    textAlign: 'center',
+    verticalAlign: 'middle',
+    marginTop: 10,
+    fontWeight: "600",
+    fontSize: 16
+  }
 });

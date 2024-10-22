@@ -1,9 +1,8 @@
 import React, { useRef } from 'react';
-import { View, Modal, StyleSheet, Text, Button } from 'react-native';
-import ReusableAnimation from '../LottieFiles';
-import Transfer from '../../../assets/Lottie/transfer.json';
-import { TouchableOpacity } from 'react-native-web';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
+import Transfer from '../../../assets/Lottie/transfer.json';
+import ReusableAnimation from '../LottieFiles';
 
 const Transferbackdrop = ({ loading, setLoading }) => {
   const animationRef = useRef(null);

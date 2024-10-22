@@ -1,29 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
-import InitialScreen from './InitialScreen';
-import CountingScreen from './CountingScreen';
-import { useDispatch, useSelector } from 'react-redux';
 import { AnalogyxBIClient } from '@analogyxbi/connection';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, StyleSheet } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
+import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import {
   setIsLoading,
   setOnError,
   setOnSuccess,
 } from '../../components/Loaders/toastReducers';
-import ErrorBackdrop from '../../components/Loaders/ErrorBackdrop';
-import SuccessBackdrop from '../../components/Loaders/SuccessBackdrop';
 import Transferbackdrop from '../../components/Loaders/Transferbackdrop';
+import { showSnackbar } from '../../Snackbar/messageSlice';
 import {
   setCurrentCycle,
   setCycleTags,
+  setScreenLayout,
   setSelectedCycleDetails,
   setTagsData,
 } from '../reducer/inventory';
-import { showSnackbar } from '../../Snackbar/messageSlice';
-import getClientErrorMessage from '../../utils/getClientErrorMessage';
+import CountingScreen from './CountingScreen';
+import InitialScreen from './InitialScreen';
+import { isEmpty } from '../../utils/utils';
 
 export default function CycleApp() {
-  const [screen, setScreen] = useState('initial'); // Initial screen state
-  const { currentCycle, tagsData, selectedCycleDetails } = useSelector(
+  // const [screen, setScreen] = useState('initial'); // Initial screen state
+  const { currentCycle, tagsData, selectedCycleDetails, screen } = useSelector(
     (state) => state.inventory
   );
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
@@ -32,8 +33,8 @@ export default function CycleApp() {
   const [countedQty, setCountedQty] = useState('');
   const [notes, setNotes] = useState('');
   const dispatch = useDispatch();
-
-  function fetchAllTags(isCount = true, showLoading = false) {
+  
+  async function fetchAllTags(isCount = true, showLoading = false) {
     if (showLoading) {
       dispatch(
         setIsLoading({
@@ -43,9 +44,9 @@ export default function CycleApp() {
       );
     }
     const filters = encodeURI(
-      `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCYear eq ${currentCycle.CCYear} and CCMonth eq ${currentCycle.CCMonth})`
+      `(WarehouseCode eq '${currentCycle.WarehouseCode}' and CycleSeq eq ${currentCycle.CycleSeq} and CCYear eq ${currentCycle.CCYear} and CCMonth eq ${currentCycle.CCMonth}) and TagReturned eq false`
     );
-    let endpoint = `/Erp.BO.CountTagSvc/CountTags?$filter=${filters}&top=10000`;
+    let endpoint = `/Erp.BO.CountTagSvc/CountTags?top=300&$filter=${filters}&$skip=0`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
@@ -71,17 +72,8 @@ export default function CycleApp() {
         }
       })
       .catch((err) => {
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   }
@@ -94,10 +86,11 @@ export default function CycleApp() {
       })
     );
     try {
+      let CCDtls = selectedCycleDetails[0].CCDtls 
       const tags = !startCount
-        ? parseInt(currentCycle.TotalParts) + tagNum
-        : parseInt(currentCycle.TotalParts) + 30;
-
+        ? parseInt(currentCycle.TotalParts)
+        : parseInt(CCDtls.length);
+      // const dtl = CCDtls.map((data)=> ({...data,  "PostAdjustment": 2, "PartNumSellingFactor": 1,"PartNumPricePerCode": "E"}))
       let values = {
         ds: {
           CCHdr: [
@@ -108,13 +101,17 @@ export default function CycleApp() {
               EnableStartCountSeq: true,
               EnableVoidBlankTags: false,
               EnableVoidTagsByPart: false,
-              BlankTagsOnly: true,
+              BlankTagsOnly: false,
               NumOfBlankTags: tags,
+              TotalParts: tags,
               RowMod: 'U',
             },
           ],
+          CCDtl: CCDtls
         },
       };
+
+
       const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/GenerateTags';
       AnalogyxBIClient.post({
         endpoint: `/erp_woodland/resolve_api`,
@@ -126,7 +123,6 @@ export default function CycleApp() {
         stringify: false,
       })
         .then(({ json }) => {
-          // delete data.odata
           const newData = {
             ...currentCycle,
             CycleStatus: 1,
@@ -145,27 +141,18 @@ export default function CycleApp() {
             })
           );
           if (startCount) {
-            startCountProcess(newData);
-            // fetchAllTags(false);
+            startCountProcess(json.data.parameters);
           } else {
             fetchAllTags(true);
           }
         })
         .catch((err) => {
-          // getClientErrorMessage(err).then(({ message }) => {
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: message,
-          //     })
-          //   );
-          // });
           err.json().then((res) => {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });
     } catch (err) {
+      console.log({err})
       dispatch(showSnackbar('Error Occured while generating tags'));
       dispatch(
         setOnError({
@@ -219,26 +206,11 @@ export default function CycleApp() {
               ...newData,
             })
           );
-          // dispatch(
-          //   setOnSuccess({
-          //     value: true,
-          //     message: 'Tags generated Successfully.',
-          //   })
-          // );
           fetchAllTags(false, true);
         })
         .catch((err) => {
-          // getClientErrorMessage(err).then(({ message }) => {
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: message,
-          //     })
-          //   );
-          // });
           err.json().then((res) => {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-            // console.log({ res });
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
         });
     } catch (err) {
@@ -253,15 +225,26 @@ export default function CycleApp() {
   }
 
   function startCountProcess(newData) {
+    const details = newData.ds.CCDtl;
     let values = {
       ds: {
         CCHdr: [
           {
-            ...newData,
+            ...currentCycle,
+            CycleStatus: 1,
+            EnablePrintTags: true,
+            EnableReprintTags: true,
+            EnableStartCountSeq: true,
+            EnableVoidBlankTags: false,
+            EnableVoidTagsByPart: false,
+            BlankTagsOnly: false,
+            RowMod: 'U',
           },
         ],
+        CCDtl: [...details]
       },
     };
+
     const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/StartCountSequence';
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
@@ -273,21 +256,12 @@ export default function CycleApp() {
       stringify: false,
     })
       .then(({ json }) => {
-        dispatch(setCurrentCycle({ ...newData, CycleStatus: 2 }));
-        fetchAllTags(false);
+        dispatch(setCurrentCycle({ ...currentCycle, CycleStatus: 2 }));
+        fetchAllTags(false, true);
       })
       .catch((err) => {
-        // getClientErrorMessage(err).then(({ message }) => {
-        //   dispatch(
-        //     setOnError({
-        //       value: true,
-        //       message: message,
-        //     })
-        //   );
-        // });
         err.json().then((res) => {
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-          // console.log({ res });
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });
   }
@@ -336,6 +310,7 @@ export default function CycleApp() {
             NumOfBlankTags: tags,
             RowMod: 'U',
           };
+  
           dispatch(
             setCurrentCycle({
               ...newData,
@@ -353,14 +328,6 @@ export default function CycleApp() {
             dispatch(setOnError({ value: true, message: res.ErrorMessage }));
             // console.log({ res });
           }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-          // getClientErrorMessage(err).then(({ message }) => {
-          //   dispatch(
-          //     setOnError({
-          //       value: true,
-          //       message: message,
-          //     })
-          //   );
-          // });
         });
     } catch (err) {
       dispatch(showSnackbar('Error Occured while generating tags'));
@@ -396,20 +363,21 @@ export default function CycleApp() {
           })
             .then(({ json }) => {
               dispatch(setSelectedCycleDetails(json.data.value));
-              const selectedData = json?.data?.value;
-              const details = selectedData && selectedData[0]?.CCDtls || [];
+              const selectedData = json.data.value[0];
+              const details = selectedData?.CCDtls ? selectedData?.CCDtls : [];
               let values = {
                 ds: {
                   CCHdr: [
                     {
-                      ...currentCycle,
+                      ...selectedData,
                       BlankTagsOnly: false,
                       RowMod: 'U',
                     },
                   ],
-                  CCDtl: details,
+                  CCDtl: details.map((data)=> ({...data, PostStatus: 1, PostAdjustment:2})),
                 },
               };
+
               const epicor_endpoint = '/Erp.BO.CCCountCycleSvc/PostCount';
               AnalogyxBIClient.post({
                 endpoint: `/erp_woodland/resolve_api`,
@@ -431,23 +399,13 @@ export default function CycleApp() {
                   );
                 })
                 .catch((err) => {
-                  
                   err.json().then((res) => {
                     dispatch(setOnError({ value: true, message: res.ErrorMessage }));
                     // console.log({ res });
                   }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-                  // getClientErrorMessage(err).then(({ message }) => {
-                  //   dispatch(
-                  //     setOnError({
-                  //       value: true,
-                  //       message: message,
-                  //     })
-                  //   );
-                  // });
                 });
             })
             .catch((err) => {
-              console.log(err)
               dispatch(setIsLoading({ value: false, message: '' }));
               dispatch(
                 showSnackbar('Error Occured While fetching cycle Details')
@@ -460,7 +418,6 @@ export default function CycleApp() {
       }
 
     } catch (err) {
-      console.log({ err });
       dispatch(showSnackbar('Error Occured while posting count'));
       dispatch(
         setOnError({
@@ -471,11 +428,10 @@ export default function CycleApp() {
     }
   }
 
-  // useEffect(() => {
-  //   if (currentCycle && currentCycle.CycleStatus >= 2) {
-  //     fetchAllTags(false, true);
-  //   }
-  // }, [currentCycle]);
+  useEffect(()=>{
+    fetchAllTags(false, true)
+  },[])
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -503,7 +459,7 @@ export default function CycleApp() {
       />
       {screen === 'initial' ? (
         <InitialScreen
-          setScreen={setScreen}
+          setScreen={(data)=> dispatch(setScreenLayout(data))}
           currentCycle={currentCycle}
           generateTagsAndStartCount={generateTagsAndStartCount}
           loading={isLoading}
@@ -519,12 +475,13 @@ export default function CycleApp() {
           setCountedQty={setCountedQty}
           notes={notes}
           setNotes={setNotes}
-          setScreen={setScreen}
+          setScreen={(data)=> dispatch(setScreenLayout(data))}
           currentCycle={currentCycle}
           loading={isLoading}
           tagsData={tagsData}
           generateNewTags={generateNewTags}
           generateNewCCDtls={generateNewCCDtls}
+          fetchAllTags={fetchAllTags}
         />
       )}
     </SafeAreaView>

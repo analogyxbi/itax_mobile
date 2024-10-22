@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const SelectInput = ({
+const SelectInputValue = ({
   label,
   value,
   options,
@@ -18,7 +18,6 @@ const SelectInput = ({
   isLoading,
   handleRefresh,
   placeholder,
-  containerStyle
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -60,7 +59,7 @@ const SelectInput = ({
   const OptionItem = React.memo(({ item, isSelected, onPress }) => (
     <TouchableOpacity
       style={[styles.option, isSelected && styles.selectedOption]}
-      onPress={() => onPress(item.value)}
+      onPress={() => onPress(item)}
     >
       <Text style={styles.optionText}>{item.value}</Text>
       {isSelected && (
@@ -70,7 +69,7 @@ const SelectInput = ({
   ));
 
   return (
-    <View style={containerStyle ? containerStyle : styles.container}>
+    <View style={styles.container}>
       <TouchableOpacity
         style={styles.inputContainer}
         onPress={() => setModalVisible(true)}
@@ -198,4 +197,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SelectInput;
+export default SelectInputValue;

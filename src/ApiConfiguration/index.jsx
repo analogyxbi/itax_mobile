@@ -1,24 +1,21 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
+import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
   Modal,
-  Alert,
   Pressable,
-  SafeAreaView
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import { AntDesign, Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
-import { globalStyles } from '../style/globalStyles';
-import { useNavigation } from '@react-navigation/native';
-import _ from 'lodash';
-import getClientErrorObject from '../utils/getClientErrorObject';
-import ApiConfigTable from './components/ApiConfigTable';
-import ApiConfigForm from './components/ApiConfigForm';
 import { useDispatch } from 'react-redux';
 import { showSnackbar } from '../Snackbar/messageSlice';
+import { globalStyles } from '../style/globalStyles';
+import getClientErrorObject from '../utils/getClientErrorObject';
+import ApiConfigForm from './components/ApiConfigForm';
+import ApiConfigTable from './components/ApiConfigTable';
 const initialFormData = {
   base_url: '',
   api_username: '',
@@ -55,7 +52,7 @@ const ApiConfiguration = () => {
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) => {
-          dispatch(showSnackbar(res.error));
+          dispatch(showSnackbar(res.message));
         });
       });
   }, []);
@@ -66,7 +63,7 @@ const ApiConfiguration = () => {
       !formData.api_username ||
       !formData.api_password
     ) {
-      return console.log('Please Enter the Required fields');
+      return dispatch(showSnackbar('Please Enter the Required fields'));
     }
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/create_or_update_woodland_api_config`,

@@ -1,4 +1,6 @@
+import { AnalogyxBIClient } from '@analogyxbi/connection';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
   Pressable,
@@ -8,23 +10,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { globalStyles } from '../../style/globalStyles';
-import { useNavigation } from '@react-navigation/native';
-import SelectInput from '../../components/SelectInput';
-import { AnalogyxBIClient } from '@analogyxbi/connection';
-import CyclesListTable from './components/CyclesListTable';
-import { ActivityIndicator } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
+import LoadingBackdrop from '../../components/Loaders/LoadingBackdrop';
+import { setIsLoading } from '../../components/Loaders/toastReducers';
+import SelectInput from '../../components/SelectInput';
+import { showSnackbar } from '../../Snackbar/messageSlice';
+import { globalStyles } from '../../style/globalStyles';
 import {
   setCurrentCycle,
   setCyclesData,
   setSelectedCycleDetails,
   setWarehouses,
 } from '../reducer/inventory';
-import { showSnackbar } from '../../Snackbar/messageSlice';
 import { validateVariable } from '../Utils/InventoryUtils';
-import LoadingBackdrop from '../../components/Loaders/LoadingBackdrop';
-import { setIsLoading } from '../../components/Loaders/toastReducers';
+import CyclesListTable from './components/CyclesListTable';
 
 const InventoryCount = () => {
   const { currentCycle, cyclesData, warehouses } = useSelector(
@@ -81,6 +80,7 @@ const InventoryCount = () => {
   const fetchCycles = () => {
     if (warehouse) {
       setCyclesLoading(true);
+      setCyclesVisible(true);
       const filter = encodeURI(`WarehouseCode eq '${warehouse}'`);
       const epicor_endpoint = `/Erp.BO.CCCountCycleSvc/CCCountCycles?$filter=${filter}&$top=1000`;
       try {
@@ -107,7 +107,6 @@ const InventoryCount = () => {
 
   const onClickSelect = () => {
     dispatch(setCurrentCycle({}));
-    setCyclesVisible(true);
     fetchCycles();
     // if (cyclesData.length == 0) {
     // }
@@ -221,7 +220,10 @@ const InventoryCount = () => {
           <SelectInput
             value={warehouse}
             onChange={(itemValue, data) => {
+              dispatch(setCurrentCycle({}));
+              dispatch(setCyclesData([]));
               setWarehouse(itemValue);
+              setCyclesVisible(false);
             }}
             options={warehouses?.map((data) => ({
               ...data,
@@ -249,10 +251,10 @@ const InventoryCount = () => {
         )}
         {currentCycle && <CycleDetails />}
       </View>
+      
       <TouchableOpacity
-        disabled={validateVariable(currentCycle)}
         style={styles.receiveButton}
-        onPress={() => getSelectedCycleDetails()}
+        onPress={() => !validateVariable(currentCycle) ? getSelectedCycleDetails() : dispatch(showSnackbar('Please select the cycle to proceed further'))}
       >
         <Text style={styles.receiveButtonText}>Next</Text>
       </TouchableOpacity>
@@ -280,7 +282,7 @@ const styles = StyleSheet.create({
     marginLeft: 20,
   },
   countOption: {
-    height: 30,
+    height: 48,
     borderRadius: 10,
     borderColor: globalStyles.colors.success,
     borderWidth: 2,
@@ -315,13 +317,12 @@ const styles = StyleSheet.create({
   },
   receiveButton: {
     backgroundColor: globalStyles.colors.success,
-    padding: 10,
+    padding: 18,
     borderRadius: 5,
     position: 'absolute',
-    bottom: 10,
-    width: '95%',
+    bottom: 40,
+    width: "100%",
     zIndex: 10,
-    marginHorizontal: 10,
   },
   receiveButtonText: {
     color: 'white',

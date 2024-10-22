@@ -52,7 +52,7 @@ const ApiConfiguration = () => {
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) => {
-          dispatch(showSnackbar(res.error));
+          dispatch(showSnackbar(res.message));
         });
       });
   }, []);

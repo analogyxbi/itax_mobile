@@ -244,8 +244,27 @@ const MiscellaneousMaterial = () => {
         let arrData = Object.assign({}, newIssue[0]);
         arrData.ReasonCode = formData.reasonCode;
         arrData.ReasonType = formData.reasonType;
+        arrData.PartNum = formData.PartNum;
+        arrData.FromBinNum = formData.BinNum;
+        arrData.Company = formData.Company;
+        arrData.FromBinNum = formData.BinNum;
+        arrData.UM = formData.UnitOfMeasure;
+        arrData.DimCode = formData.DimCode;
+        arrData.OnHandQty = formData.QuantityOnHand;
+        arrData.OnHandUM = formData.UnitOfMeasure;
+        arrData.TranQty = formData.QuantityAdjust;
+        arrData.FromJobPlant = "MfgSys",
+        arrData.ToJobPlant = "MfgSys",
+        arrData.RowMod = "U",
+        arrData.TreeDisplay = formData.PartNum,
+        arrData.TranType = "STK-UKN",
+        arrData.RequirementUOM = formData.UnitOfMeasure;
+        arrData.PartIUM = formData.UnitOfMeasure;
+        arrData.RequirementUOM = formData.UnitOfMeasure,
+        arrData.FromWarehouseCode = formData.WareHouseCode || formData.WarehouseCode;
         arrData.TranDate = new Date(date)?.toLocaleDateString(),
-          arrData.ReasonCodeDescription = formData.reasonValue;
+        arrData.ReasonCodeDescription = formData.reasonValue;
+        arrData.SysRowID = formData.SysRowID;
         let payload = {
           pdTranQty: formData.QuantityAdjust,
           ds: {

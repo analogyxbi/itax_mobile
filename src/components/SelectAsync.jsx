@@ -55,7 +55,7 @@ const SelectAsync = ({
             } finally {
                 setLoading(false);
             }
-        }, 300),
+        }, 1000),
         [fetchOptions, warehouse]
     );
 

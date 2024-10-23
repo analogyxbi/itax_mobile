@@ -146,7 +146,7 @@ export default function Homepage() {
           />
         </View>
         <Chip style={{ marginRight: 10 }} onPress={() => setIsModalVisible(true)}>
-          {company || "WOOD01"}
+          {company || "NA"}
         </Chip>
         <TouchableOpacity
           style={styles.rightIcon}

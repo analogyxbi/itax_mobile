@@ -51,6 +51,7 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
             EnableSupplierXRef: false,
             EnableLot: false,
             PartNumTrackLots: false,
+            PORelStatus: "C",
             LotNum: "0"
           })),
           RcvHead: response.ds.RcvHead.map(dt => ({
@@ -114,6 +115,22 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
     return response3.json.data.parameters
 
 };
+
+export const updateMaster = async (commitPayload, dispatch) => {
+  const epicor_endpoint = `/Erp.BO.ReceiptSvc/UpdateMaster`;
+  const response3 = await AnalogyxBIClient.post({
+    endpoint: `/erp_woodland/resolve_api`,
+    postPayload: {
+      epicor_endpoint,
+      request_type: 'POST',
+      data: JSON.stringify(commitPayload),
+    },
+    stringify: false,
+  });
+  return response3.json.data.parameters
+
+};
+
 
 export const getDoors = async (PONum)=>{
   console.log(PONum)

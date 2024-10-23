@@ -50,7 +50,7 @@ import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
 import PopUpDialog from '../components/PopUpDialog';
-import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveAllJobDetails, saveJobDetails } from './utils';
+import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveAllJobDetails, saveJobDetails, updateMaster } from './utils';
 
 const initialFormdata = {
   poNum: '',
@@ -536,6 +536,29 @@ const POReceipt = () => {
     return result.toFixed(2);
   }
 
+  const createPayload = (rcvHead, receipt)=>{
+    return {
+      RunChkLCAmtBeforeUpdate: true,
+      RunChkHdrBeforeUpdate: true,
+      ipVendorNum: receipt?.VendorNum,
+      ipPurPoint: "",
+      ipPackSlip: packSLipNUm,
+      ipPackLine: 0,
+      lRunChkDtl: true,
+      lRunChkDtlCompliance: true,
+      lRunCheckCompliance: true,
+      lRunPreUpdate: true,
+      lRunCreatePartLot: true,
+      partNum: "",
+      lotNum: "",
+      lOkToUpdate: true,
+      ds:{
+        RcvHead: [rcvHead],
+        RcvDtl: [receipt]
+      }
+    }
+  }
+
   const handleSave = (reverse) => {
     dispatch(
       setIsLoading({ value: true, message: 'Saving the Receipt. Please wait' })
@@ -575,6 +598,7 @@ const POReceipt = () => {
       RowMod: !reverse ? 'U' : 'A',
       JobNum: currentLine?.JobNum,
       JobSeq: currentLine?.JobSeq,
+      PORelStatus: parseInt(currentLine.XRelQty) <= parseInt(currentLine?.ArrivedQty) + parseInt(ourQty) ? "C" : "O",
       JobSeqType: currentLine?.JobSeqType,
       QtyOption: formData?.qty_type || currentLine?.QtyOption,
     };
@@ -592,11 +616,11 @@ const POReceipt = () => {
       SaveForInvoicing: true,
       Invoiced: false,
       RowMod: !reverse ? 'U' : 'A',
-      ReceivePerson: 'analogyx1',
+      ReceivePerson: 'Warehouse app',
       RcvDtls: [receipt],
     };
 
-    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts?$expand=RcvDtls`;
+    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
@@ -607,7 +631,14 @@ const POReceipt = () => {
       stringify: false,
     })
       .then(async ({ json }) => {
+        console.log({json})
+        const uMasterPayload = createPayload(json.data, receipt);
+        console.log({uMasterPayload})
         setSaved(true);
+        if(receipt?.PORelStatus === "C"){
+          createPayload(json,receipt)
+          await updateMaster(uMasterPayload, dispatch)
+        }
         if (currentLine?.ClassID === "030" && !_.isEmpty(doors)) {
           const currentDoor = doors?.filter(door => door.PORel_POLine == currentLine?.POLine && door.PORel_PORelNum == currentLine?.PORelNum)
           const keys = ["JobHead_UserChar1", 'PORel_PONum', 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
@@ -617,9 +648,36 @@ const POReceipt = () => {
         dispatch(setOnSuccess({ value: true, message: '' }));
         setIsSaved(true)
       })
+      // .then( async ()=>{
+      //   const modifiedResponse = {
+      //     ds: {
+      //       RcvDtl: {
+      //         Selected: true,
+      //         OurQty: dt.OrderQty - dt.PORelArrivedQty,
+      //         InputOurQty: dt.OrderQty - dt.PORelArrivedQty,
+      //         VendorQty: convertQuantity(dt.OrderQty, dt.IUM, dt.PUM),
+      //         ReceivedComplete: true,
+      //         ReceivedQty: dt.OrderQty - dt.PORelArrivedQty,
+      //         Received: true,
+      //         EnableSupplierXRef: false,
+      //         EnableLot: false,
+      //         PartNumTrackLots: false,
+      //         PORelStatus: "C",
+      //         LotNum: "0"
+      //       },
+      //       RcvHead: response.ds.RcvHead.map(dt => ({
+      //         ...dt,
+      //         eshReceived: false,
+      //         PartialReceipt: false,
+      //       })),
+      //     },
+      //   };
+      // })
       .catch((err) => {
+        console.log(err)
         dispatch(setIsLoading({ value: false, message: '' }));
         err.json().then((res) => {
+          console.log({res})
           dispatch(setOnError({ value: true, message: res.ErrorMessage }));
         }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
       });

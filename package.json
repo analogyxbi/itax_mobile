@@ -1,13 +1,15 @@
 {
   "name": "woodland-application",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "main": "node_modules/expo/AppEntry.js",
   "proxy": "http://192.168.0.103:8088",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "expo_apk": "eas build --platform android --local",
+    "expo_ios": "eas build --platform ios --local"
   },
   "dependencies": {
     "@analogyxbi/connection": "^1.0.3",

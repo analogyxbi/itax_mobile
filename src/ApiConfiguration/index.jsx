@@ -63,7 +63,7 @@ const ApiConfiguration = () => {
       !formData.api_username ||
       !formData.api_password
     ) {
-      return console.log('Please Enter the Required fields');
+      return dispatch(showSnackbar('Please Enter the Required fields'));
     }
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/create_or_update_woodland_api_config`,

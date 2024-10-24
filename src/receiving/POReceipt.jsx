@@ -50,7 +50,7 @@ import LineComponent from './components/LineComponent';
 import LinesCard from './components/LinesCard';
 import { setPOdataResponse } from './reducer/poReceipts';
 import PopUpDialog from '../components/PopUpDialog';
-import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveAllJobDetails, saveJobDetails, updateMaster } from './utils';
+import { commitReceivedData, createMassReceipts, getDoors, onChangeDTLPOSelected, receiveAllLines, saveAllJobDetails, saveJobDetails, closeRelease } from './utils';
 
 const initialFormdata = {
   poNum: '',
@@ -631,13 +631,9 @@ const POReceipt = () => {
       stringify: false,
     })
       .then(async ({ json }) => {
-        console.log({json})
-        const uMasterPayload = createPayload(json.data, receipt);
-        console.log({uMasterPayload})
         setSaved(true);
         if(receipt?.PORelStatus === "C"){
-          createPayload(json,receipt)
-          await updateMaster(uMasterPayload, dispatch)
+          await closeRelease({PoNum: poNum, PoLine: currentLine?.POLine, PoRelease: currentLine?.PORelNum }, dispatch)
         }
         if (currentLine?.ClassID === "030" && !_.isEmpty(doors)) {
           const currentDoor = doors?.filter(door => door.PORel_POLine == currentLine?.POLine && door.PORel_PORelNum == currentLine?.PORelNum)
@@ -648,31 +644,6 @@ const POReceipt = () => {
         dispatch(setOnSuccess({ value: true, message: '' }));
         setIsSaved(true)
       })
-      // .then( async ()=>{
-      //   const modifiedResponse = {
-      //     ds: {
-      //       RcvDtl: {
-      //         Selected: true,
-      //         OurQty: dt.OrderQty - dt.PORelArrivedQty,
-      //         InputOurQty: dt.OrderQty - dt.PORelArrivedQty,
-      //         VendorQty: convertQuantity(dt.OrderQty, dt.IUM, dt.PUM),
-      //         ReceivedComplete: true,
-      //         ReceivedQty: dt.OrderQty - dt.PORelArrivedQty,
-      //         Received: true,
-      //         EnableSupplierXRef: false,
-      //         EnableLot: false,
-      //         PartNumTrackLots: false,
-      //         PORelStatus: "C",
-      //         LotNum: "0"
-      //       },
-      //       RcvHead: response.ds.RcvHead.map(dt => ({
-      //         ...dt,
-      //         eshReceived: false,
-      //         PartialReceipt: false,
-      //       })),
-      //     },
-      //   };
-      // })
       .catch((err) => {
         console.log(err)
         dispatch(setIsLoading({ value: false, message: '' }));

@@ -116,8 +116,8 @@ export const createMassReceipts = async (epicor_endpoint, data, dispatch) => {
 
 };
 
-export const updateMaster = async (commitPayload, dispatch) => {
-  const epicor_endpoint = `/Erp.BO.ReceiptSvc/UpdateMaster`;
+export const closeRelease = async (commitPayload, dispatch) => {
+  const epicor_endpoint = `/Erp.BO.POSvc/CloseRelease`;
   const response3 = await AnalogyxBIClient.post({
     endpoint: `/erp_woodland/resolve_api`,
     postPayload: {
@@ -127,6 +127,7 @@ export const updateMaster = async (commitPayload, dispatch) => {
     },
     stringify: false,
   });
+  console.log({response3})
   return response3.json.data.parameters
 
 };

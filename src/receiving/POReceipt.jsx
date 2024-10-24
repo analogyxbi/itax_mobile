@@ -113,7 +113,8 @@ const POReceipt = () => {
   const [ourQty, setOurQty] = useState('');
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [doors, setDoors] = useState([]);
-
+  const [currentRcvHead, setCurrentRcvHead]= useState([])
+  const [poLineInfo,setPOLineInfo] = useState({})
   const handleImagePress = (imageBase64) => {
     setPreviewImage(imageBase64);
   };
@@ -342,6 +343,29 @@ const POReceipt = () => {
     setPackslipButtonClicked(true);
   };
 
+  const fetchRcvHead = async (packslip) => {
+    try{
+      let endpoint = `/Erp.BO.ReceiptSvc/Receipts?`;
+      const filter = encodeURIComponent(`PONum eq ${poNum} and PackSlip eq '${packslip}'`);
+      const epicor_endpoint = endpoint + `$filter=${filter}`
+      const response = await AnalogyxBIClient.post({
+          endpoint:'/erp_woodland/resolve_api',
+          postPayload: {
+            request_type: 'GET',
+            epicor_endpoint
+          },
+          stringify: false,
+      })
+      const {json} = response
+      setCurrentRcvHead(()=> [...json.data.value])
+    }catch(err){
+      dispatch(showSnackbar('Error Fecthing RcvHead'));
+      err.json().then((res) => {
+        dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+      }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+    }
+  }
+
   const createPackSlip = () => {
     setCreatepackslipLoading(true);
 
@@ -372,12 +396,13 @@ const POReceipt = () => {
           .then(async({ json }) => {
             dispatch(showSnackbar('Packslip added succesfully'));
             setCreatePackslipResponse(json?.data)
+            await fetchRcvHead(packSLipNUm)
             setCreatepackslipLoading(false);
             setTabvalue('2');
             const poDetails = (POData && POData[0]?.PODetails) || [];
             if (poDetails.length > 0 && poDetails?.some(detail => detail.ClassID === "030")) {
               const jobResponse = await getDoors(poNum);
-              console.log(jobResponse)
+        
               setDoors(jobResponse);
             }
           })
@@ -469,6 +494,58 @@ const POReceipt = () => {
     setPackSlipNUm(po?.PackSlip);
   };
 
+
+  const fetchGetDtlPOLineInfo = async (po) => {
+    try{
+      let endpoint = `/Erp.BO.ReceiptSvc/GetNewRcvDtl`;
+      const response = await AnalogyxBIClient.post({
+          endpoint:'/erp_woodland/resolve_api',
+          postPayload: {
+            request_type: 'POST',
+            epicor_endpoint:endpoint,
+            data: JSON.stringify({
+              ds: {
+                RcvHead: currentRcvHead
+              },
+              "vendorNum": POData[0]?.VendorNum,
+              "purPoint": "",
+              "packSlip": packSLipNUm,
+              "packLine": 0,
+              "poLine": po.POLine
+            })
+          },
+          stringify: false,
+      })
+      const newRcvJson = response.json.data.parameters
+      // setPOLineInfo(()=> json.data.parameters)
+
+      let epicorendpoint = `/Erp.BO.ReceiptSvc/GetDtlPOLineInfo`;
+      const dtlResponse = await AnalogyxBIClient.post({
+          endpoint:'/erp_woodland/resolve_api',
+          postPayload: {
+            request_type: 'POST',
+            epicor_endpoint:epicorendpoint,
+            data: JSON.stringify({
+              ds: newRcvJson.ds,
+              "vendorNum": POData[0]?.VendorNum,
+              "purPoint": "",
+              "packSlip": packSLipNUm,
+              "packLine": 0,
+              "poLine": po.POLine
+            })
+          },
+          stringify: false,
+      })
+      const {json} = dtlResponse
+      setPOLineInfo(()=> json.data.parameters)
+      return
+    }catch(err){
+      dispatch(showSnackbar('Error Fecthing RcvHead'));
+      err.json().then((res) => {
+        dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+      }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+    }
+  }
   const onSelectLine = async(po) => {
     setFormdata(prev => ({ ...prev, WareHouseCode: po?.WarehouseCode, BinNum: '', input: '' }))
     const poDetails = (POData && POData[0]?.PODetails) || [];
@@ -485,6 +562,7 @@ const POReceipt = () => {
     }
     setTabvalue('3');
     setIsSaved(false);
+    await fetchGetDtlPOLineInfo(po)
   };
 
   const fetchUoms = () => {
@@ -536,33 +614,41 @@ const POReceipt = () => {
     return result.toFixed(2);
   }
 
-  const createPayload = (rcvHead, receipt)=>{
-    return {
-      RunChkLCAmtBeforeUpdate: true,
-      RunChkHdrBeforeUpdate: true,
-      ipVendorNum: receipt?.VendorNum,
-      ipPurPoint: "",
-      ipPackSlip: packSLipNUm,
-      ipPackLine: 0,
-      lRunChkDtl: true,
-      lRunChkDtlCompliance: true,
-      lRunCheckCompliance: true,
-      lRunPreUpdate: true,
-      lRunCreatePartLot: true,
-      partNum: "",
-      lotNum: "",
-      lOkToUpdate: true,
-      ds:{
-        RcvHead: [rcvHead],
-        RcvDtl: [receipt]
+  const createPayload = (line, receipt)=>{
+    try{
+      const rcvDtls = line.ds.RcvDtl;
+      console.log({rcvDtls})
+      return {
+        RunChkLCAmtBeforeUpdate: true,
+        RunChkHdrBeforeUpdate: true,
+        ipVendorNum: receipt?.VendorNum,
+        ipPurPoint: "",
+        ipPackSlip: packSLipNUm,
+        ipPackLine: 0,
+        lRunChkDtl: true,
+        lRunChkDtlCompliance: false,
+        lRunCheckCompliance: false,
+        lRunPreUpdate: true,
+        lRunCreatePartLot: false,
+        partNum: rcvDtls[0].PartNum,
+        lotNum: "",
+        lOkToUpdate: true,
+        ds:{
+          ...line.ds,
+          RcvDtl: [{...rcvDtls[0], ...receipt}]
+        }
       }
+    }catch(err){
+      console.log({err})
+      return line.ds
     }
   }
-
-  const handleSave = (reverse) => {
+  // dispatch(setOnError({ value: true, message: 'An Error Occured' }))
+  const handleSave = async (reverse) => {
     dispatch(
       setIsLoading({ value: true, message: 'Saving the Receipt. Please wait' })
     );
+    console.log("AFTER DISPATCH")
     const today = new Date();
     let receipt = {
       // ...currentLine,
@@ -602,52 +688,80 @@ const POReceipt = () => {
       JobSeqType: currentLine?.JobSeqType,
       QtyOption: formData?.qty_type || currentLine?.QtyOption,
     };
+    console.log("receipt", receipt)
     if (currentLine.PackLine) {
       receipt.PackLine = currentLine.PackLine;
       receipt.WareHouseCode = formData?.WareHouseCode || currentLine?.WareHouseCode;
       receipt.BinNum = formData?.BinNum || currentLine?.BinNum;
     }
-    const postPayload = {
-      Company: POData[0]?.Company,
-      VendorNum: POData[0]?.VendorNum,
-      PurPoint: '',
-      PackSlip: packSLipNUm,
-      ReceiptDate: today.toISOString(),
-      SaveForInvoicing: true,
-      Invoiced: false,
-      RowMod: !reverse ? 'U' : 'A',
-      ReceivePerson: 'Warehouse app',
-      RcvDtls: [receipt],
-    };
-
-    const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
+    console.log({currentLine})
+    
+    const uMasterPayload = createPayload(poLineInfo, receipt);
+    console.log({uMasterPayload})
+    const epicor_endpoint = `/Erp.BO.ReceiptSvc/UpdateMaster`;
     AnalogyxBIClient.post({
       endpoint: `/erp_woodland/resolve_api`,
       postPayload: {
         epicor_endpoint,
         request_type: 'POST',
-        data: JSON.stringify(postPayload),
+        data: JSON.stringify(uMasterPayload),
       },
       stringify: false,
+    }).then(async ({json})=>{
+      setSaved(true);
+      if (currentLine?.ClassID === "030" && !_.isEmpty(doors)) {
+        const currentDoor = doors?.filter(door => door.PORel_POLine == currentLine?.POLine && door.PORel_PORelNum == currentLine?.PORelNum)
+        const keys = ["JobHead_UserChar1", 'PORel_PONum', 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
+        await saveJobDetails(currentDoor, keys, ourQty);
+      }
+      dispatch(setIsLoading({ value: false, message: '' }));
+      dispatch(setOnSuccess({ value: true, message: '' }));
+      setIsSaved(true)
+
     })
-      .then(async ({ json }) => {
-        console.log({json})
-        const uMasterPayload = createPayload(json.data, receipt);
-        console.log({uMasterPayload})
-        setSaved(true);
-        if(receipt?.PORelStatus === "C"){
-          createPayload(json,receipt)
-          await updateMaster(uMasterPayload, dispatch)
-        }
-        if (currentLine?.ClassID === "030" && !_.isEmpty(doors)) {
-          const currentDoor = doors?.filter(door => door.PORel_POLine == currentLine?.POLine && door.PORel_PORelNum == currentLine?.PORelNum)
-          const keys = ["JobHead_UserChar1", 'PORel_PONum', 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
-          await saveJobDetails(currentDoor, keys, ourQty);
-        }
+   .catch((err) => {
+      console.log({err})
+
         dispatch(setIsLoading({ value: false, message: '' }));
-        dispatch(setOnSuccess({ value: true, message: '' }));
-        setIsSaved(true)
-      })
+        err.json().then((res) => {
+          console.log({res})
+          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+      });
+    // const epicor_endpoint = `/Erp.BO.ReceiptSvc/Receipts`;
+    // AnalogyxBIClient.post({
+    //   endpoint: `/erp_woodland/resolve_api`,
+    //   postPayload: {
+    //     epicor_endpoint,
+    //     request_type: 'POST',
+    //     data: JSON.stringify(postPayload),
+    //   },
+    //   stringify: false,
+    // })
+    //   .then(async ({ json }) => {
+    //     if(receipt?.PORelStatus === "C"){
+    //       const uMasterPayload = createPayload({...currentLine,
+    //         Company: POData[0]?.Company,
+    //         VendorNum: POData[0]?.VendorNum,
+    //         PurPoint: '',
+    //         PackSlip: packSLipNUm,
+    //         ReceiptDate: today.toISOString(),
+    //         SaveForInvoicing: true,
+    //         Invoiced: false,
+    //         RowMod: !reverse ? 'U' : 'A',
+    //         ReceivePerson: 'Warehouse app',}, receipt);
+    //       await updateMaster(uMasterPayload, dispatch)
+    //     }
+    //     setSaved(true);
+    //     if (currentLine?.ClassID === "030" && !_.isEmpty(doors)) {
+    //       const currentDoor = doors?.filter(door => door.PORel_POLine == currentLine?.POLine && door.PORel_PORelNum == currentLine?.PORelNum)
+    //       const keys = ["JobHead_UserChar1", 'PORel_PONum', 'PODetail_PartNum', 'PORel_POLine', 'PORel_JobNum']
+    //       await saveJobDetails(currentDoor, keys, ourQty);
+    //     }
+    //     dispatch(setIsLoading({ value: false, message: '' }));
+    //     dispatch(setOnSuccess({ value: true, message: '' }));
+    //     setIsSaved(true)
+    //   })
       // .then( async ()=>{
       //   const modifiedResponse = {
       //     ds: {
@@ -673,14 +787,14 @@ const POReceipt = () => {
       //     },
       //   };
       // })
-      .catch((err) => {
-        console.log(err)
-        dispatch(setIsLoading({ value: false, message: '' }));
-        err.json().then((res) => {
-          console.log({res})
-          dispatch(setOnError({ value: true, message: res.ErrorMessage }));
-        }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
-      });
+      // .catch((err) => {
+      //   console.log(err)
+      //   dispatch(setIsLoading({ value: false, message: '' }));
+      //   err.json().then((res) => {
+      //     console.log({res})
+      //     dispatch(setOnError({ value: true, message: res.ErrorMessage }));
+      //   }).catch((error) => dispatch(setOnError({ value: true, message: 'An Error Occured' })))
+      // });
   };
 
   const onSearchPoChange = (text) => {

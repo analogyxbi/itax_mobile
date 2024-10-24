@@ -38,7 +38,7 @@ export default function Homepage() {
   const fetchCompanies = async () => {
     const postPayload = {
       epicor_endpoint:
-        "/Erp.BO.CompanySvc/Companies",
+        "/Erp.BO.CompanySvc/Companies?$select=Company1,Name",
       request_type: "GET",
     };
     AnalogyxBIClient.post({
@@ -82,7 +82,11 @@ export default function Homepage() {
     const endpoint = `/erp_woodland/api_company`;
     AnalogyxBIClient.get({ endpoint })
       .then(({ json }) => {
-        dispatch(setCompany(json?.api_company))
+        if(companies?.map(c => c.Company1)?.includes(json?.api_company)){
+          dispatch(setCompany(json?.api_company))
+        }else{
+          dispatch(setCompany("NA"))
+        }
       })
       .catch((err) => {
         getClientErrorObject(err).then((res) =>
@@ -103,8 +107,11 @@ export default function Homepage() {
         );
       });
     fetchCompanies();
-    handlegetCompany();
   }, []);
+
+  useEffect(()=>{
+    handlegetCompany();
+  },[companies])
 
   return (
     <View style={styles.container}>

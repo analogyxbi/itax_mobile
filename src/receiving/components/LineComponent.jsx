@@ -26,7 +26,7 @@ const LineComponent = ({ currentLine,
     const dispatch = useDispatch();
     const [refreshing, setRefreshing] = useState(false);
     const { warehouses, binsData } = useSelector((state) => state.inventory);
-    const {company} = useSelector(state => state.auth);
+    const {company, user_data} = useSelector(state => state.auth);
     const [bins, setBins] = useState({
         from: [],
         to: [],
@@ -150,7 +150,7 @@ const LineComponent = ({ currentLine,
         dispatch(setIsLoading({ value: true, message: 'Printing...' }));
         const epicor_endpoint = `/BaqSvc/WHAppPrint2(${company})/?POLine=${currentLine?.POLine}&PONum=${currentLine?.PONum}`;
         const postData = {
-            UD12_Character01: "Analogyx1",
+            UD12_Character01: user_data?.user?.username || "Analogyx1",
             UD12_Key1: `${currentLine?.PONum}`,
             UD12_Key2: `${currentLine?.POLine}`,
             UD12_Key3: "",

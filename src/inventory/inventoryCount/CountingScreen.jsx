@@ -83,6 +83,7 @@ const CountingScreen = ({
   const [selectedPart, setSelectedPart] = useState({});
   const [nextConfirm, setNextConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { user_data } = useSelector(state => state.auth);
   const dispatch = useDispatch();
 
   const openMenu = () => setVisible(true);
@@ -242,7 +243,7 @@ const CountingScreen = ({
           BinNum: bin,
           PartNum: part,
           TagNote: notes,
-          CountedBy: "Warehouse App",
+          CountedBy: user_data?.user?.username || "Warehouse App",
           CountedQty: countedQty,
           TagReturned: true,
           CountedDate: new Date().toISOString(),

@@ -70,6 +70,7 @@ const initialFormdata = {
 const POReceipt = () => {
   const { podata } = useSelector((state) => state.poReceipts);
   const { isLoading, onSuccess, onError } = useSelector((state) => state.toast);
+  const { user_data } = useSelector(state => state.auth);
   const [localPoData, setLocalPoData] = useState({ 1: podata });
   const [hasPermission, setHasPermission] = useState(null);
   const [isNewPackSlip, setIsNewpackslip] = useState(true);
@@ -616,7 +617,7 @@ const POReceipt = () => {
       SaveForInvoicing: true,
       Invoiced: false,
       RowMod: !reverse ? 'U' : 'A',
-      ReceivePerson: 'Warehouse app',
+      ReceivePerson: user_data?.user?.username || 'Warehouse app',
       RcvDtls: [receipt],
     };
 
